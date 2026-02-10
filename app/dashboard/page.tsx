@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Waves, Fish, Scale, Camera, ClipboardList, Calculator, BarChart3, DollarSign, Bell, AlertTriangle } from 'lucide-react'
+import { Waves, Fish, Scale, Camera, ClipboardList, Calculator, BarChart3, DollarSign, Bell, AlertTriangle, Droplets, FlaskConical } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -13,40 +13,52 @@ export default async function DashboardPage() {
     .eq('id', user!.id)
     .single()
 
-  // Fetch counts for the org
   let pondCount = 0
   let batchCount = 0
   let recordCount = 0
   let unreadAlerts: Array<{ id: string; severity: string; message: string; alert_type: string; created_at: string }> = []
 
   if (profile?.organization_id) {
-    const { count: ponds } = await supabase
-      .from('ponds')
-      .select('*', { count: 'exact', head: true })
-      .eq('organization_id', profile.organization_id)
-    pondCount = ponds ?? 0
+    // Parallel: counts + alerts
+    const [{ count: ponds }, { data: orgPonds }, { data: alertData }] = await Promise.all([
+      supabase
+        .from('ponds')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', profile.organization_id),
+      supabase
+        .from('ponds')
+        .select('id')
+        .eq('organization_id', profile.organization_id),
+      supabase
+        .from('alerts')
+        .select('id, severity, message, alert_type, created_at')
+        .eq('organization_id', profile.organization_id)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ])
 
-    const { data: orgPonds } = await supabase
-      .from('ponds')
-      .select('id')
-      .eq('organization_id', profile.organization_id)
+    pondCount = ponds ?? 0
+    unreadAlerts = (alertData ?? []) as typeof unreadAlerts
 
     if (orgPonds && orgPonds.length > 0) {
       const pondIds = orgPonds.map(p => p.id)
-      const { count: batches } = await supabase
-        .from('batches')
-        .select('*', { count: 'exact', head: true })
-        .in('pond_id', pondIds)
-        .eq('status', 'active')
+      const [{ count: batches }, { data: allBatches }] = await Promise.all([
+        supabase
+          .from('batches')
+          .select('*', { count: 'exact', head: true })
+          .in('pond_id', pondIds)
+          .eq('status', 'active'),
+        supabase
+          .from('batches')
+          .select('id')
+          .in('pond_id', pondIds),
+      ])
+
       batchCount = batches ?? 0
 
-      const { data: activeBatches } = await supabase
-        .from('batches')
-        .select('id')
-        .in('pond_id', pondIds)
-
-      if (activeBatches && activeBatches.length > 0) {
-        const batchIds = activeBatches.map(b => b.id)
+      if (allBatches && allBatches.length > 0) {
+        const batchIds = allBatches.map(b => b.id)
         const { count: records } = await supabase
           .from('production_records')
           .select('*', { count: 'exact', head: true })
@@ -54,22 +66,16 @@ export default async function DashboardPage() {
         recordCount = records ?? 0
       }
     }
-
-    // Fetch unread alerts
-    const { data: alertData } = await supabase
-      .from('alerts')
-      .select('id, severity, message, alert_type, created_at')
-      .eq('organization_id', profile.organization_id)
-      .eq('is_read', false)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    unreadAlerts = (alertData ?? []) as typeof unreadAlerts
   }
 
   const greeting = profile?.full_name
     ? `Hola, ${profile.full_name}`
     : 'Bienvenido'
+
+  // Separar alertas: oportunidades de venta vs otras
+  const opportunityTypes = ['high_ammonia', 'low_oxygen']
+  const opportunities = unreadAlerts.filter(a => opportunityTypes.includes(a.alert_type))
+  const otherAlerts = unreadAlerts.filter(a => !opportunityTypes.includes(a.alert_type))
 
   const kpis = [
     {
@@ -124,21 +130,58 @@ export default async function DashboardPage() {
         })}
       </div>
 
-      {/* Alerts Banner */}
-      {unreadAlerts.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+      {/* Oportunidades de venta (ammonia/oxygen alerts) */}
+      {opportunities.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm text-foreground">
-              <Bell className="h-4 w-4 text-amber-600" />
-              Alertas recientes
-              <Badge variant="secondary" className="ml-auto">
-                {unreadAlerts.length}
+              <FlaskConical className="h-4 w-4 text-primary" />
+              Estanques que necesitan tratamiento
+              <Badge className="ml-auto bg-primary text-primary-foreground">
+                {opportunities.length}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-2">
-              {unreadAlerts.slice(0, 3).map((alert) => (
+              {opportunities.slice(0, 4).map((alert) => (
+                <div key={alert.id} className="flex items-start gap-2">
+                  <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <p className="text-sm text-foreground">{alert.message}</p>
+                  <Badge variant="outline" className="ml-auto shrink-0 border-primary/30 text-xs text-primary">
+                    Oportunidad
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-3">
+              <a href="/dashboard/bioremediation" className="text-sm font-medium text-primary hover:underline">
+                Calcular dosis de tratamiento
+              </a>
+              <span className="text-muted-foreground">|</span>
+              <a href="/dashboard/alerts" className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline">
+                Ver todas las alertas
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Other alerts */}
+      {otherAlerts.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm text-foreground">
+              <Bell className="h-4 w-4 text-amber-600" />
+              Otras alertas
+              <Badge variant="secondary" className="ml-auto">
+                {otherAlerts.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-2">
+              {otherAlerts.slice(0, 3).map((alert) => (
                 <div key={alert.id} className="flex items-start gap-2">
                   <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${alert.severity === 'critical' ? 'text-destructive' : 'text-amber-600'}`} />
                   <p className="text-sm text-foreground">{alert.message}</p>
@@ -175,12 +218,12 @@ export default async function DashboardPage() {
         <h2 className="mb-4 text-lg font-semibold text-foreground">Acciones rapidas</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
+            { label: 'Calcular dosis', href: '/dashboard/bioremediation', Icon: Calculator, desc: 'Bioremediacion por estanque' },
+            { label: 'Ventas', href: '/dashboard/costs', Icon: DollarSign, desc: 'Ingresos por tratamiento' },
             { label: 'Subir reporte', href: '/dashboard/upload', Icon: Camera, desc: 'Foto a datos con IA' },
             { label: 'Analitica', href: '/dashboard/analytics', Icon: BarChart3, desc: 'Graficas y tendencias' },
-            { label: 'Costos', href: '/dashboard/costs', Icon: DollarSign, desc: 'Rentabilidad por ciclo' },
             { label: 'Estanques', href: '/dashboard/ponds', Icon: Waves, desc: 'Gestionar estanques' },
             { label: 'Registros', href: '/dashboard/records', Icon: ClipboardList, desc: 'Ver historial' },
-            { label: 'Bioremediacion', href: '/dashboard/bioremediation', Icon: Calculator, desc: 'Calcular dosis' },
           ].map((action) => (
             <a
               key={action.href}

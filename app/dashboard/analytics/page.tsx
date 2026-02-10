@@ -6,6 +6,7 @@ import {
   NitrogenChart,
   MortalityChart,
   FcaChart,
+  TreatmentEffectivenessChart,
 } from '@/components/analytics-charts'
 import { PondFilter } from '@/components/pond-filter'
 
@@ -34,6 +35,14 @@ export default async function AnalyticsPage({
   ])
 
   const ponds = orgPonds ?? []
+  let treatments: Array<{
+    treatment_date: string
+    pond_name: string
+    product_name: string
+    dose_liters: number
+    ammonia_before: number | null
+    ammonia_after: number | null
+  }> = []
   let records: Array<{
     id: string
     record_date: string
@@ -53,11 +62,25 @@ export default async function AnalyticsPage({
 
   if (profile?.organization_id && ponds.length > 0) {
     const filteredPondIds = pondFilter ? [pondFilter] : ponds.map((p) => p.id)
+    const pondNameMap: Record<string, string> = {}
+    for (const p of ponds) pondNameMap[p.id] = p.name
 
-    const { data: batches } = await supabase
-      .from('batches')
-      .select('id, pond_id')
-      .in('pond_id', filteredPondIds)
+    const [{ data: batches }, { data: rawTreatments }] = await Promise.all([
+      supabase
+        .from('batches')
+        .select('id, pond_id')
+        .in('pond_id', filteredPondIds),
+      supabase
+        .from('bioremediation_treatments')
+        .select('pond_id, treatment_date, product_name, dose_liters, ammonia_before, ammonia_after')
+        .in('pond_id', filteredPondIds)
+        .order('treatment_date', { ascending: true }),
+    ])
+
+    treatments = (rawTreatments ?? []).map((t) => ({
+      ...t,
+      pond_name: pondNameMap[t.pond_id] ?? '',
+    })) as typeof treatments
 
     if (batches && batches.length > 0) {
       const batchPondMap: Record<string, string> = {}
@@ -109,6 +132,7 @@ export default async function AnalyticsPage({
           <FeedConsumptionChart records={records} />
           <WaterQualityChart records={records} />
           <NitrogenChart records={records} />
+          <TreatmentEffectivenessChart treatments={treatments} />
           <MortalityChart records={records} />
         </div>
       )}

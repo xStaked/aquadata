@@ -27,7 +27,7 @@ const navItems = [
   { href: '/dashboard/upload', label: 'Captura OCR', icon: Camera },
   { href: '/dashboard/records', label: 'Registros', icon: ClipboardList },
   { href: '/dashboard/analytics', label: 'Analitica', icon: BarChart3 },
-  { href: '/dashboard/costs', label: 'Costos', icon: DollarSign },
+  { href: '/dashboard/costs', label: 'Ventas', icon: DollarSign },
   { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
   { href: '/dashboard/bioremediation', label: 'Bioremediacion', icon: Calculator },
 ]

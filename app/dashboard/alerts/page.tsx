@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Bell, AlertTriangle, AlertOctagon, CheckCircle } from 'lucide-react'
+import { Bell, AlertTriangle, AlertOctagon, CheckCircle, FlaskConical, Calculator } from 'lucide-react'
 import { AlertActions } from '@/components/alert-actions'
+
+const OPPORTUNITY_TYPES = ['high_ammonia', 'low_oxygen']
 
 export default async function AlertsPage() {
   const supabase = await createClient()
@@ -27,19 +29,20 @@ export default async function AlertsPage() {
   let pondNames: Record<string, string> = {}
 
   if (profile?.organization_id) {
-    const { data } = await supabase
-      .from('alerts')
-      .select('*')
-      .eq('organization_id', profile.organization_id)
-      .order('created_at', { ascending: false })
-      .limit(100)
+    const [{ data }, { data: ponds }] = await Promise.all([
+      supabase
+        .from('alerts')
+        .select('id, alert_type, severity, message, is_read, created_at, pond_id')
+        .eq('organization_id', profile.organization_id)
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('ponds')
+        .select('id, name')
+        .eq('organization_id', profile.organization_id),
+    ])
 
     alerts = (data ?? []) as typeof alerts
-
-    const { data: ponds } = await supabase
-      .from('ponds')
-      .select('id, name')
-      .eq('organization_id', profile.organization_id)
 
     if (ponds) {
       for (const p of ponds) {
@@ -49,6 +52,7 @@ export default async function AlertsPage() {
   }
 
   const unreadCount = alerts.filter((a) => !a.is_read).length
+  const opportunityCount = alerts.filter((a) => !a.is_read && OPPORTUNITY_TYPES.includes(a.alert_type)).length
 
   const severityConfig: Record<string, { icon: typeof AlertTriangle; badgeClass: string; label: string }> = {
     critical: { icon: AlertOctagon, badgeClass: 'bg-destructive/10 text-destructive border-destructive/20', label: 'Critico' },
@@ -72,6 +76,7 @@ export default async function AlertsPage() {
             {unreadCount > 0
               ? `${unreadCount} alerta${unreadCount > 1 ? 's' : ''} sin leer`
               : 'Todas las alertas leidas'}
+            {opportunityCount > 0 && ` · ${opportunityCount} oportunidad${opportunityCount > 1 ? 'es' : ''} de tratamiento`}
           </p>
         </div>
         {unreadCount > 0 && <AlertActions />}
@@ -94,6 +99,7 @@ export default async function AlertsPage() {
           {alerts.map((alert) => {
             const config = severityConfig[alert.severity] ?? severityConfig.info
             const Icon = config.icon
+            const isOpportunity = OPPORTUNITY_TYPES.includes(alert.alert_type)
             const formattedDate = new Date(alert.created_at).toLocaleDateString('es', {
               day: '2-digit',
               month: 'short',
@@ -108,8 +114,18 @@ export default async function AlertsPage() {
                 className={alert.is_read ? 'opacity-60' : ''}
               >
                 <CardContent className="flex items-start gap-4 py-4">
-                  <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${alert.severity === 'critical' ? 'bg-destructive/10' : 'bg-amber-500/10'}`}>
-                    <Icon className={`h-5 w-5 ${alert.severity === 'critical' ? 'text-destructive' : 'text-amber-600'}`} />
+                  <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    isOpportunity
+                      ? 'bg-primary/10'
+                      : alert.severity === 'critical'
+                      ? 'bg-destructive/10'
+                      : 'bg-amber-500/10'
+                  }`}>
+                    {isOpportunity ? (
+                      <FlaskConical className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Icon className={`h-5 w-5 ${alert.severity === 'critical' ? 'text-destructive' : 'text-amber-600'}`} />
+                    )}
                   </div>
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -122,9 +138,25 @@ export default async function AlertsPage() {
                       {alert.pond_id && pondNames[alert.pond_id] && (
                         <Badge variant="secondary">{pondNames[alert.pond_id]}</Badge>
                       )}
+                      {isOpportunity && !alert.is_read && (
+                        <Badge variant="outline" className="border-primary/30 text-primary">
+                          Oportunidad
+                        </Badge>
+                      )}
                     </div>
                     <p className="mt-1.5 text-sm text-foreground">{alert.message}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{formattedDate}</p>
+                    <div className="mt-1 flex items-center gap-3">
+                      <p className="text-xs text-muted-foreground">{formattedDate}</p>
+                      {isOpportunity && !alert.is_read && (
+                        <a
+                          href="/dashboard/bioremediation"
+                          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          <Calculator className="h-3 w-3" />
+                          Calcular tratamiento
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
