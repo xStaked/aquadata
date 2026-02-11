@@ -62,12 +62,18 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center bg-background p-6 md:p-10">
-      <div className="w-full max-w-sm">
+    <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-background p-6 md:p-10">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
+      </div>
+      <div className="relative w-full max-w-sm">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-2 text-primary">
-              <Fish className="h-8 w-8" />
+            <div className="flex items-center gap-2.5 text-primary">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                <Fish className="h-6 w-6" />
+              </div>
               <span className="text-2xl font-bold tracking-tight text-foreground">AquaData</span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
@@ -75,7 +81,7 @@ export default function SignUpPage() {
               <p className="text-sm">Plataforma Acuicola Digital</p>
             </div>
           </div>
-          <Card>
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-2xl text-foreground">Crear Cuenta</CardTitle>
               <CardDescription>

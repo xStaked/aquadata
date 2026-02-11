@@ -94,13 +94,15 @@ export default async function CostsPage() {
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="transition-shadow duration-200 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos Totales</CardTitle>
-            <DollarSign className="h-5 w-5 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <DollarSign className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold tracking-tight text-foreground">
               ${totalRevenue.toLocaleString('es', { maximumFractionDigits: 0 })}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -108,13 +110,15 @@ export default async function CostsPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-shadow duration-200 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Producto Vendido</CardTitle>
-            <Droplets className="h-5 w-5 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <Droplets className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold tracking-tight text-foreground">
               {totalLiters.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">litros</span>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -122,25 +126,29 @@ export default async function CostsPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-shadow duration-200 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ticket Promedio</CardTitle>
-            <TrendingUp className="h-5 w-5 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-2xl font-bold tracking-tight text-foreground">
               ${totalTreatments > 0 ? (totalRevenue / totalTreatments).toLocaleString('es', { maximumFractionDigits: 0 }) : '0'}
             </div>
             <p className="text-xs text-muted-foreground">Por tratamiento</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-shadow duration-200 hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Efectividad Promedio</CardTitle>
-            <FlaskConical className="h-5 w-5 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <FlaskConical className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-2xl font-bold tracking-tight text-primary">
               {avgEffectiveness != null ? `${avgEffectiveness.toFixed(0)}%` : '—'}
             </div>
             <p className="text-xs text-muted-foreground">Reduccion de amonio</p>
@@ -182,7 +190,7 @@ export default async function CostsPage() {
               </TableHeader>
               <TableBody>
                 {treatments.map((t) => (
-                  <TableRow key={t.id}>
+                  <TableRow key={t.id} className="transition-colors duration-150 hover:bg-muted/50">
                     <TableCell>{new Date(t.treatment_date + 'T12:00:00').toLocaleDateString('es')}</TableCell>
                     <TableCell className="font-medium">{t.pond_name}</TableCell>
                     <TableCell>{t.product_name}</TableCell>

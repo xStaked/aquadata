@@ -119,7 +119,7 @@ export default async function RecordsPage() {
               </TableHeader>
               <TableBody>
                 {records.map((rec) => (
-                  <TableRow key={rec.id}>
+                  <TableRow key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
                     <TableCell className="font-medium">
                       {format(new Date(rec.record_date), 'dd/MM/yyyy')}
                     </TableCell>

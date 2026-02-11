@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { UploadForm } from '@/components/upload-form'
+import { ManualRecordForm } from '@/components/manual-record-form'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default async function UploadPage() {
   const supabase = await createClient()
@@ -46,12 +48,23 @@ export default async function UploadPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Captura OCR</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Nuevo Reporte</h1>
         <p className="mt-1 text-muted-foreground">
-          Sube una foto de tu reporte de campo y la IA extraera los datos automaticamente
+          Registra datos de produccion manualmente o sube una foto para extraccion automatica con IA
         </p>
       </div>
-      <UploadForm batches={batches} />
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList>
+          <TabsTrigger value="manual">Manual</TabsTrigger>
+          <TabsTrigger value="ocr">Captura OCR</TabsTrigger>
+        </TabsList>
+        <TabsContent value="manual" className="mt-4">
+          <ManualRecordForm batches={batches} />
+        </TabsContent>
+        <TabsContent value="ocr" className="mt-4">
+          <UploadForm batches={batches} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

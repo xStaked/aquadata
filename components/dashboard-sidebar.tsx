@@ -24,7 +24,7 @@ import { useState } from 'react'
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/dashboard/ponds', label: 'Estanques', icon: Waves },
-  { href: '/dashboard/upload', label: 'Captura OCR', icon: Camera },
+  { href: '/dashboard/upload', label: 'Nuevo Reporte', icon: Camera },
   { href: '/dashboard/records', label: 'Registros', icon: ClipboardList },
   { href: '/dashboard/analytics', label: 'Analitica', icon: BarChart3 },
   { href: '/dashboard/costs', label: 'Ventas', icon: DollarSign },
@@ -51,7 +51,9 @@ export function DashboardSidebar() {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-6 py-5">
-        <Fish className="h-7 w-7 text-sidebar-primary" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary/15">
+          <Fish className="h-5 w-5 text-sidebar-primary" />
+        </div>
         <span className="text-lg font-bold tracking-tight text-sidebar-foreground">
           AquaData
         </span>
@@ -68,7 +70,7 @@ export function DashboardSidebar() {
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                     active
                       ? 'bg-sidebar-accent text-sidebar-primary'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary'

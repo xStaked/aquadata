@@ -128,7 +128,7 @@ export default async function PondsPage() {
             const oxygenStatus = wq ? getOxygenStatus(wq.oxygen) : null
 
             return (
-              <Card key={pond.id}>
+              <Card key={pond.id} className="transition-shadow duration-200 hover:shadow-md">
                 <CardHeader className="flex flex-row items-start justify-between pb-3">
                   <div className="flex items-center gap-2">
                     <Waves className="h-5 w-5 text-primary" />

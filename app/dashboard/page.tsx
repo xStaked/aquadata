@@ -114,15 +114,17 @@ export default async function DashboardPage() {
         {kpis.map((kpi) => {
           const Icon = kpi.icon
           return (
-            <Card key={kpi.title}>
+            <Card key={kpi.title} className="transition-shadow duration-200 hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {kpi.title}
                 </CardTitle>
-                <Icon className="h-5 w-5 text-primary" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground">{kpi.value}</div>
+                <div className="text-3xl font-bold tracking-tight text-foreground">{kpi.value}</div>
                 <p className="mt-1 text-xs text-muted-foreground">{kpi.description}</p>
               </CardContent>
             </Card>
@@ -228,7 +230,7 @@ export default async function DashboardPage() {
             <a
               key={action.href}
               href={action.href}
-              className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-primary/5"
+              className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:shadow-md"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <action.Icon className="h-5 w-5 text-primary" />

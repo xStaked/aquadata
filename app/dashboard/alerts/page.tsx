@@ -111,7 +111,7 @@ export default async function AlertsPage() {
             return (
               <Card
                 key={alert.id}
-                className={alert.is_read ? 'opacity-60' : ''}
+                className={`transition-shadow duration-200 hover:shadow-md ${alert.is_read ? 'opacity-60' : ''}`}
               >
                 <CardContent className="flex items-start gap-4 py-4">
                   <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${

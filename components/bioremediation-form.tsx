@@ -199,7 +199,7 @@ export function BioremediationForm() {
             {DOSE_TABLE.map((entry) => (
               <div
                 key={entry.label}
-                className="rounded-lg border border-border p-3 text-center"
+                className="rounded-lg border border-border p-3 text-center transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
               >
                 <p className="text-xs font-medium text-muted-foreground">{entry.label}</p>
                 <p className="mt-1 text-lg font-bold text-foreground">{entry.dose} L/m3</p>
