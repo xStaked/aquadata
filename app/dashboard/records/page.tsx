@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
+import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 
 export default async function RecordsPage() {
   const supabase = await createClient()
@@ -75,9 +76,28 @@ export default async function RecordsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Registros Productivos</h1>
-        <p className="mt-1 text-muted-foreground">Historial completo de datos capturados</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Registros Productivos</h1>
+          <p className="mt-1 text-muted-foreground">Historial completo de datos capturados</p>
+        </div>
+        <RecordsExport
+          records={records.map((rec) => ({
+            id: rec.id,
+            record_date: rec.record_date,
+            pond_name: batchPondMap[rec.batch_id] || '-',
+            feed_kg: rec.feed_kg,
+            avg_weight_g: rec.avg_weight_g,
+            mortality_count: rec.mortality_count,
+            temperature_c: rec.temperature_c,
+            oxygen_mg_l: rec.oxygen_mg_l,
+            ammonia_mg_l: (rec as any).ammonia_mg_l ?? null,
+            nitrite_mg_l: (rec as any).nitrite_mg_l ?? null,
+            ph: (rec as any).ph ?? null,
+            calculated_fca: rec.calculated_fca,
+            calculated_biomass_kg: rec.calculated_biomass_kg,
+          }))}
+        />
       </div>
 
       {records.length === 0 ? (
@@ -115,6 +135,7 @@ export default async function RecordsPage() {
                   <TableHead className="text-right">pH</TableHead>
                   <TableHead className="text-right">FCA</TableHead>
                   <TableHead className="text-right">Biomasa (kg)</TableHead>
+                  <TableHead className="text-center">Descargar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -145,6 +166,25 @@ export default async function RecordsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       {rec.calculated_biomass_kg ? rec.calculated_biomass_kg.toFixed(1) : '-'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <SingleRecordExport
+                        record={{
+                          id: rec.id,
+                          record_date: rec.record_date,
+                          pond_name: batchPondMap[rec.batch_id] || '-',
+                          feed_kg: rec.feed_kg,
+                          avg_weight_g: rec.avg_weight_g,
+                          mortality_count: rec.mortality_count,
+                          temperature_c: rec.temperature_c,
+                          oxygen_mg_l: rec.oxygen_mg_l,
+                          ammonia_mg_l: (rec as any).ammonia_mg_l ?? null,
+                          nitrite_mg_l: (rec as any).nitrite_mg_l ?? null,
+                          ph: (rec as any).ph ?? null,
+                          calculated_fca: rec.calculated_fca,
+                          calculated_biomass_kg: rec.calculated_biomass_kg,
+                        }}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
