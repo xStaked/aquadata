@@ -26,6 +26,7 @@ export interface CalcResult {
   densityBonusG: number
   baseCalcG: number
   finalDoseG: number
+  dailyDoseG: number   // finalDoseG / 3 (lunes, martes, miércoles)
   aerationHalved: boolean
   speciesLabel: string
   ageMonths: number
@@ -77,7 +78,8 @@ export function calculateDose(params: {
 
   const { baseDosePerHa, label: speciesLabel } = SPECIES_CONFIG[species]
   const baseDoseG = baseDosePerHa * areaHa
-  const ageAdjustmentG = ageMonths > 2 ? 0.05 * areaM2 : 0
+  // Age adjustment: if > 2 months, add 15% of the base dose
+  const ageAdjustmentG = ageMonths > 2 ? baseDoseG * 0.15 : 0
 
   const subtotal = baseDoseG + ageAdjustmentG
   const densityBonus = stockingDensity >= 10
@@ -87,13 +89,14 @@ export function calculateDose(params: {
   // BioTerraPro only: halve the dose when there is no aeration
   const aerationHalved = product === 'bioterrapro' && aeration === '0'
   const finalDoseG = aerationHalved ? baseCalcG / 2 : baseCalcG
+  const dailyDoseG = finalDoseG / 3
 
   return {
     volume, areaM2, areaHa,
     baseDosePerHa, baseDoseG,
     ageAdjustmentG,
     densityBonus, densityBonusG,
-    baseCalcG, finalDoseG,
+    baseCalcG, finalDoseG, dailyDoseG,
     aerationHalved,
     speciesLabel, ageMonths, stockingDensity, aeration, product,
   }

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
-  Calculator, Droplets, Save, Fish, Wind,
-  FlaskConical, CheckCircle2, AlertCircle,
+  Calculator, Save, Fish, Wind,
+  CheckCircle2, AlertCircle,
 } from 'lucide-react'
 import {
   useBioremediation,
@@ -24,7 +25,7 @@ const PRODUCTS: Record<ProductKey, {
   name: string
   type: string
   description: string
-  icon: React.ReactNode
+  image: string
   colorClass: string
   selectedClass: string
   badgeClass: string
@@ -33,10 +34,10 @@ const PRODUCTS: Record<ProductKey, {
   resultBorder: string
 }> = {
   bioaquapro: {
-    name: 'BioAquaPro',
+    name: 'BIOAQUAPRO',
     type: 'Producto de agua',
-    description: 'Tratamiento acuático de alta concentración. Mejora la calidad del agua y reduce cargas orgánicas.',
-    icon: <Droplets className="h-7 w-7" />,
+    description: 'Tratamiento acuícola de alta concentración. Mejora la calidad del agua y reduce cargas orgánicas.',
+    image: '/images/bioaquapro.png',
     colorClass: 'text-sky-600 dark:text-sky-400',
     selectedClass: 'border-sky-500 bg-sky-50 dark:bg-sky-950/60 ring-2 ring-sky-500/30',
     badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300',
@@ -45,10 +46,10 @@ const PRODUCTS: Record<ProductKey, {
     resultBorder: 'border-sky-200 dark:border-sky-800',
   },
   bioterrapro: {
-    name: 'BioTerraPro',
+    name: 'BIOTERRAPRO',
     type: 'Producto de suelo',
     description: 'Bioremediador de fondos de estanque. Para sedimentos y suelos con alta carga orgánica.',
-    icon: <FlaskConical className="h-7 w-7" />,
+    image: '/images/bioterrapro.png',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
     selectedClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 ring-2 ring-emerald-500/30',
     badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
@@ -87,20 +88,25 @@ export function BioremediationForm() {
             <button
               key={key}
               onClick={() => handleProductSelect(key)}
-              className={`group relative flex w-full cursor-pointer items-start gap-4 rounded-xl border-2 p-5 text-left transition-all duration-200 ${
-                selectedProduct === key
-                  ? p.selectedClass
-                  : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-sm'
-              }`}
+              className={`group relative flex w-full cursor-pointer items-start gap-4 rounded-xl border-2 p-5 text-left transition-all duration-200 ${selectedProduct === key
+                ? p.selectedClass
+                : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-sm'
+                }`}
             >
               {selectedProduct === key && (
                 <span className={`absolute right-4 top-4 ${p.colorClass}`}>
                   <CheckCircle2 className="h-5 w-5" />
                 </span>
               )}
-              <span className={`mt-0.5 shrink-0 transition-colors ${selectedProduct === key ? p.colorClass : 'text-muted-foreground group-hover:text-foreground'}`}>
-                {p.icon}
-              </span>
+              <div className="mt-0.5 shrink-0">
+                <Image
+                  src={p.image}
+                  alt={p.name}
+                  width={100}
+                  height={100}
+                  className="rounded-lg object-contain"
+                />
+              </div>
               <div className="flex flex-col gap-1 pr-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-foreground">{p.name}</span>
@@ -158,7 +164,7 @@ export function BioremediationForm() {
                 <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                   Área: <strong className="text-foreground">{previewArea.toFixed(1)} m²</strong>
                   {' · '}
-                  <strong className="text-foreground">{previewHa!.toFixed(4)} ha</strong>
+                  <strong className="text-foreground">{previewHa!.toFixed(2)} ha</strong>
                   {previewVolume != null && (
                     <> · Vol: <strong className="text-foreground">{previewVolume.toFixed(1)} m³</strong></>
                   )}
@@ -209,7 +215,7 @@ export function BioremediationForm() {
                     </SelectContent>
                   </Select>
                   {ageMonths && Number(ageMonths) > 2 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400">+0.05 g/m² por edad</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">+15% por edad &gt;2 meses</p>
                   )}
                 </div>
 
@@ -233,11 +239,10 @@ export function BioremediationForm() {
                     <button
                       key={opt.value}
                       onClick={() => setAeration(opt.value)}
-                      className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs font-medium transition-all duration-150 ${
-                        aeration === opt.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
-                      }`}
+                      className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs font-medium transition-all duration-150 ${aeration === opt.value
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -278,8 +283,14 @@ export function BioremediationForm() {
           <Card className={`border-2 ${PRODUCTS[result.product].resultBorder}`}>
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <span className={PRODUCTS[result.product].colorClass}>{prod.icon}</span>
+                <CardTitle className="flex items-center gap-2.5 text-foreground">
+                  <Image
+                    src={prod.image}
+                    alt={prod.name}
+                    width={32}
+                    height={32}
+                    className="rounded-md object-contain"
+                  />
                   {prod.name}
                 </CardTitle>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${prod.badgeClass}`}>
@@ -294,31 +305,52 @@ export function BioremediationForm() {
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
 
-              {/* Dosis principal */}
-              <div className={`rounded-xl border-2 ${PRODUCTS[result.product].resultBorder} ${PRODUCTS[result.product].resultBg} p-6 text-center`}>
+              {/* Dosis semanal + aplicaciones */}
+              <div className={`rounded-xl border-2 ${PRODUCTS[result.product].resultBorder} ${PRODUCTS[result.product].resultBg} p-6`}>
                 {result.aerationHalved && (
                   <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                     <AlertCircle className="h-3.5 w-3.5" />
                     Dosis reducida 50% por ausencia de aireación
                   </div>
                 )}
-                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Dosis recomendada
-                </p>
-                <p className={`text-5xl font-bold ${PRODUCTS[result.product].resultText}`}>
-                  {fmtDose(result.finalDoseG)}
-                </p>
-                {result.finalDoseG >= 1000 && (
-                  <p className="mt-1 text-sm text-muted-foreground">{result.finalDoseG.toFixed(0)} g</p>
-                )}
+
+                {/* Total semanal */}
+                <div className="text-center mb-5">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Dosis semanal total
+                  </p>
+                  <p className={`text-5xl font-bold ${PRODUCTS[result.product].resultText}`}>
+                    {fmtDose(result.finalDoseG)}
+                  </p>
+                  {result.finalDoseG >= 1000 && (
+                    <p className="mt-1 text-sm text-muted-foreground">{result.finalDoseG.toFixed(0)} g</p>
+                  )}
+                </div>
+
+                {/* Aplicaciones: lunes, martes, miércoles */}
+                <div className={`border-t ${PRODUCTS[result.product].resultBorder} pt-4`}>
+                  <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Aplicación por día (÷ 3)
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['Lunes', 'Miércoles', 'Viernes'].map(day => (
+                      <div key={day} className="rounded-lg bg-background/60 p-3 text-center">
+                        <p className="text-xs text-muted-foreground mb-1">{day}</p>
+                        <p className={`text-lg font-bold ${PRODUCTS[result.product].resultText}`}>
+                          {fmtDose(result.dailyDoseG)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Métricas */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: 'Área',       value: `${result.areaM2.toFixed(0)} m²` },
-                  { label: 'Hectáreas',  value: `${result.areaHa.toFixed(4)} ha` },
-                  { label: 'Volumen',    value: `${result.volume.toFixed(1)} m³` },
+                  { label: 'Área', value: `${result.areaM2.toFixed(0)} m²` },
+                  { label: 'Hectáreas', value: `${result.areaHa.toFixed(2)} ha` },
+                  { label: 'Volumen', value: `${result.volume.toFixed(1)} m³` },
                   { label: 'Dosis base', value: `${result.baseDosePerHa} g/ha` },
                 ].map(({ label, value }) => (
                   <div key={label} className="rounded-lg bg-muted/40 p-3">
@@ -333,14 +365,14 @@ export function BioremediationForm() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Desglose</p>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Base ({result.baseDosePerHa} g/ha × {result.areaHa.toFixed(4)} ha)
+                    Base ({result.baseDosePerHa} g/ha × {result.areaHa.toFixed(2)} ha)
                   </span>
                   <span className="font-medium tabular-nums">{result.baseDoseG.toFixed(2)} g</span>
                 </div>
                 {result.ageAdjustmentG > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Edad &gt;2 meses (0.05 g/m² × {result.areaM2} m²)
+                      Edad &gt;2 meses (+15% sobre dosis base)
                     </span>
                     <span className="font-medium tabular-nums text-amber-600">+{result.ageAdjustmentG.toFixed(2)} g</span>
                   </div>
@@ -409,11 +441,10 @@ export function BioremediationForm() {
                 <button
                   key={key}
                   onClick={() => setSpecies(key)}
-                  className={`cursor-pointer rounded-lg border p-3 text-center transition-all duration-150 hover:shadow-sm ${
-                    species === key
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                      : 'border-border hover:border-muted-foreground/30'
-                  }`}
+                  className={`cursor-pointer rounded-lg border p-3 text-center transition-all duration-150 hover:shadow-sm ${species === key
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                    : 'border-border hover:border-muted-foreground/30'
+                    }`}
                 >
                   <p className="text-xs font-medium text-muted-foreground">{label}</p>
                   <p className="mt-1 text-xl font-bold text-foreground">{baseDosePerHa}</p>
