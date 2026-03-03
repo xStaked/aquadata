@@ -50,7 +50,7 @@ export function DashboardSidebar() {
         .eq('id', user.id)
         .single()
 
-      const org = data?.organizations as { name: string } | null
+      const org = data?.organizations as unknown as { name: string } | null
       if (org?.name) setFarmName(org.name)
     }
     fetchFarmName()
