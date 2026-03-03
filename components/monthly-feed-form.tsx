@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,8 +27,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Plus, Wheat, Trash2 } from 'lucide-react'
-import { createMonthlyFeedRecord, deleteMonthlyFeedRecord } from '@/app/dashboard/costs/actions'
+import { Plus, Wheat, Trash2, X, PlusCircle } from 'lucide-react'
+import { createMonthlyFeedRecord, deleteMonthlyFeedRecord, createConcentrate } from '@/app/dashboard/costs/actions'
 import { formatCOP } from '@/lib/format'
 
 interface Batch {
@@ -76,16 +77,34 @@ const emptyForm = {
   notes: '',
 }
 
+const emptyQuick = { name: '', brand: '', price_per_kg: '' }
+
 export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyFeedFormProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
 
-  const selectedConcentrate = concentrates.find(c => c.id === form.concentrate_id)
+  // Inline concentrate quick-create
+  const [showQuick, setShowQuick] = useState(false)
+  const [quickForm, setQuickForm] = useState(emptyQuick)
+  const [quickError, setQuickError] = useState('')
+  const [pendingSelect, setPendingSelect] = useState('')
+
+  // Auto-select concentrate created inline after router.refresh() updates the props
+  useEffect(() => {
+    if (pendingSelect && concentrates.length > 0) {
+      const found = concentrates.find(c => c.name === pendingSelect)
+      if (found) {
+        handleConcentrateChange(found.id)
+        setPendingSelect('')
+      }
+    }
+  }, [concentrates, pendingSelect])
+
   const totalCost = (Number(form.kg_used) || 0) * (Number(form.cost_per_kg) || 0)
 
-  // Auto-fill price when concentrate selected
   const handleConcentrateChange = (id: string) => {
     const c = concentrates.find(x => x.id === id)
     setForm(f => ({
@@ -93,6 +112,41 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
       concentrate_id: id,
       cost_per_kg: c ? String(c.price_per_kg) : f.cost_per_kg,
     }))
+  }
+
+  const handleQuickCreate = () => {
+    if (!quickForm.name.trim() || !quickForm.price_per_kg) {
+      setQuickError('Nombre y precio son requeridos')
+      return
+    }
+    setQuickError('')
+    startTransition(async () => {
+      try {
+        await createConcentrate({
+          name: quickForm.name.trim(),
+          brand: quickForm.brand.trim() || undefined,
+          price_per_kg: Number(quickForm.price_per_kg),
+        })
+        setPendingSelect(quickForm.name.trim())
+        setQuickForm(emptyQuick)
+        setShowQuick(false)
+        router.refresh()
+      } catch (e: any) {
+        setQuickError(e.message)
+      }
+    })
+  }
+
+  const handleDialogOpen = (v: boolean) => {
+    setOpen(v)
+    if (v) {
+      setForm(emptyForm)
+      setError('')
+      // Auto-show quick form if no concentrates exist
+      setShowQuick(concentrates.length === 0)
+      setQuickForm(emptyQuick)
+      setQuickError('')
+    }
   }
 
   const handleSubmit = () => {
@@ -130,13 +184,11 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
     startTransition(async () => { await deleteMonthlyFeedRecord(id) })
   }
 
-  // Group records by month for summary
-  const byMonth = feedRecords.reduce<Record<string, { totalKg: number; totalCost: number; items: FeedRecord[] }>>((acc, r) => {
+  const byMonth = feedRecords.reduce<Record<string, { totalKg: number; totalCost: number }>>((acc, r) => {
     const key = `${r.year}-${String(r.month).padStart(2, '0')}`
-    if (!acc[key]) acc[key] = { totalKg: 0, totalCost: 0, items: [] }
+    if (!acc[key]) acc[key] = { totalKg: 0, totalCost: 0 }
     acc[key].totalKg += r.kg_used
     acc[key].totalCost += r.kg_used * r.cost_per_kg
-    acc[key].items.push(r)
     return acc
   }, {})
 
@@ -147,9 +199,9 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
           <Wheat className="h-4 w-4" />
           <span>{feedRecords.length} registro{feedRecords.length !== 1 ? 's' : ''} de alimentación</span>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-2" onClick={() => { setForm(emptyForm); setError('') }}>
+            <Button size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
               Registrar alimento
             </Button>
@@ -161,6 +213,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
 
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3">
+                {/* Lote */}
                 <div className="col-span-2 flex flex-col gap-1.5">
                   <Label>Lote / Estanque *</Label>
                   <Select value={form.batch_id} onValueChange={v => setForm(f => ({ ...f, batch_id: v }))}>
@@ -177,13 +230,24 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
                   </Select>
                 </div>
 
+                {/* Concentrado */}
                 <div className="col-span-2 flex flex-col gap-1.5">
-                  <Label>Concentrado *</Label>
-                  {concentrates.length === 0 ? (
-                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
-                      No hay concentrados configurados. Agrega uno en la pestaña "Concentrados".
-                    </p>
-                  ) : (
+                  <div className="flex items-center justify-between">
+                    <Label>Concentrado / Alimento *</Label>
+                    {concentrates.length > 0 && !showQuick && (
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer"
+                        onClick={() => { setShowQuick(true); setQuickError('') }}
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Agregar nuevo
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Select from existing concentrates */}
+                  {concentrates.length > 0 && !showQuick && (
                     <Select value={form.concentrate_id} onValueChange={handleConcentrateChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar concentrado…" />
@@ -197,8 +261,74 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
                       </SelectContent>
                     </Select>
                   )}
+
+                  {/* Inline quick-create form */}
+                  {showQuick && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-primary">
+                          {concentrates.length === 0
+                            ? 'Primero registra el alimento que usas'
+                            : 'Nuevo concentrado'}
+                        </span>
+                        {concentrates.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => { setShowQuick(false); setQuickError('') }}
+                            className="cursor-pointer text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2 flex flex-col gap-1">
+                          <Label className="text-xs">Nombre del alimento *</Label>
+                          <Input
+                            placeholder="Ej: Purina 32%, Mojarra Inicio…"
+                            value={quickForm.name}
+                            onChange={e => setQuickForm(f => ({ ...f, name: e.target.value }))}
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Label className="text-xs">Marca / Proveedor</Label>
+                          <Input
+                            placeholder="Ej: Italcol"
+                            value={quickForm.brand}
+                            onChange={e => setQuickForm(f => ({ ...f, brand: e.target.value }))}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Label className="text-xs">Precio/kg (COP) *</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="100"
+                            placeholder="Ej: 2800"
+                            value={quickForm.price_per_kg}
+                            onChange={e => setQuickForm(f => ({ ...f, price_per_kg: e.target.value }))}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                      {quickError && <p className="text-xs text-destructive">{quickError}</p>}
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleQuickCreate}
+                        disabled={isPending}
+                        className="w-full"
+                      >
+                        {isPending ? 'Creando…' : 'Crear y seleccionar'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
+                {/* Año y Mes */}
                 <div className="flex flex-col gap-1.5">
                   <Label>Año *</Label>
                   <Input
@@ -290,7 +420,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
             </TableRow>
           ) : (
             feedRecords.map(r => (
-              <TableRow key={r.id}>
+              <TableRow key={r.id} className="transition-colors hover:bg-muted/40">
                 <TableCell className="font-medium">
                   {MONTHS[r.month - 1]} {r.year}
                 </TableCell>

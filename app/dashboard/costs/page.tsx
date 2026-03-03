@@ -241,19 +241,19 @@ export default async function CostsPage() {
         <TabsList className="flex w-full flex-wrap gap-1 h-auto sm:grid sm:grid-cols-5 sm:max-w-3xl">
           <TabsTrigger value="investment" className="gap-1.5 text-xs sm:text-sm">
             <Target className="h-3.5 w-3.5" />
-            Inversión
+            Resumen
           </TabsTrigger>
-          <TabsTrigger value="harvest" className="gap-1.5 text-xs sm:text-sm">
-            <Scale className="h-3.5 w-3.5" />
-            Cosecha
+          <TabsTrigger value="fish" className="gap-1.5 text-xs sm:text-sm">
+            <Fish className="h-3.5 w-3.5" />
+            Ventas
           </TabsTrigger>
           <TabsTrigger value="feed" className="gap-1.5 text-xs sm:text-sm">
             <Wheat className="h-3.5 w-3.5" />
             Alimentación
           </TabsTrigger>
-          <TabsTrigger value="fish" className="gap-1.5 text-xs sm:text-sm">
-            <Fish className="h-3.5 w-3.5" />
-            Ventas
+          <TabsTrigger value="harvest" className="gap-1.5 text-xs sm:text-sm">
+            <Scale className="h-3.5 w-3.5" />
+            Cosecha
           </TabsTrigger>
           <TabsTrigger value="bio" className="gap-1.5 text-xs sm:text-sm">
             <FlaskConical className="h-3.5 w-3.5" />
@@ -274,8 +274,14 @@ export default async function CostsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="harvest" className="mt-6">
-          <HarvestTab harvests={harvests} batchesForForms={batchesForForms} />
+        <TabsContent value="fish" className="mt-6">
+          <FishTab
+            batches={batches}
+            marketPrices={marketPrices}
+            totalFishRevenue={totalFishRevenue}
+            totalFishCosts={totalFishCosts}
+            totalFishUtility={totalFishUtility}
+          />
         </TabsContent>
 
         <TabsContent value="feed" className="mt-6">
@@ -286,14 +292,8 @@ export default async function CostsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="fish" className="mt-6">
-          <FishTab
-            batches={batches}
-            marketPrices={marketPrices}
-            totalFishRevenue={totalFishRevenue}
-            totalFishCosts={totalFishCosts}
-            totalFishUtility={totalFishUtility}
-          />
+        <TabsContent value="harvest" className="mt-6">
+          <HarvestTab harvests={harvests} batchesForForms={batchesForForms} />
         </TabsContent>
 
         <TabsContent value="bio" className="mt-6">
