@@ -21,7 +21,7 @@ interface Record {
   id: string
   record_date: string
   feed_kg: number | null
-  avg_weight_g: number | null
+  avg_weight_kg: number | null
   mortality_count: number
   temperature_c: number | null
   oxygen_mg_l: number | null
@@ -77,11 +77,11 @@ function downsample<T extends { date: string }>(
 export function WeightChart({ records, targetWeight }: { records: Record[]; targetWeight?: number }) {
   const data = useMemo(() => {
     const raw = records
-      .filter((r) => r.avg_weight_g !== null)
+      .filter((r) => r.avg_weight_kg !== null)
       .sort((a, b) => a.record_date.localeCompare(b.record_date))
       .map((r) => ({
         date: formatDate(r.record_date),
-        peso: r.avg_weight_g as number,
+        peso: r.avg_weight_kg! * 1000,
       }))
     return downsample(raw, ['peso'])
   }, [records])

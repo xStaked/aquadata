@@ -22,7 +22,7 @@ const productionDataSchema = z.object({
     record_date: z.number().describe('Confianza de 0 a 100 para la fecha'),
     fish_count: z.number().describe('Confianza de 0 a 100 para numero de peces'),
     feed_kg: z.number().describe('Confianza de 0 a 100 para alimento'),
-    avg_weight_g: z.number().describe('Confianza de 0 a 100 para peso promedio'),
+    avg_weight_g: z.number().describe('Confianza de 0 a 100 para peso promedio en gramos'),
     mortality_count: z.number().describe('Confianza de 0 a 100 para mortalidad'),
     temperature_c: z.number().describe('Confianza de 0 a 100 para temperatura'),
     oxygen_mg_l: z.number().describe('Confianza de 0 a 100 para oxigeno'),

@@ -316,7 +316,9 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
           const fishCount = formData.fish_count !== '' ? Number(formData.fish_count) : null
           const avgWeight = formData.avg_weight_g !== '' ? Number(formData.avg_weight_g) : null
           const feedKg = formData.feed_kg !== '' ? Number(formData.feed_kg) : null
-          const biomasa = fishCount && avgWeight ? (fishCount * avgWeight) / 1000 : null
+          const mortality = formData.mortality_count !== '' ? Number(formData.mortality_count) : 0
+          const effectiveFish = Math.max(0, (fishCount ?? 0) - mortality)
+          const biomasa = fishCount && avgWeight ? effectiveFish * avgWeight : null
           const fca = feedKg && biomasa && biomasa > 0 ? feedKg / biomasa : null
           return (
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -335,7 +337,7 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
                   <p className="mt-1 text-xl font-bold text-foreground">
                     {biomasa !== null ? biomasa.toFixed(2) : <span className="text-sm font-normal text-muted-foreground">Ingresa nº peces y peso</span>}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">nº peces × peso prom. / 1000</p>
+                  <p className="text-[10px] text-muted-foreground">(peces − mortalidad) × peso prom.</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

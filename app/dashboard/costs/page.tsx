@@ -58,7 +58,7 @@ export default async function CostsPage() {
           avg_weight_at_seeding_g, fingerling_cost_per_unit,
           sale_price_per_kg, target_profitability_pct,
           labor_cost_per_month,
-          production_records (avg_weight_g, record_date),
+          production_records (avg_weight_kg, record_date),
           monthly_feed_records (kg_used, cost_per_kg)
         `)
         .eq('status', 'active'),
@@ -113,9 +113,10 @@ export default async function CostsPage() {
       const latestRecord = [...records].sort((x, y) =>
         new Date(y.record_date).getTime() - new Date(x.record_date).getTime()
       )[0]
-      const avgWeight = latestRecord?.avg_weight_g || 0
+      const avgWeightKg = latestRecord?.avg_weight_kg || 0
       const population = b.current_population || 0
-      const biomassKg = (population * avgWeight) / 1000
+      // biomasa (kg) = nº peces × avg_weight_kg (ya está en kg)
+      const biomassKg = population * avgWeightKg
 
       const marketRef = marketPrices.find(mp =>
         pondInfo?.species.toLowerCase().includes(mp.species.toLowerCase().split(' ')[0])
@@ -148,7 +149,7 @@ export default async function CostsPage() {
         pond_name: pondInfo?.name ?? 'S/E',
         species: pondInfo?.species ?? 'Pescado',
         population,
-        avg_weight: avgWeight,
+        avg_weight: avgWeightKg,
         biomass_kg: biomassKg,
         sale_price: salePrice,
         projected_revenue: projectedRevenue,

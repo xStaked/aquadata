@@ -32,7 +32,8 @@ export async function confirmProductionRecord(data: ProductionData) {
   let calculated_biomass_kg: number | null = null
 
   if (data.fish_count && data.avg_weight_g) {
-    calculated_biomass_kg = (data.fish_count * data.avg_weight_g) / 1000
+    const effectiveFish = data.fish_count - (data.mortality_count ?? 0)
+    calculated_biomass_kg = Math.max(0, effectiveFish) * data.avg_weight_g / 1000
   }
 
   if (data.feed_kg && calculated_biomass_kg && calculated_biomass_kg > 0) {
@@ -60,7 +61,7 @@ export async function confirmProductionRecord(data: ProductionData) {
     record_date: data.record_date,
     fish_count: data.fish_count,
     feed_kg: data.feed_kg,
-    avg_weight_g: data.avg_weight_g,
+    avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
     mortality_count: data.mortality_count ?? 0,
     temperature_c: data.temperature_c,
     oxygen_mg_l: data.oxygen_mg_l,

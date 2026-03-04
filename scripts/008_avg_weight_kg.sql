@@ -1,0 +1,4 @@
+-- Migration 008: No changes needed.
+-- avg_weight_g column remains in grams.
+-- Formula: biomasa_kg = (fish_count - mortality) * avg_weight_g / 1000
+-- This correctly converts grams to kg and accounts for mortality.

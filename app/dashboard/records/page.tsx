@@ -28,7 +28,7 @@ export default async function RecordsPage() {
     record_date: string
     fish_count: number | null
     feed_kg: number | null
-    avg_weight_g: number | null
+    avg_weight_kg: number | null
     mortality_count: number
     temperature_c: number | null
     oxygen_mg_l: number | null
@@ -95,7 +95,7 @@ export default async function RecordsPage() {
             pond_name: batchPondMap[rec.batch_id] || '-',
             fish_count: rec.fish_count,
             feed_kg: rec.feed_kg,
-            avg_weight_g: rec.avg_weight_g,
+            avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
             mortality_count: rec.mortality_count,
             temperature_c: rec.temperature_c,
             oxygen_mg_l: rec.oxygen_mg_l,
@@ -194,7 +194,7 @@ export default async function RecordsPage() {
                           pond_name: batchPondMap[rec.batch_id] || '-',
                           fish_count: rec.fish_count,
                           feed_kg: rec.feed_kg,
-                          avg_weight_g: rec.avg_weight_g,
+                          avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
                           mortality_count: rec.mortality_count,
                           temperature_c: rec.temperature_c,
                           oxygen_mg_l: rec.oxygen_mg_l,

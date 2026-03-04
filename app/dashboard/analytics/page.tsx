@@ -47,7 +47,7 @@ export default async function AnalyticsPage({
     id: string
     record_date: string
     feed_kg: number | null
-    avg_weight_g: number | null
+    avg_weight_kg: number | null
     mortality_count: number
     temperature_c: number | null
     oxygen_mg_l: number | null
@@ -92,7 +92,7 @@ export default async function AnalyticsPage({
       const { data: recs } = await supabase
         .from('production_records')
         .select(
-          'id, batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg'
+          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg'
         )
         .in('batch_id', batchIds)
         .order('record_date', { ascending: true })
