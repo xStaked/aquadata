@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 interface ProductionData {
   batch_id: string
   record_date: string
+  fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
   mortality_count: number | null
@@ -26,41 +27,24 @@ export async function confirmProductionRecord(data: ProductionData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
 
-  // Calculate FCA and biomass if possible
+  // Calculate biomass and FCA
   let calculated_fca: number | null = null
   let calculated_biomass_kg: number | null = null
 
-  // Get batch info for calculations
+  if (data.fish_count && data.avg_weight_g) {
+    calculated_biomass_kg = (data.fish_count * data.avg_weight_g) / 1000
+  }
+
+  if (data.feed_kg && calculated_biomass_kg && calculated_biomass_kg > 0) {
+    calculated_fca = data.feed_kg / calculated_biomass_kg
+  }
+
+  // Get batch info for mortality update
   const { data: batch } = await supabase
     .from('batches')
     .select('current_population, initial_population')
     .eq('id', data.batch_id)
     .single()
-
-  if (batch && data.avg_weight_g) {
-    const population = batch.current_population ?? batch.initial_population
-    calculated_biomass_kg = (population * data.avg_weight_g) / 1000
-  }
-
-  // Get previous record for FCA calculation
-  if (data.feed_kg && data.avg_weight_g) {
-    const { data: prevRecord } = await supabase
-      .from('production_records')
-      .select('avg_weight_g')
-      .eq('batch_id', data.batch_id)
-      .order('record_date', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (prevRecord?.avg_weight_g) {
-      const weightGain = data.avg_weight_g - prevRecord.avg_weight_g
-      if (weightGain > 0 && batch) {
-        const population = batch.current_population ?? batch.initial_population
-        const gainKg = (weightGain * population) / 1000
-        calculated_fca = data.feed_kg / gainKg
-      }
-    }
-  }
 
   // Update mortality in batch
   if (data.mortality_count && data.mortality_count > 0 && batch) {
@@ -74,6 +58,7 @@ export async function confirmProductionRecord(data: ProductionData) {
   const { error } = await supabase.from('production_records').insert({
     batch_id: data.batch_id,
     record_date: data.record_date,
+    fish_count: data.fish_count,
     feed_kg: data.feed_kg,
     avg_weight_g: data.avg_weight_g,
     mortality_count: data.mortality_count ?? 0,

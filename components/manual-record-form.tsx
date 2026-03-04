@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Fish,
   Droplets,
+  Calculator,
 } from 'lucide-react'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
 
@@ -94,6 +95,7 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
 
   const [formData, setFormData] = useState({
     record_date: new Date().toISOString().split('T')[0],
+    fish_count: '',
     feed_kg: '',
     avg_weight_g: '',
     mortality_count: '',
@@ -130,6 +132,7 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
       await confirmProductionRecord({
         batch_id: selectedBatch,
         record_date: formData.record_date,
+        fish_count: toNum(formData.fish_count),
         feed_kg: toNum(formData.feed_kg),
         avg_weight_g: toNum(formData.avg_weight_g),
         mortality_count: toNum(formData.mortality_count),
@@ -158,6 +161,7 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
     setSelectedBatch('')
     setFormData({
       record_date: new Date().toISOString().split('T')[0],
+      fish_count: '',
       feed_kg: '',
       avg_weight_g: '',
       mortality_count: '',
@@ -259,6 +263,17 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
           <SectionHeader icon={Fish} title="Datos de Producción" variant="primary" />
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
+              <FieldLabel htmlFor="m_fish_count" unit="ind">Nº de Peces</FieldLabel>
+              <Input
+                id="m_fish_count"
+                type="number"
+                placeholder="0"
+                className="h-9"
+                value={formData.fish_count}
+                onChange={(e) => updateField('fish_count', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
               <FieldLabel htmlFor="m_feed_kg" unit="kg">Alimento</FieldLabel>
               <Input
                 id="m_feed_kg"
@@ -295,6 +310,47 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
             </div>
           </div>
         </div>
+
+        {/* ── Valores Calculados ── */}
+        {(() => {
+          const fishCount = formData.fish_count !== '' ? Number(formData.fish_count) : null
+          const avgWeight = formData.avg_weight_g !== '' ? Number(formData.avg_weight_g) : null
+          const feedKg = formData.feed_kg !== '' ? Number(formData.feed_kg) : null
+          const biomasa = fishCount && avgWeight ? (fishCount * avgWeight) / 1000 : null
+          const fca = feedKg && biomasa && biomasa > 0 ? feedKg / biomasa : null
+          return (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Calculator className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                  Valores Calculados
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Biomasa
+                    <span className="ml-1.5 rounded px-1.5 py-px text-[9px] font-semibold bg-primary/10 text-primary">kg</span>
+                  </p>
+                  <p className="mt-1 text-xl font-bold text-foreground">
+                    {biomasa !== null ? biomasa.toFixed(2) : <span className="text-sm font-normal text-muted-foreground">Ingresa nº peces y peso</span>}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">nº peces × peso prom. / 1000</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Conversión Alimenticia
+                    <span className="ml-1.5 rounded px-1.5 py-px text-[9px] font-semibold bg-primary/10 text-primary">FCA</span>
+                  </p>
+                  <p className="mt-1 text-xl font-bold text-foreground">
+                    {fca !== null ? fca.toFixed(2) : <span className="text-sm font-normal text-muted-foreground">Ingresa alimento y biomasa</span>}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">consumo / biomasa</p>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Calidad del Agua ── */}
         <div className="space-y-4">

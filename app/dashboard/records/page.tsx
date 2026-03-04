@@ -26,6 +26,7 @@ export default async function RecordsPage() {
   let records: Array<{
     id: string
     record_date: string
+    fish_count: number | null
     feed_kg: number | null
     avg_weight_g: number | null
     mortality_count: number
@@ -92,6 +93,7 @@ export default async function RecordsPage() {
             id: rec.id,
             record_date: rec.record_date,
             pond_name: batchPondMap[rec.batch_id] || '-',
+            fish_count: rec.fish_count,
             feed_kg: rec.feed_kg,
             avg_weight_g: rec.avg_weight_g,
             mortality_count: rec.mortality_count,
@@ -134,6 +136,7 @@ export default async function RecordsPage() {
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Estanque</TableHead>
+                  <TableHead className="text-right">Nº Peces</TableHead>
                   <TableHead className="text-right">Alimento (kg)</TableHead>
                   <TableHead className="text-right">Peso prom. (g)</TableHead>
                   <TableHead className="text-right">Mortalidad</TableHead>
@@ -159,6 +162,7 @@ export default async function RecordsPage() {
                     <TableCell>
                       <Badge variant="secondary">{batchPondMap[rec.batch_id] || '-'}</Badge>
                     </TableCell>
+                    <TableCell className="text-right">{rec.fish_count ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.feed_kg?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.avg_weight_g?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">
@@ -188,6 +192,7 @@ export default async function RecordsPage() {
                           id: rec.id,
                           record_date: rec.record_date,
                           pond_name: batchPondMap[rec.batch_id] || '-',
+                          fish_count: rec.fish_count,
                           feed_kg: rec.feed_kg,
                           avg_weight_g: rec.avg_weight_g,
                           mortality_count: rec.mortality_count,

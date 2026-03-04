@@ -8,6 +8,7 @@ interface RecordRow {
   id: string
   record_date: string
   pond_name: string
+  fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
   mortality_count: number
@@ -30,6 +31,7 @@ interface RecordsExportProps {
 const HEADERS = [
   'Fecha',
   'Estanque',
+  'Nº Peces',
   'Alimento (kg)',
   'Peso prom. (g)',
   'Mortalidad',
@@ -51,6 +53,7 @@ function formatRow(rec: RecordRow) {
   return [
     date,
     rec.pond_name || '-',
+    rec.fish_count ?? '-',
     rec.feed_kg?.toFixed(1) ?? '-',
     rec.avg_weight_g?.toFixed(1) ?? '-',
     rec.mortality_count,
@@ -97,6 +100,7 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
     const fields = [
       ['Fecha', dateStr],
       ['Estanque', record.pond_name || '-'],
+      ['Numero de peces', record.fish_count != null ? String(record.fish_count) : '-'],
       ['Alimento (kg)', record.feed_kg?.toFixed(1) ?? '-'],
       ['Peso promedio (g)', record.avg_weight_g?.toFixed(1) ?? '-'],
       ['Mortalidad', String(record.mortality_count)],
@@ -135,6 +139,7 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Parametro', 'Valor'],
       ['Fecha', dateStr],
       ['Estanque', record.pond_name || '-'],
+      ['Numero de peces', record.fish_count ?? '-'],
       ['Alimento (kg)', record.feed_kg?.toFixed(1) ?? '-'],
       ['Peso promedio (g)', record.avg_weight_g?.toFixed(1) ?? '-'],
       ['Mortalidad', record.mortality_count],
