@@ -27,6 +27,7 @@ interface Batch {
 
 interface OcrResult {
   record_date: string | null
+  fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
   mortality_count: number | null
@@ -36,9 +37,13 @@ interface OcrResult {
   nitrite_mg_l: number | null
   nitrate_mg_l: number | null
   ph: number | null
+  phosphate_mg_l: number | null
+  hardness_mg_l: number | null
+  alkalinity_mg_l: number | null
   notes: string | null
   confidence: {
     record_date: number
+    fish_count: number
     feed_kg: number
     avg_weight_g: number
     mortality_count: number
@@ -48,6 +53,9 @@ interface OcrResult {
     nitrite_mg_l: number
     nitrate_mg_l: number
     ph: number
+    phosphate_mg_l: number
+    hardness_mg_l: number
+    alkalinity_mg_l: number
   }
 }
 
@@ -139,6 +147,7 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
       await confirmProductionRecord({
         batch_id: selectedBatch,
         record_date: editedData.record_date!,
+        fish_count: editedData.fish_count ?? null,
         feed_kg: editedData.feed_kg ?? null,
         avg_weight_g: editedData.avg_weight_g ?? null,
         mortality_count: editedData.mortality_count ?? null,
@@ -148,6 +157,9 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
         nitrite_mg_l: editedData.nitrite_mg_l ?? null,
         nitrate_mg_l: editedData.nitrate_mg_l ?? null,
         ph: editedData.ph ?? null,
+        phosphate_mg_l: editedData.phosphate_mg_l ?? null,
+        hardness_mg_l: editedData.hardness_mg_l ?? null,
+        alkalinity_mg_l: editedData.alkalinity_mg_l ?? null,
         notes: editedData.notes ?? null,
       })
       setStep('done')
@@ -429,6 +441,73 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
                       step="0.1"
                       value={editedData.ph ?? ''}
                       onChange={(e) => setEditedData({ ...editedData, ph: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="fish_count">Nº de Peces</Label>
+                      {ocrData.confidence.fish_count > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.fish_count} />
+                      )}
+                    </div>
+                    <Input
+                      id="fish_count"
+                      type="number"
+                      value={editedData.fish_count ?? ''}
+                      onChange={(e) => setEditedData({ ...editedData, fish_count: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="phosphate_mg_l">Fosfato (mg/L)</Label>
+                      {ocrData.confidence.phosphate_mg_l > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.phosphate_mg_l} />
+                      )}
+                    </div>
+                    <Input
+                      id="phosphate_mg_l"
+                      type="number"
+                      step="0.01"
+                      value={editedData.phosphate_mg_l ?? ''}
+                      onChange={(e) => setEditedData({ ...editedData, phosphate_mg_l: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="hardness_mg_l">Dureza (mg/L)</Label>
+                      {ocrData.confidence.hardness_mg_l > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.hardness_mg_l} />
+                      )}
+                    </div>
+                    <Input
+                      id="hardness_mg_l"
+                      type="number"
+                      step="0.1"
+                      value={editedData.hardness_mg_l ?? ''}
+                      onChange={(e) => setEditedData({ ...editedData, hardness_mg_l: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="Opcional"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="alkalinity_mg_l">Alcalinidad (mg/L)</Label>
+                      {ocrData.confidence.alkalinity_mg_l > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.alkalinity_mg_l} />
+                      )}
+                    </div>
+                    <Input
+                      id="alkalinity_mg_l"
+                      type="number"
+                      step="0.1"
+                      value={editedData.alkalinity_mg_l ?? ''}
+                      onChange={(e) => setEditedData({ ...editedData, alkalinity_mg_l: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="Opcional"
                     />
                   </div>
                 </div>
