@@ -16,6 +16,9 @@ interface RecordRow {
   ammonia_mg_l: number | null
   nitrite_mg_l: number | null
   ph: number | null
+  phosphate_mg_l: number | null
+  hardness_mg_l: number | null
+  alkalinity_mg_l: number | null
   calculated_fca: number | null
   calculated_biomass_kg: number | null
 }
@@ -35,6 +38,9 @@ const HEADERS = [
   'NH₃ (mg/L)',
   'NO₂ (mg/L)',
   'pH',
+  'Fosfato (mg/L)',
+  'Dureza (mg/L)',
+  'Alcalinidad (mg/L)',
   'FCA',
   'Biomasa (kg)',
 ]
@@ -53,6 +59,9 @@ function formatRow(rec: RecordRow) {
     rec.ammonia_mg_l?.toFixed(2) ?? '-',
     rec.nitrite_mg_l?.toFixed(2) ?? '-',
     rec.ph?.toFixed(1) ?? '-',
+    rec.phosphate_mg_l?.toFixed(2) ?? '-',
+    rec.hardness_mg_l?.toFixed(1) ?? '-',
+    rec.alkalinity_mg_l?.toFixed(1) ?? '-',
     rec.calculated_fca?.toFixed(2) ?? '-',
     rec.calculated_biomass_kg?.toFixed(1) ?? '-',
   ]
@@ -96,6 +105,9 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Amoniaco NH3 (mg/L)', record.ammonia_mg_l?.toFixed(2) ?? '-'],
       ['Nitrito NO2 (mg/L)', record.nitrite_mg_l?.toFixed(2) ?? '-'],
       ['pH', record.ph?.toFixed(1) ?? '-'],
+      ['Fosfato (mg/L)', record.phosphate_mg_l?.toFixed(2) ?? '-'],
+      ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
+      ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
       ['FCA', record.calculated_fca?.toFixed(2) ?? '-'],
       ['Biomasa (kg)', record.calculated_biomass_kg?.toFixed(1) ?? '-'],
     ]
@@ -131,6 +143,9 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Amoniaco NH3 (mg/L)', record.ammonia_mg_l?.toFixed(2) ?? '-'],
       ['Nitrito NO2 (mg/L)', record.nitrite_mg_l?.toFixed(2) ?? '-'],
       ['pH', record.ph?.toFixed(1) ?? '-'],
+      ['Fosfato (mg/L)', record.phosphate_mg_l?.toFixed(2) ?? '-'],
+      ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
+      ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
       ['FCA', record.calculated_fca?.toFixed(2) ?? '-'],
       ['Biomasa (kg)', record.calculated_biomass_kg?.toFixed(1) ?? '-'],
     ]

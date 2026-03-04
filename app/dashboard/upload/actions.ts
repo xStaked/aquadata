@@ -15,6 +15,9 @@ interface ProductionData {
   nitrite_mg_l: number | null
   nitrate_mg_l: number | null
   ph: number | null
+  phosphate_mg_l: number | null
+  hardness_mg_l: number | null
+  alkalinity_mg_l: number | null
   notes: string | null
 }
 
@@ -80,6 +83,9 @@ export async function confirmProductionRecord(data: ProductionData) {
     nitrite_mg_l: data.nitrite_mg_l,
     nitrate_mg_l: data.nitrate_mg_l,
     ph: data.ph,
+    phosphate_mg_l: data.phosphate_mg_l,
+    hardness_mg_l: data.hardness_mg_l,
+    alkalinity_mg_l: data.alkalinity_mg_l,
     notes: data.notes,
     calculated_fca,
     calculated_biomass_kg,

@@ -31,6 +31,12 @@ export default async function RecordsPage() {
     mortality_count: number
     temperature_c: number | null
     oxygen_mg_l: number | null
+    ammonia_mg_l: number | null
+    nitrite_mg_l: number | null
+    ph: number | null
+    phosphate_mg_l: number | null
+    hardness_mg_l: number | null
+    alkalinity_mg_l: number | null
     calculated_fca: number | null
     calculated_biomass_kg: number | null
     notes: string | null
@@ -91,9 +97,12 @@ export default async function RecordsPage() {
             mortality_count: rec.mortality_count,
             temperature_c: rec.temperature_c,
             oxygen_mg_l: rec.oxygen_mg_l,
-            ammonia_mg_l: (rec as any).ammonia_mg_l ?? null,
-            nitrite_mg_l: (rec as any).nitrite_mg_l ?? null,
-            ph: (rec as any).ph ?? null,
+            ammonia_mg_l: rec.ammonia_mg_l,
+            nitrite_mg_l: rec.nitrite_mg_l,
+            ph: rec.ph,
+            phosphate_mg_l: rec.phosphate_mg_l,
+            hardness_mg_l: rec.hardness_mg_l,
+            alkalinity_mg_l: rec.alkalinity_mg_l,
             calculated_fca: rec.calculated_fca,
             calculated_biomass_kg: rec.calculated_biomass_kg,
           }))}
@@ -133,6 +142,9 @@ export default async function RecordsPage() {
                   <TableHead className="text-right">NH3</TableHead>
                   <TableHead className="text-right">NO2</TableHead>
                   <TableHead className="text-right">pH</TableHead>
+                  <TableHead className="text-right">Fosfato (mg/L)</TableHead>
+                  <TableHead className="text-right">Dureza (mg/L)</TableHead>
+                  <TableHead className="text-right">Alcalinidad (mg/L)</TableHead>
                   <TableHead className="text-right">FCA</TableHead>
                   <TableHead className="text-right">Biomasa (kg)</TableHead>
                   <TableHead className="text-center">Descargar</TableHead>
@@ -158,9 +170,12 @@ export default async function RecordsPage() {
                     </TableCell>
                     <TableCell className="text-right">{rec.temperature_c?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.oxygen_mg_l?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{(rec as any).ammonia_mg_l?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{(rec as any).nitrite_mg_l?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{(rec as any).ph?.toFixed(1) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.ammonia_mg_l?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.nitrite_mg_l?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.ph?.toFixed(1) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.phosphate_mg_l?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.hardness_mg_l?.toFixed(1) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.alkalinity_mg_l?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">
                       {rec.calculated_fca ? rec.calculated_fca.toFixed(2) : '-'}
                     </TableCell>
@@ -178,9 +193,12 @@ export default async function RecordsPage() {
                           mortality_count: rec.mortality_count,
                           temperature_c: rec.temperature_c,
                           oxygen_mg_l: rec.oxygen_mg_l,
-                          ammonia_mg_l: (rec as any).ammonia_mg_l ?? null,
-                          nitrite_mg_l: (rec as any).nitrite_mg_l ?? null,
-                          ph: (rec as any).ph ?? null,
+                          ammonia_mg_l: rec.ammonia_mg_l,
+                          nitrite_mg_l: rec.nitrite_mg_l,
+                          ph: rec.ph,
+                          phosphate_mg_l: rec.phosphate_mg_l,
+                          hardness_mg_l: rec.hardness_mg_l,
+                          alkalinity_mg_l: rec.alkalinity_mg_l,
                           calculated_fca: rec.calculated_fca,
                           calculated_biomass_kg: rec.calculated_biomass_kg,
                         }}

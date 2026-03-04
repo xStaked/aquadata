@@ -39,6 +39,9 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
     nitrite_mg_l: '',
     nitrate_mg_l: '',
     ph: '',
+    phosphate_mg_l: '',
+    hardness_mg_l: '',
+    alkalinity_mg_l: '',
     notes: '',
   })
 
@@ -74,6 +77,9 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
         nitrite_mg_l: toNum(formData.nitrite_mg_l),
         nitrate_mg_l: toNum(formData.nitrate_mg_l),
         ph: toNum(formData.ph),
+        phosphate_mg_l: toNum(formData.phosphate_mg_l),
+        hardness_mg_l: toNum(formData.hardness_mg_l),
+        alkalinity_mg_l: toNum(formData.alkalinity_mg_l),
         notes: formData.notes || null,
       })
       setDone(true)
@@ -99,6 +105,9 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
       nitrite_mg_l: '',
       nitrate_mg_l: '',
       ph: '',
+      phosphate_mg_l: '',
+      hardness_mg_l: '',
+      alkalinity_mg_l: '',
       notes: '',
     })
   }
@@ -198,28 +207,15 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="m_mortality_count">Mortalidad</Label>
-                <Input
-                  id="m_mortality_count"
-                  type="number"
-                  placeholder="0"
-                  value={formData.mortality_count}
-                  onChange={(e) => updateField('mortality_count', e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="m_temperature_c">Temp. (°C)</Label>
-                <Input
-                  id="m_temperature_c"
-                  type="number"
-                  step="0.1"
-                  placeholder="28.0"
-                  value={formData.temperature_c}
-                  onChange={(e) => updateField('temperature_c', e.target.value)}
-                />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="m_mortality_count">Mortalidad</Label>
+              <Input
+                id="m_mortality_count"
+                type="number"
+                placeholder="0"
+                value={formData.mortality_count}
+                onChange={(e) => updateField('mortality_count', e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
@@ -234,16 +230,29 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="m_oxygen_mg_l">Oxigeno (mg/L)</Label>
-              <Input
-                id="m_oxygen_mg_l"
-                type="number"
-                step="0.1"
-                placeholder="6.0"
-                value={formData.oxygen_mg_l}
-                onChange={(e) => updateField('oxygen_mg_l', e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="m_temperature_c">Temp. (°C)</Label>
+                <Input
+                  id="m_temperature_c"
+                  type="number"
+                  step="0.1"
+                  placeholder="28.0"
+                  value={formData.temperature_c}
+                  onChange={(e) => updateField('temperature_c', e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="m_oxygen_mg_l">Oxigeno (mg/L)</Label>
+                <Input
+                  id="m_oxygen_mg_l"
+                  type="number"
+                  step="0.1"
+                  placeholder="6.0"
+                  value={formData.oxygen_mg_l}
+                  onChange={(e) => updateField('oxygen_mg_l', e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -294,6 +303,43 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
                   onChange={(e) => updateField('ph', e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="m_phosphate_mg_l">Fosfato (mg/L)</Label>
+                <Input
+                  id="m_phosphate_mg_l"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.0"
+                  value={formData.phosphate_mg_l}
+                  onChange={(e) => updateField('phosphate_mg_l', e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="m_hardness_mg_l">Dureza (mg/L)</Label>
+                <Input
+                  id="m_hardness_mg_l"
+                  type="number"
+                  step="1"
+                  placeholder="0"
+                  value={formData.hardness_mg_l}
+                  onChange={(e) => updateField('hardness_mg_l', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="m_alkalinity_mg_l">Alcalinidad (mg/L)</Label>
+              <Input
+                id="m_alkalinity_mg_l"
+                type="number"
+                step="1"
+                placeholder="0"
+                value={formData.alkalinity_mg_l}
+                onChange={(e) => updateField('alkalinity_mg_l', e.target.value)}
+              />
             </div>
 
             <div className="grid gap-2">
