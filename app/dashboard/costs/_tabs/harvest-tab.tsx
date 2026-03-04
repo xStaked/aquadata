@@ -47,13 +47,13 @@ export function HarvestTab({ harvests, batchesForForms }: HarvestTabProps) {
             </CardContent>
           </Card>
 
-          <Card className="transition-all hover:shadow-md border-destructive/20 bg-destructive/5">
+          <Card className={`transition-all hover:shadow-md ${avgShrinkage != null && avgShrinkage > 15 ? 'border-destructive/20 bg-destructive/5' : avgShrinkage != null ? 'border-green-500/20 bg-green-500/5' : ''}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Merma promedio</CardTitle>
-              <TrendingDown className="h-4 w-4 text-destructive" />
+              <TrendingDown className={`h-4 w-4 ${avgShrinkage != null && avgShrinkage > 15 ? 'text-destructive' : avgShrinkage != null ? 'text-green-600' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">
+              <div className={`text-2xl font-bold ${avgShrinkage != null && avgShrinkage > 15 ? 'text-destructive' : avgShrinkage != null ? 'text-green-600' : ''}`}>
                 {avgShrinkage != null ? `${avgShrinkage.toFixed(1)}%` : '—'}
               </div>
               <p className="text-xs text-muted-foreground">Pérdida al eviscerado</p>

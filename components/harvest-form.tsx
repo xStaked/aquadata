@@ -250,7 +250,7 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
                         </div>
                         <div>
                           <span className="text-muted-foreground">% Merma:</span>
-                          <span className="ml-2 font-bold text-destructive">{preview.shrinkagePct!.toFixed(1)}%</span>
+                          <span className={`ml-2 font-bold ${preview.shrinkagePct! > 15 ? 'text-destructive' : 'text-green-600'}`}>{preview.shrinkagePct!.toFixed(1)}%</span>
                         </div>
                       </>
                     )}
@@ -318,7 +318,7 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
                   </TableCell>
                   <TableCell>
                     {m.shrinkagePct != null ? (
-                      <Badge variant="outline" className="border-destructive/30 text-destructive gap-1">
+                      <Badge variant="outline" className={`gap-1 ${m.shrinkagePct > 15 ? 'border-destructive/30 text-destructive' : 'border-green-500/30 text-green-600'}`}>
                         <TrendingDown className="h-3 w-3" />
                         {m.shrinkagePct.toFixed(1)}%
                       </Badge>
