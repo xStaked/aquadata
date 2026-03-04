@@ -298,18 +298,6 @@ export async function confirmProductionRecord(data: ProductionData) {
       })
     }
 
-    // pH > 7.5 + Alimentación > 1.5 kg → sin rentabilidad
-    if (data.ph !== null && data.ph > 7.5 && data.feed_kg !== null && data.feed_kg > 1.5) {
-      alerts.push({
-        organization_id: profile.organization_id,
-        pond_id: batchInfo?.pond_id ?? null,
-        batch_id: data.batch_id,
-        alert_type: 'ph_feed_no_profit',
-        severity: 'warning',
-        message: `Sin rentabilidad: pH ${data.ph} elevado con alimentacion de ${data.feed_kg} kg — la alimentacion no debe superar 1.5 kg con pH > 7.5`,
-      })
-    }
-
     // Mortalidad alta
     if (data.mortality_count !== null && data.mortality_count > 10) {
       alerts.push({

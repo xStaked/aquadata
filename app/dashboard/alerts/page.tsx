@@ -84,7 +84,6 @@ export default async function AlertsPage() {
     high_phosphate: 'Fosfato alto',
     ph_ammonia_mortality: 'Mortalidad (pH + Amonio)',
     nitrite_ph_mortality: 'Mortalidad (Nitrito + pH)',
-    ph_feed_no_profit: 'Sin rentabilidad',
     high_mortality: 'Mortalidad alta',
     high_fca: 'FCA elevado',
   }
