@@ -4,7 +4,15 @@ import { Badge } from '@/components/ui/badge'
 import { Bell, AlertTriangle, AlertOctagon, CheckCircle, FlaskConical, Calculator } from 'lucide-react'
 import { AlertActions } from '@/components/alert-actions'
 
-const OPPORTUNITY_TYPES = ['high_ammonia', 'low_oxygen', 'ph_ammonia_mortality', 'nitrite_ph_mortality']
+const OPPORTUNITY_TYPES = [
+  'high_ammonia',
+  'high_nitrite',
+  'high_phosphate',
+  'high_ph',
+  'low_ph',
+  'ph_ammonia_mortality',
+  'nitrite_ph_mortality',
+]
 
 export default async function AlertsPage() {
   const supabase = await createClient()
@@ -68,6 +76,7 @@ export default async function AlertsPage() {
     high_temperature: 'Temperatura alta',
     low_temperature: 'Temperatura baja',
     high_nitrite: 'Nitrito alto',
+    high_nitrate: 'Nitrato alto',
     low_hardness: 'Dureza baja',
     high_hardness: 'Dureza alta',
     low_alkalinity: 'Alcalinidad baja',

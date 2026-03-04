@@ -102,53 +102,59 @@ export async function confirmProductionRecord(data: ProductionData) {
       message: string
     }> = []
 
-    // Oxígeno bajo
-    if (data.oxygen_mg_l !== null && data.oxygen_mg_l < 2) {
+    // Oxígeno bajo (ideal: 4-6 mg/L)
+    if (data.oxygen_mg_l !== null && data.oxygen_mg_l < 4) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'low_oxygen',
-        severity: 'critical',
-        message: data.oxygen_mg_l <= 1
+        severity: data.oxygen_mg_l <= 2 ? 'critical' : 'warning',
+        message: data.oxygen_mg_l <= 2
           ? `Oxigeno critico: ${data.oxygen_mg_l} mg/L — riesgo de mortalidad inmediata`
-          : `Oxigeno muy bajo: ${data.oxygen_mg_l} mg/L (minimo: 2 mg/L)`,
+          : `Oxigeno bajo: ${data.oxygen_mg_l} mg/L (ideal: 4-6 mg/L)`,
       })
     }
 
-    // Amonio alto
-    if (data.ammonia_mg_l !== null && data.ammonia_mg_l > 2) {
+    // Amonio alto (ideal: 0-0.5 mg/L)
+    if (data.ammonia_mg_l !== null && data.ammonia_mg_l > 0.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_ammonia',
-        severity: 'critical',
-        message: `Amonio critico: ${data.ammonia_mg_l} mg/L — nivel letal (maximo: 2 mg/L)`,
+        severity: data.ammonia_mg_l > 1 ? 'critical' : 'warning',
+        message: data.ammonia_mg_l > 1
+          ? `Amonio critico: ${data.ammonia_mg_l} mg/L — nivel toxico (ideal: 0-0.5 mg/L)`
+          : `Amonio elevado: ${data.ammonia_mg_l} mg/L (ideal: 0-0.5 mg/L)`,
       })
     }
 
-    // pH alto
-    if (data.ph !== null && data.ph > 8) {
+    // pH alto (ideal: 6.5-7.5)
+    if (data.ph !== null && data.ph > 7.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_ph',
-        severity: 'warning',
-        message: `pH elevado: ${data.ph} (maximo recomendado: 8)`,
+        severity: data.ph > 8.5 ? 'critical' : 'warning',
+        message: data.ph > 8.5
+          ? `pH critico: ${data.ph} — nivel letal para los peces`
+          : `pH elevado: ${data.ph} (ideal: 6.5-7.5)`,
       })
     }
 
-    // pH bajo
-    if (data.ph !== null && data.ph < 5.8) {
+    // pH bajo (ideal: 6.5-7.5)
+    if (data.ph !== null && data.ph < 6.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'low_ph',
-        severity: 'warning',
-        message: `pH bajo: ${data.ph} (minimo recomendado: 5.8)`,
+        severity: data.ph < 6 ? 'critical' : 'warning',
+        message: data.ph < 6
+          ? `pH critico: ${data.ph} — nivel letal para los peces`
+          : `pH bajo: ${data.ph} (ideal: 6.5-7.5)`,
       })
     }
 
@@ -178,82 +184,98 @@ export async function confirmProductionRecord(data: ProductionData) {
       })
     }
 
-    // Nitritos altos
-    if (data.nitrite_mg_l !== null && data.nitrite_mg_l > 2) {
+    // Nitritos altos (ideal: 0-0.5 mg/L)
+    if (data.nitrite_mg_l !== null && data.nitrite_mg_l > 0.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_nitrite',
-        severity: 'warning',
-        message: `Nitrito elevado: ${data.nitrite_mg_l} mg/L (maximo recomendado: 2 mg/L)`,
+        severity: data.nitrite_mg_l > 1 ? 'critical' : 'warning',
+        message: data.nitrite_mg_l > 1
+          ? `Nitrito critico: ${data.nitrite_mg_l} mg/L — nivel toxico (ideal: 0-0.5 mg/L)`
+          : `Nitrito elevado: ${data.nitrite_mg_l} mg/L (ideal: 0-0.5 mg/L)`,
       })
     }
 
-    // Dureza baja
-    if (data.hardness_mg_l !== null && data.hardness_mg_l < 50) {
+    // Nitratos altos (maximo: 40 mg/L)
+    if (data.nitrate_mg_l !== null && data.nitrate_mg_l > 40) {
+      alerts.push({
+        organization_id: profile.organization_id,
+        pond_id: batchInfo?.pond_id ?? null,
+        batch_id: data.batch_id,
+        alert_type: 'high_nitrate',
+        severity: data.nitrate_mg_l > 80 ? 'critical' : 'warning',
+        message: data.nitrate_mg_l > 80
+          ? `Nitrato critico: ${data.nitrate_mg_l} mg/L — nivel peligroso (maximo: 40 mg/L)`
+          : `Nitrato elevado: ${data.nitrate_mg_l} mg/L (maximo: 40 mg/L)`,
+      })
+    }
+
+    // Dureza baja/alta (ideal: ~150 mg/L)
+    if (data.hardness_mg_l !== null && data.hardness_mg_l < 100) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'low_hardness',
         severity: 'warning',
-        message: `Dureza baja: ${data.hardness_mg_l} mg/L (minimo recomendado: 50 mg/L)`,
+        message: `Dureza baja: ${data.hardness_mg_l} mg/L (ideal: ~150 mg/L)`,
       })
     }
 
     // Dureza alta
-    if (data.hardness_mg_l !== null && data.hardness_mg_l > 180) {
+    if (data.hardness_mg_l !== null && data.hardness_mg_l > 200) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_hardness',
         severity: 'warning',
-        message: `Dureza elevada: ${data.hardness_mg_l} mg/L (maximo recomendado: 180 mg/L)`,
+        message: `Dureza elevada: ${data.hardness_mg_l} mg/L (ideal: ~150 mg/L)`,
       })
     }
 
-    // Alcalinidad baja
-    if (data.alkalinity_mg_l !== null && data.alkalinity_mg_l < 50) {
+    // Alcalinidad baja (ideal: 100-150 mg/L)
+    if (data.alkalinity_mg_l !== null && data.alkalinity_mg_l < 100) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'low_alkalinity',
         severity: 'warning',
-        message: `Alcalinidad baja: ${data.alkalinity_mg_l} mg/L (minimo recomendado: 50 mg/L)`,
+        message: `Alcalinidad baja: ${data.alkalinity_mg_l} mg/L (ideal: 100-150 mg/L)`,
       })
     }
 
     // Alcalinidad alta
-    if (data.alkalinity_mg_l !== null && data.alkalinity_mg_l > 200) {
+    if (data.alkalinity_mg_l !== null && data.alkalinity_mg_l > 150) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_alkalinity',
         severity: 'warning',
-        message: `Alcalinidad elevada: ${data.alkalinity_mg_l} mg/L (maximo recomendado: 200 mg/L)`,
+        message: `Alcalinidad elevada: ${data.alkalinity_mg_l} mg/L (ideal: 100-150 mg/L)`,
       })
     }
 
-    // Fosfatos altos
-    if (data.phosphate_mg_l !== null && data.phosphate_mg_l > 1) {
+    // Fosfatos altos (ideal: 0-0.5 mg/L)
+    if (data.phosphate_mg_l !== null && data.phosphate_mg_l > 0.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_phosphate',
-        severity: data.phosphate_mg_l > 3 ? 'critical' : 'warning',
-        message: data.phosphate_mg_l > 3
-          ? `Fosfato critico: ${data.phosphate_mg_l} mg/L (maximo critico: 3 mg/L)`
-          : `Fosfato elevado: ${data.phosphate_mg_l} mg/L (ideal: 1 mg/L)`,
+        severity: data.phosphate_mg_l > 1 ? 'critical' : 'warning',
+        message: data.phosphate_mg_l > 1
+          ? `Fosfato critico: ${data.phosphate_mg_l} mg/L (ideal: 0-0.5 mg/L)`
+          : `Fosfato elevado: ${data.phosphate_mg_l} mg/L (ideal: 0-0.5 mg/L)`,
       })
     }
 
-    // Combinación pH >= 8 + Amonio >= 2 → mortalidad inmediata
-    if (data.ph !== null && data.ph >= 8 && data.ammonia_mg_l !== null && data.ammonia_mg_l >= 2) {
+    // Combinación pH > 7.5 + Amonio > 0.5 → mortalidad inmediata
+    if (data.ph !== null && data.ph > 7.5 && data.ammonia_mg_l !== null && data.ammonia_mg_l > 0.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
@@ -264,8 +286,8 @@ export async function confirmProductionRecord(data: ProductionData) {
       })
     }
 
-    // Combinación Nitrito >= 4 + pH >= 8 → mortalidad
-    if (data.nitrite_mg_l !== null && data.nitrite_mg_l >= 4 && data.ph !== null && data.ph >= 8) {
+    // Combinación Nitrito > 1 + pH > 7.5 → mortalidad
+    if (data.nitrite_mg_l !== null && data.nitrite_mg_l > 1 && data.ph !== null && data.ph > 7.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
@@ -276,15 +298,15 @@ export async function confirmProductionRecord(data: ProductionData) {
       })
     }
 
-    // pH >= 8 + Alimentación > 1.5 kg → sin rentabilidad
-    if (data.ph !== null && data.ph >= 8 && data.feed_kg !== null && data.feed_kg > 1.5) {
+    // pH > 7.5 + Alimentación > 1.5 kg → sin rentabilidad
+    if (data.ph !== null && data.ph > 7.5 && data.feed_kg !== null && data.feed_kg > 1.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'ph_feed_no_profit',
         severity: 'warning',
-        message: `Sin rentabilidad: pH ${data.ph} elevado con alimentacion de ${data.feed_kg} kg — la alimentacion no debe superar 1.5 kg con pH >= 8`,
+        message: `Sin rentabilidad: pH ${data.ph} elevado con alimentacion de ${data.feed_kg} kg — la alimentacion no debe superar 1.5 kg con pH > 7.5`,
       })
     }
 
