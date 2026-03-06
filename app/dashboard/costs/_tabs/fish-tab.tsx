@@ -93,9 +93,9 @@ export function FishTab({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Precios de Referencia (SIPSA - Colombia)</CardTitle>
+              <CardTitle>Precios de Referencia (SIPSA - Bogotá)</CardTitle>
               <CardDescription>
-                Valores promedio en centrales de abastos
+                Valores promedio de Corabastos usados como referencia comercial
                 {marketPrices[0]?.market_date
                   ? ` · ${new Date(marketPrices[0].market_date + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}`
                   : ''}

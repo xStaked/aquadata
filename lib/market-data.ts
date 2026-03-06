@@ -18,14 +18,22 @@ export interface MarketPrice {
 function getMockMarketPrices(): MarketPrice[] {
     const today = new Date().toISOString().split('T')[0]
     return [
-        { species: 'Tilapia roja', price_min: 8800, price_max: 10500, price_avg: 9500, unit: 'kg', source: 'SIPSA - Corabastos (referencia)', market_date: today },
-        { species: 'Mojarra lora', price_min: 7800, price_max: 9500, price_avg: 8500, unit: 'kg', source: 'SIPSA - Corabastos (referencia)', market_date: today },
-        { species: 'Cachama', price_min: 6800, price_max: 8500, price_avg: 7500, unit: 'kg', source: 'SIPSA - Referencia', market_date: today },
-        { species: 'Trucha arcoíris', price_min: 11500, price_max: 15000, price_avg: 13000, unit: 'kg', source: 'SIPSA - Corabastos (referencia)', market_date: today },
+        { species: 'Tilapia roja', price_min: 8800, price_max: 10500, price_avg: 9500, unit: 'kg', source: 'SIPSA - Corabastos (referencia Bogotá)', market_date: today, city: 'BOGOTÁ' },
+        { species: 'Mojarra lora', price_min: 7800, price_max: 9500, price_avg: 8500, unit: 'kg', source: 'SIPSA - Corabastos (referencia Bogotá)', market_date: today, city: 'BOGOTÁ' },
+        { species: 'Cachama', price_min: 6800, price_max: 8500, price_avg: 7500, unit: 'kg', source: 'SIPSA - Corabastos (referencia Bogotá)', market_date: today, city: 'BOGOTÁ' },
+        { species: 'Trucha arcoíris', price_min: 11500, price_max: 15000, price_avg: 13000, unit: 'kg', source: 'SIPSA - Corabastos (referencia Bogotá)', market_date: today, city: 'BOGOTÁ' },
     ]
 }
 
-export async function getColombianMarketPrices(): Promise<MarketPrice[]> {
+function normalizeCity(value?: string | null): string {
+    return (value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toUpperCase()
+}
+
+export async function getColombianMarketPrices(referenceCity = 'BOGOTÁ'): Promise<MarketPrice[]> {
     try {
         const supabase = await createClient()
 
@@ -33,7 +41,7 @@ export async function getColombianMarketPrices(): Promise<MarketPrice[]> {
             .from('market_prices')
             .select('*')
             .order('market_date', { ascending: false })
-            .limit(50)
+            .limit(200)
 
         if (error) {
             // Tabla no existe o error de permisos
@@ -46,9 +54,17 @@ export async function getColombianMarketPrices(): Promise<MarketPrice[]> {
             return getMockMarketPrices()
         }
 
+        const normalizedReferenceCity = normalizeCity(referenceCity)
+        const cityRows = data.filter(item => normalizeCity(item.city) === normalizedReferenceCity)
+        const baseRows = cityRows.length > 0 ? cityRows : data
+
+        if (cityRows.length === 0) {
+            console.warn(`No se encontraron precios para ${referenceCity}. Se usarán precios disponibles de otras ciudades.`)
+        }
+
         // Deduplicar: devolver el precio más reciente por especie
-        const latestBySpecies = new Map<string, typeof data[0]>()
-        for (const item of data) {
+        const latestBySpecies = new Map<string, (typeof baseRows)[0]>()
+        for (const item of baseRows) {
             const existing = latestBySpecies.get(item.species)
             if (!existing || new Date(item.market_date) > new Date(existing.market_date)) {
                 latestBySpecies.set(item.species, item)

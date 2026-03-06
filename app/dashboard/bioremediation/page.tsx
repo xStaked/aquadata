@@ -6,7 +6,7 @@ export default function BioremediationPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Calculadora de Bioremediacion</h1>
         <p className="mt-1 text-muted-foreground">
-          Calcula el volumen de tu estanque y la dosis estimada de bioremediacion
+          Calcula la dosis estimada de bioremediación usando el área del estanque y su profundidad
         </p>
       </div>
       <BioremediationForm />

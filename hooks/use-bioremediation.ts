@@ -61,8 +61,7 @@ export const AGE_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
 export function calculateDose(params: {
-  length: number
-  width: number
+  areaM2: number
   depth: number
   species: SpeciesKey
   ageMonths: number
@@ -70,9 +69,8 @@ export function calculateDose(params: {
   aeration: string
   product: ProductKey
 }): CalcResult {
-  const { length, width, depth, species, ageMonths, stockingDensity, aeration, product } = params
+  const { areaM2, depth, species, ageMonths, stockingDensity, aeration, product } = params
 
-  const areaM2 = length * width
   const areaHa = areaM2 / 10000
   const volume = areaM2 * depth
 
@@ -111,8 +109,7 @@ export function fmtDose(g: number): string {
 export function useBioremediation() {
   const [selectedProduct, setSelectedProduct] = useState<ProductKey | null>(null)
 
-  const [length, setLength]                   = useState('')
-  const [width, setWidth]                     = useState('')
+  const [areaM2, setAreaM2]                   = useState('')
   const [depth, setDepth]                     = useState('')
   const [species, setSpecies]                 = useState<SpeciesKey | ''>('')
   const [ageMonths, setAgeMonths]             = useState('')
@@ -124,11 +121,11 @@ export function useBioremediation() {
   const [saved, setSaved]       = useState(false)
 
   const canCalculate = Boolean(
-    selectedProduct && length && width && depth && species && ageMonths && stockingDensity && aeration,
+    selectedProduct && areaM2 && depth && species && ageMonths && stockingDensity && aeration,
   )
 
   // Derived preview values (live, before calculating)
-  const previewArea   = length && width ? Number(length) * Number(width) : null
+  const previewArea   = areaM2 ? Number(areaM2) : null
   const previewHa     = previewArea != null ? previewArea / 10000 : null
   const previewVolume = previewArea != null && depth ? previewArea * Number(depth) : null
 
@@ -141,8 +138,7 @@ export function useBioremediation() {
   function handleCalculate() {
     if (!canCalculate) return
     setResult(calculateDose({
-      length: Number(length),
-      width: Number(width),
+      areaM2: Number(areaM2),
       depth: Number(depth),
       species: species as SpeciesKey,
       ageMonths: Number(ageMonths),
@@ -162,8 +158,10 @@ export function useBioremediation() {
       if (!user) throw new Error('No autenticado')
       await supabase.from('bioremediation_calcs').insert({
         user_id: user.id,
-        pond_length: Number(length),
-        pond_width: Number(width),
+        // Compatibilidad con el esquema actual (aún exige largo y ancho).
+        // Guardamos el área ingresada como "largo" y ancho unitario.
+        pond_length: Number(areaM2),
+        pond_width: 1,
         pond_depth: Number(depth),
         volume_m3: result.volume,
         bioremediation_dose: result.finalDoseG,
@@ -178,8 +176,7 @@ export function useBioremediation() {
 
   return {
     // Form fields
-    length, setLength,
-    width, setWidth,
+    areaM2, setAreaM2,
     depth, setDepth,
     species, setSpecies,
     ageMonths, setAgeMonths,

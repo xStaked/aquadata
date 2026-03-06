@@ -27,7 +27,7 @@ export default async function CostsPage() {
     .eq('id', user!.id)
     .single()
 
-  const marketPrices = await getColombianMarketPrices()
+  const marketPrices = await getColombianMarketPrices('BOGOTÁ')
 
   let treatments: Treatment[] = []
   let batches: BatchSummary[] = []

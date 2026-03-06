@@ -63,7 +63,7 @@ const PRODUCTS: Record<ProductKey, {
 
 export function BioremediationForm() {
   const {
-    length, setLength, width, setWidth, depth, setDepth,
+    areaM2, setAreaM2, depth, setDepth,
     species, setSpecies, ageMonths, setAgeMonths,
     stockingDensity, setStockingDensity, aeration, setAeration,
     selectedProduct, handleProductSelect,
@@ -139,20 +139,15 @@ export function BioremediationForm() {
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Calculator className="h-4 w-4 text-primary" />
-                Dimensiones
+                Área y profundidad
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="length" className="text-xs">Largo (m)</Label>
-                  <Input id="length" type="number" step="0.1" placeholder="20"
-                    value={length} onChange={e => setLength(e.target.value)} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="width" className="text-xs">Ancho (m)</Label>
-                  <Input id="width" type="number" step="0.1" placeholder="10"
-                    value={width} onChange={e => setWidth(e.target.value)} />
+                  <Label htmlFor="areaM2" className="text-xs">Área (m²)</Label>
+                  <Input id="areaM2" type="number" step="0.1" placeholder="200"
+                    value={areaM2} onChange={e => setAreaM2(e.target.value)} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="depth" className="text-xs">Prof. (m)</Label>
