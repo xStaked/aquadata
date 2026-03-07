@@ -22,6 +22,7 @@ export default function SignUpPage() {
   const [inviteCode, setInviteCode] = useState('')
   const [farmName, setFarmName] = useState('')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
@@ -40,6 +41,15 @@ export default function SignUpPage() {
       setIsLoading(false)
       return
     }
+
+    const phoneDigits = phone.replace(/\D/g, '')
+    if (!/^\d{10}$/.test(phoneDigits)) {
+      setError('El número telefónico debe tener 10 dígitos')
+      setIsLoading(false)
+      return
+    }
+
+    const phoneWithCountryCode = `+57${phoneDigits}`
 
     // Validate invitation code
     const { data: codeData, error: codeError } = await supabase
@@ -71,6 +81,7 @@ export default function SignUpPage() {
           data: {
             full_name: fullName,
             farm_name: farmName,
+            phone: phoneWithCountryCode,
           },
         },
       })
@@ -155,6 +166,19 @@ export default function SignUpPage() {
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Número telefónico</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="3XXXXXXXXX"
+                      inputMode="numeric"
+                      maxLength={10}
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                     />
                   </div>
                   <div className="grid gap-2">
