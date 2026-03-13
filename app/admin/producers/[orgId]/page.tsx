@@ -59,7 +59,7 @@ export default async function AdminProducerDetailPage({
     nitrite_mg_l: number | null
     nitrate_mg_l: number | null
     ph: number | null
-    calculated_fca: number | null
+    effective_fca: number | null
     calculated_biomass_kg: number | null
     pond_name: string
   }> = []
@@ -86,7 +86,7 @@ export default async function AdminProducerDetailPage({
       supabase
         .from('production_records')
         .select(
-          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg'
+          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, effective_fca, calculated_biomass_kg'
         )
         .order('record_date', { ascending: true })
         .limit(3000),

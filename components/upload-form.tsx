@@ -3,7 +3,9 @@
 import React from "react"
 
 import { useState, useRef } from 'react'
+import { calculateCalculatedFca } from '@/lib/fca'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +26,8 @@ interface Batch {
   start_date: string
   status: string
 }
+
+type FcaMode = 'default' | 'calculated'
 
 interface OcrResult {
   record_date: string | null
@@ -73,7 +77,13 @@ function ConfidenceBadge({ value }: { value: number }) {
   )
 }
 
-export function UploadForm({ batches }: { batches: Batch[] }) {
+export function UploadForm({
+  batches,
+  defaultFca,
+}: {
+  batches: Batch[]
+  defaultFca: number | null
+}) {
   const [step, setStep] = useState<'upload' | 'processing' | 'review' | 'done'>('upload')
   const [selectedBatch, setSelectedBatch] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -81,6 +91,7 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
   const [editedData, setEditedData] = useState<Partial<OcrResult>>({})
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fcaMode, setFcaMode] = useState<FcaMode>(defaultFca != null ? 'default' : 'calculated')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +138,7 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
 
       setOcrData(result.data)
       setEditedData(result.data)
+      setFcaMode(defaultFca != null ? 'default' : 'calculated')
       setStep('review')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar imagen')
@@ -161,6 +173,7 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
         hardness_mg_l: editedData.hardness_mg_l ?? null,
         alkalinity_mg_l: editedData.alkalinity_mg_l ?? null,
         notes: editedData.notes ?? null,
+        fca_source: fcaMode,
       })
       setStep('done')
     } catch (err) {
@@ -177,6 +190,7 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
     setEditedData({})
     setError(null)
     setSelectedBatch('')
+    setFcaMode(defaultFca != null ? 'default' : 'calculated')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -282,6 +296,65 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
               </p>
             </CardHeader>
             <CardContent>
+              {(() => {
+                const { calculated_fca: calculatedFca } = calculateCalculatedFca({
+                  fish_count: editedData.fish_count ?? null,
+                  feed_kg: editedData.feed_kg ?? null,
+                  avg_weight_g: editedData.avg_weight_g ?? null,
+                  mortality_count: editedData.mortality_count ?? null,
+                })
+                const effectiveFca = fcaMode === 'default' ? defaultFca : calculatedFca
+
+                return (
+                  <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                          Fuente de FCA
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          El sistema seguirá guardando el FCA calculado, pero usará el valor efectivo que selecciones.
+                        </p>
+                      </div>
+                      <div className="min-w-[220px]">
+                        <Select value={fcaMode} onValueChange={(value) => setFcaMode(value as FcaMode)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {defaultFca != null ? (
+                              <SelectItem value="default">Usar configurado ({defaultFca.toFixed(2)})</SelectItem>
+                            ) : null}
+                            <SelectItem value="calculated">Usar calculado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                      <div className="rounded-md border bg-background px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Calculado</p>
+                        <p className="mt-1 font-semibold text-foreground">
+                          {calculatedFca != null ? calculatedFca.toFixed(2) : '-'}
+                        </p>
+                      </div>
+                      <div className="rounded-md border bg-background px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Configurado finca</p>
+                        <p className="mt-1 font-semibold text-foreground">
+                          {defaultFca != null ? defaultFca.toFixed(2) : 'No configurado'}
+                        </p>
+                      </div>
+                      <div className="rounded-md border bg-background px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">FCA efectivo</p>
+                        <p className="mt-1 font-semibold text-foreground">
+                          {effectiveFca != null ? effectiveFca.toFixed(2) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
               <div className="flex flex-col gap-4">
                 <div className="grid gap-2">
                   <div className="flex items-center">
@@ -290,11 +363,11 @@ export function UploadForm({ batches }: { batches: Batch[] }) {
                       <ConfidenceBadge value={ocrData.confidence.record_date} />
                     )}
                   </div>
-                  <Input
+                  <DatePicker
                     id="record_date"
-                    type="date"
                     value={editedData.record_date || ''}
-                    onChange={(e) => setEditedData({ ...editedData, record_date: e.target.value })}
+                    onChange={(value) => setEditedData({ ...editedData, record_date: value })}
+                    placeholder="Selecciona la fecha del reporte"
                   />
                 </div>
 

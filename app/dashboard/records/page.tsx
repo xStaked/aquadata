@@ -12,6 +12,8 @@ import {
 import { ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import { RecordsExport, SingleRecordExport } from '@/components/records-export'
+import { DatePicker } from '@/components/ui/date-picker'
+import { RecordEditModal } from '@/components/record-edit-modal'
 
 export default async function RecordsPage({
   searchParams,
@@ -20,7 +22,7 @@ export default async function RecordsPage({
 }) {
   const { pond: pondFilter, from: fromDateFilter, to: toDateFilter, page: pageParam } = await searchParams
   const currentPage = Number(pageParam) > 0 ? Math.floor(Number(pageParam)) : 1
-  const pageSize = 100
+  const pageSize = 20
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -41,11 +43,14 @@ export default async function RecordsPage({
     oxygen_mg_l: number | null
     ammonia_mg_l: number | null
     nitrite_mg_l: number | null
+    nitrate_mg_l: number | null
     ph: number | null
     phosphate_mg_l: number | null
     hardness_mg_l: number | null
     alkalinity_mg_l: number | null
     calculated_fca: number | null
+    effective_fca: number | null
+    fca_source: 'calculated' | 'default' | null
     calculated_biomass_kg: number | null
     notes: string | null
     created_at: string
@@ -55,8 +60,17 @@ export default async function RecordsPage({
   let batchPondMap: Record<string, string> = {}
   let ponds: Array<{ id: string; name: string }> = []
   let totalRecords = 0
+  let organizationDefaultFca: number | null = null
 
   if (profile?.organization_id) {
+    const { data: organization } = await supabase
+      .from('organizations')
+      .select('default_fca')
+      .eq('id', profile.organization_id)
+      .single()
+
+    organizationDefaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
+
     const { data: organizationPonds } = await supabase
       .from('ponds')
       .select('id, name')
@@ -151,7 +165,8 @@ export default async function RecordsPage({
             phosphate_mg_l: rec.phosphate_mg_l,
             hardness_mg_l: rec.hardness_mg_l,
             alkalinity_mg_l: rec.alkalinity_mg_l,
-            calculated_fca: rec.calculated_fca,
+            effective_fca: rec.effective_fca,
+            fca_source: rec.fca_source,
             calculated_biomass_kg: rec.calculated_biomass_kg,
           }))}
         />
@@ -181,24 +196,24 @@ export default async function RecordsPage({
               <label htmlFor="from" className="text-sm font-medium text-foreground">
                 Desde
               </label>
-              <input
+              <DatePicker
                 id="from"
                 name="from"
-                type="date"
                 defaultValue={fromDateFilter ?? ''}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Fecha inicial"
+                buttonClassName="justify-between text-sm"
               />
             </div>
             <div className="flex min-w-[180px] flex-col gap-1">
               <label htmlFor="to" className="text-sm font-medium text-foreground">
                 Hasta
               </label>
-              <input
+              <DatePicker
                 id="to"
                 name="to"
-                type="date"
                 defaultValue={toDateFilter ?? ''}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Fecha final"
+                buttonClassName="justify-between text-sm"
               />
             </div>
             <button
@@ -240,6 +255,7 @@ export default async function RecordsPage({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-center">Editar</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Estanque</TableHead>
                   <TableHead className="text-right">Nº Peces</TableHead>
@@ -262,6 +278,32 @@ export default async function RecordsPage({
               <TableBody>
                 {records.map((rec) => (
                   <TableRow key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
+                    <TableCell className="text-center">
+                      <RecordEditModal
+                        record={{
+                          id: rec.id,
+                          record_date: rec.record_date,
+                          pond_name: batchPondMap[rec.batch_id] || '-',
+                          fish_count: rec.fish_count,
+                          feed_kg: rec.feed_kg,
+                          avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                          mortality_count: rec.mortality_count,
+                          temperature_c: rec.temperature_c,
+                          oxygen_mg_l: rec.oxygen_mg_l,
+                          ammonia_mg_l: rec.ammonia_mg_l,
+                          nitrite_mg_l: rec.nitrite_mg_l,
+                          nitrate_mg_l: rec.nitrate_mg_l,
+                          ph: rec.ph,
+                          phosphate_mg_l: rec.phosphate_mg_l,
+                          hardness_mg_l: rec.hardness_mg_l,
+                          alkalinity_mg_l: rec.alkalinity_mg_l,
+                          effective_fca: rec.effective_fca,
+                          fca_source: rec.fca_source,
+                          notes: rec.notes,
+                        }}
+                        defaultFca={organizationDefaultFca}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       {format(new Date(rec.record_date), 'dd/MM/yyyy')}
                     </TableCell>
@@ -289,11 +331,19 @@ export default async function RecordsPage({
                     <TableCell className="text-right">{rec.hardness_mg_l?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.alkalinity_mg_l?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">
-                      {rec.calculated_fca ? rec.calculated_fca.toFixed(2) : '-'}
+                      <div className="flex flex-col items-end gap-1">
+                        <span>{rec.effective_fca != null ? rec.effective_fca.toFixed(2) : '-'}</span>
+                        {rec.fca_source ? (
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {rec.fca_source === 'default' ? 'configurado' : 'calculado'}
+                          </span>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {rec.calculated_biomass_kg ? rec.calculated_biomass_kg.toFixed(1) : '-'}
+                      {rec.calculated_biomass_kg != null ? rec.calculated_biomass_kg.toFixed(1) : '-'}
                     </TableCell>
+
                     <TableCell className="text-center">
                       <SingleRecordExport
                         record={{
@@ -312,7 +362,8 @@ export default async function RecordsPage({
                           phosphate_mg_l: rec.phosphate_mg_l,
                           hardness_mg_l: rec.hardness_mg_l,
                           alkalinity_mg_l: rec.alkalinity_mg_l,
-                          calculated_fca: rec.calculated_fca,
+                          effective_fca: rec.effective_fca,
+                          fca_source: rec.fca_source,
                           calculated_biomass_kg: rec.calculated_biomass_kg,
                         }}
                       />

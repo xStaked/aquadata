@@ -20,7 +20,8 @@ interface RecordRow {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
-  calculated_fca: number | null
+  effective_fca: number | null
+  fca_source?: string | null
   calculated_biomass_kg: number | null
 }
 
@@ -65,7 +66,7 @@ function formatRow(rec: RecordRow) {
     rec.phosphate_mg_l?.toFixed(2) ?? '-',
     rec.hardness_mg_l?.toFixed(1) ?? '-',
     rec.alkalinity_mg_l?.toFixed(1) ?? '-',
-    rec.calculated_fca?.toFixed(2) ?? '-',
+    rec.effective_fca?.toFixed(2) ?? '-',
     rec.calculated_biomass_kg?.toFixed(1) ?? '-',
   ]
 }
@@ -112,7 +113,7 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Fosfato (mg/L)', record.phosphate_mg_l?.toFixed(2) ?? '-'],
       ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
       ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
-      ['FCA', record.calculated_fca?.toFixed(2) ?? '-'],
+      ['FCA', record.effective_fca?.toFixed(2) ?? '-'],
       ['Biomasa (kg)', record.calculated_biomass_kg?.toFixed(1) ?? '-'],
     ]
 
@@ -151,7 +152,7 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Fosfato (mg/L)', record.phosphate_mg_l?.toFixed(2) ?? '-'],
       ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
       ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
-      ['FCA', record.calculated_fca?.toFixed(2) ?? '-'],
+      ['FCA', record.effective_fca?.toFixed(2) ?? '-'],
       ['Biomasa (kg)', record.calculated_biomass_kg?.toFixed(1) ?? '-'],
     ]
 

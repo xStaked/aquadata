@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { calculateCalculatedFca } from '@/lib/fca'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -26,6 +28,8 @@ interface Batch {
   start_date: string
   status: string
 }
+
+type FcaMode = 'default' | 'calculated'
 
 function FieldLabel({
   children,
@@ -87,11 +91,18 @@ function SectionHeader({
   )
 }
 
-export function ManualRecordForm({ batches }: { batches: Batch[] }) {
+export function ManualRecordForm({
+  batches,
+  defaultFca,
+}: {
+  batches: Batch[]
+  defaultFca: number | null
+}) {
   const [selectedBatch, setSelectedBatch] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [fcaMode, setFcaMode] = useState<FcaMode>(defaultFca != null ? 'default' : 'calculated')
 
   const [formData, setFormData] = useState({
     record_date: new Date().toISOString().split('T')[0],
@@ -146,6 +157,7 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
         hardness_mg_l: toNum(formData.hardness_mg_l),
         alkalinity_mg_l: toNum(formData.alkalinity_mg_l),
         notes: formData.notes || null,
+        fca_source: fcaMode,
       })
       setDone(true)
     } catch (err) {
@@ -159,6 +171,7 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
     setDone(false)
     setError(null)
     setSelectedBatch('')
+    setFcaMode(defaultFca != null ? 'default' : 'calculated')
     setFormData({
       record_date: new Date().toISOString().split('T')[0],
       fish_count: '',
@@ -248,12 +261,11 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
           </div>
           <div className="flex flex-col gap-2">
             <FieldLabel htmlFor="m_record_date">Fecha del registro</FieldLabel>
-            <Input
+            <DatePicker
               id="m_record_date"
-              type="date"
-              className="h-9"
               value={formData.record_date}
-              onChange={(e) => updateField('record_date', e.target.value)}
+              onChange={(value) => updateField('record_date', value)}
+              buttonClassName="h-9"
             />
           </div>
         </div>
@@ -313,13 +325,13 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
 
         {/* ── Valores Calculados ── */}
         {(() => {
-          const fishCount = formData.fish_count !== '' ? Number(formData.fish_count) : null
-          const avgWeight = formData.avg_weight_g !== '' ? Number(formData.avg_weight_g) : null
-          const feedKg = formData.feed_kg !== '' ? Number(formData.feed_kg) : null
-          const mortality = formData.mortality_count !== '' ? Number(formData.mortality_count) : 0
-          const effectiveFish = Math.max(0, (fishCount ?? 0) - mortality)
-          const biomasa = fishCount && avgWeight ? effectiveFish * avgWeight : null
-          const fca = feedKg && biomasa && biomasa > 0 ? feedKg / biomasa : null
+          const { calculated_biomass_kg: biomasa, calculated_fca: fcaCalculado } = calculateCalculatedFca({
+            fish_count: formData.fish_count !== '' ? Number(formData.fish_count) : null,
+            avg_weight_g: formData.avg_weight_g !== '' ? Number(formData.avg_weight_g) : null,
+            feed_kg: formData.feed_kg !== '' ? Number(formData.feed_kg) : null,
+            mortality_count: formData.mortality_count !== '' ? Number(formData.mortality_count) : 0,
+          })
+          const fcaEfectivo = fcaMode === 'default' ? defaultFca : fcaCalculado
           return (
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
               <div className="mb-3 flex items-center gap-2">
@@ -345,9 +357,36 @@ export function ManualRecordForm({ batches }: { batches: Batch[] }) {
                     <span className="ml-1.5 rounded px-1.5 py-px text-[9px] font-semibold bg-primary/10 text-primary">FCA</span>
                   </p>
                   <p className="mt-1 text-xl font-bold text-foreground">
-                    {fca !== null ? fca.toFixed(2) : <span className="text-sm font-normal text-muted-foreground">Ingresa alimento y biomasa</span>}
+                    {fcaEfectivo !== null ? fcaEfectivo.toFixed(2) : <span className="text-sm font-normal text-muted-foreground">Ingresa alimento y biomasa</span>}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">consumo / biomasa</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {fcaMode === 'default'
+                      ? 'Usando FCA por defecto de la finca'
+                      : 'Usando FCA calculado desde el reporte'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 rounded-md border border-primary/15 bg-background/70 p-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Fuente de FCA
+                  </p>
+                  <Select value={fcaMode} onValueChange={(value) => setFcaMode(value as FcaMode)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {defaultFca != null ? (
+                        <SelectItem value="default">Usar configurado ({defaultFca.toFixed(2)})</SelectItem>
+                      ) : null}
+                      <SelectItem value="calculated">Usar calculado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <p>Calculado: {fcaCalculado != null ? fcaCalculado.toFixed(2) : '-'}</p>
+                  <p>Configurado finca: {defaultFca != null ? defaultFca.toFixed(2) : 'No configurado'}</p>
                 </div>
               </div>
             </div>

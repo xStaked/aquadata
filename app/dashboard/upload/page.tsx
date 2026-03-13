@@ -13,6 +13,8 @@ export default async function UploadPage() {
     .eq('id', user!.id)
     .single()
 
+  let organizationDefaultFca: number | null = null
+
   let batches: Array<{
     id: string
     pond_name: string
@@ -21,6 +23,14 @@ export default async function UploadPage() {
   }> = []
 
   if (profile?.organization_id) {
+    const { data: organization } = await supabase
+      .from('organizations')
+      .select('default_fca')
+      .eq('id', profile.organization_id)
+      .single()
+
+    organizationDefaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
+
     const { data: ponds } = await supabase
       .from('ponds')
       .select('id, name')
@@ -73,10 +83,10 @@ export default async function UploadPage() {
           <TabsTrigger value="ocr">Captura OCR</TabsTrigger>
         </TabsList>
         <TabsContent value="manual" className="mt-4">
-          <ManualRecordForm batches={batches} />
+          <ManualRecordForm batches={batches} defaultFca={organizationDefaultFca} />
         </TabsContent>
         <TabsContent value="ocr" className="mt-4">
-          <UploadForm batches={batches} />
+          <UploadForm batches={batches} defaultFca={organizationDefaultFca} />
         </TabsContent>
       </Tabs>
     </div>

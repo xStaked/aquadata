@@ -51,7 +51,7 @@ export default async function AdminAnalyticsPage({
     nitrite_mg_l: number | null
     nitrate_mg_l: number | null
     ph: number | null
-    calculated_fca: number | null
+    effective_fca: number | null
     calculated_biomass_kg: number | null
     pond_name: string
     organization_id: string | null
@@ -74,7 +74,7 @@ export default async function AdminAnalyticsPage({
       supabase
         .from('production_records')
         .select(
-          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg'
+          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, effective_fca, calculated_biomass_kg'
         )
         .gte('record_date', fromDateStr)
         .order('record_date', { ascending: true })
@@ -128,7 +128,7 @@ export default async function AdminAnalyticsPage({
   const recordsForChartsWithoutOrg = recordsForCharts.map(({ organization_id, ...record }) => record)
 
   const validFca = recordsForCharts
-    .map((record) => record.calculated_fca)
+    .map((record) => record.effective_fca)
     .filter((value): value is number => value != null && Number.isFinite(value))
   const avgFca = validFca.length > 0 ? validFca.reduce((a, b) => a + b, 0) / validFca.length : null
 
@@ -164,7 +164,7 @@ export default async function AdminAnalyticsPage({
     nitrito_mg_l: row.nitrite_mg_l ?? '',
     nitrato_mg_l: row.nitrate_mg_l ?? '',
     ph: row.ph ?? '',
-    fca: row.calculated_fca ?? '',
+    fca: row.effective_fca ?? '',
     biomasa_kg: row.calculated_biomass_kg ?? '',
   }))
 

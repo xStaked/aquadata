@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -156,11 +157,11 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
                 {/* Fecha */}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="h-date">Fecha de cosecha *</Label>
-                  <Input
+                  <DatePicker
                     id="h-date"
-                    type="date"
                     value={form.harvest_date}
-                    onChange={e => setForm(f => ({ ...f, harvest_date: e.target.value }))}
+                    onChange={(value) => setForm(f => ({ ...f, harvest_date: value }))}
+                    placeholder="Selecciona la fecha"
                   />
                 </div>
 

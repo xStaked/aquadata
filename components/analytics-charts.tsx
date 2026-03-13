@@ -29,7 +29,7 @@ interface ProductionRecord {
   nitrite_mg_l: number | null
   nitrate_mg_l: number | null
   ph: number | null
-  calculated_fca: number | null
+  effective_fca: number | null
   calculated_biomass_kg: number | null
   pond_name: string
 }
@@ -377,11 +377,11 @@ export function TreatmentEffectivenessChart({ treatments }: { treatments: Treatm
 export function FcaChart({ records }: { records: ProductionRecord[] }) {
   const data = useMemo(() => {
     const raw = records
-      .filter((r) => r.calculated_fca !== null)
+      .filter((r) => r.effective_fca !== null)
       .sort((a, b) => a.record_date.localeCompare(b.record_date))
       .map((r) => ({
         date: formatDate(r.record_date),
-        fca: Number(r.calculated_fca?.toFixed(2)),
+        fca: Number(r.effective_fca?.toFixed(2)),
       }))
     return downsample(raw, ['fca'])
   }, [records])
@@ -393,7 +393,7 @@ export function FcaChart({ records }: { records: ProductionRecord[] }) {
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Se necesitan al menos 2 registros de peso para calcular FCA</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">Aún no hay FCA efectivo disponible para mostrar</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data}>

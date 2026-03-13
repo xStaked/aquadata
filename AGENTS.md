@@ -9,17 +9,17 @@
 - `public/` and `styles/`: static assets and global styles.
 
 ## Build, Test, and Development Commands
-- `npm install`: install dependencies.
-- `npm run dev`: start local development server with hot reload.
-- `npm run build`: produce production build and catch type/build issues.
-- `npm run start`: run the production build locally.
-- `npm run lint`: run ESLint across the repository.
+- `pnpm install`: install dependencies.
+- `pnpm  dev`: start local development server with hot reload.
+- `pnpm  build`: produce production build and catch type/build issues.
+- `pnpm  start`:  the production build locally.
+- `pnpm  lint`: run ESLint across the repository.
 
 Use from repository root:
 
 ```bash
-npm run dev
-npm run lint && npm run build
+pnpm dev
+pnpm lint && pnpm build
 ```
 
 ## Coding Style & Naming Conventions

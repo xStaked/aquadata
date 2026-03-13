@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { revalidatePath } from 'next/cache'
 
 interface ProductionData {
@@ -20,6 +21,7 @@ interface ProductionData {
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
   notes: string | null
+  fca_source: FcaSource
 }
 
 export async function confirmProductionRecord(data: ProductionData) {
@@ -27,18 +29,7 @@ export async function confirmProductionRecord(data: ProductionData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
 
-  // Calculate biomass and FCA
-  let calculated_fca: number | null = null
-  let calculated_biomass_kg: number | null = null
-
-  if (data.fish_count && data.avg_weight_g) {
-    const effectiveFish = data.fish_count - (data.mortality_count ?? 0)
-    calculated_biomass_kg = Math.max(0, effectiveFish) * data.avg_weight_g / 1000
-  }
-
-  if (data.feed_kg && calculated_biomass_kg && calculated_biomass_kg > 0) {
-    calculated_fca = data.feed_kg / calculated_biomass_kg
-  }
+  const { calculated_fca, calculated_biomass_kg } = calculateCalculatedFca(data)
 
   // Get batch info for mortality update
   const { data: batch } = await supabase
@@ -55,6 +46,29 @@ export async function confirmProductionRecord(data: ProductionData) {
       .update({ current_population: Math.max(0, newPop) })
       .eq('id', data.batch_id)
   }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  let defaultFca: number | null = null
+  if (profile?.organization_id) {
+    const { data: organization } = await supabase
+      .from('organizations')
+      .select('default_fca')
+      .eq('id', profile.organization_id)
+      .single()
+
+    defaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
+  }
+
+  const { effective_fca, fca_source } = resolveEffectiveFca({
+    calculatedFca: calculated_fca,
+    defaultFca,
+    source: data.fca_source,
+  })
 
   const { error } = await supabase.from('production_records').insert({
     batch_id: data.batch_id,
@@ -74,6 +88,8 @@ export async function confirmProductionRecord(data: ProductionData) {
     alkalinity_mg_l: data.alkalinity_mg_l,
     notes: data.notes,
     calculated_fca,
+    effective_fca,
+    fca_source,
     calculated_biomass_kg,
     confirmed_by: user.id,
   })
@@ -81,12 +97,6 @@ export async function confirmProductionRecord(data: ProductionData) {
   if (error) throw new Error(error.message)
 
   // Generate alerts for critical values
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
   if (profile?.organization_id) {
     const { data: batchInfo } = await supabase
       .from('batches')
@@ -312,14 +322,14 @@ export async function confirmProductionRecord(data: ProductionData) {
     }
 
     // FCA elevado
-    if (calculated_fca !== null && calculated_fca > 2.5) {
+    if (effective_fca !== null && effective_fca > 2.5) {
       alerts.push({
         organization_id: profile.organization_id,
         pond_id: batchInfo?.pond_id ?? null,
         batch_id: data.batch_id,
         alert_type: 'high_fca',
         severity: 'warning',
-        message: `FCA elevado: ${calculated_fca.toFixed(2)} (objetivo: < 1.8)`,
+        message: `FCA elevado: ${effective_fca.toFixed(2)} (objetivo: < 1.8)`,
       })
     }
 

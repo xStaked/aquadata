@@ -17,6 +17,7 @@ import {
   Bell,
   LogOut,
   Menu,
+  Settings,
   X,
   ShieldCheck,
 } from 'lucide-react'
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/costs', label: 'Ventas', icon: DollarSign },
   { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
   { href: '/dashboard/bioremediation', label: 'Bioremediacion', icon: Calculator },
+  { href: '/dashboard/settings', label: 'Configuracion', icon: Settings },
   { href: '/admin', label: 'Admin', icon: ShieldCheck, adminOnly: true },
 ]
 
