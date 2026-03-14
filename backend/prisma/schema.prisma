@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  profiles  Profile[]
+
+  @@map("organizations")
+}
+
+model Profile {
+  id             String        @id @db.Uuid
+  email          String?
+  fullName       String?       @map("full_name")
+  role           String        @default("cliente")
+  organizationId String?       @db.Uuid @map("organization_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@map("profiles")
+}
+
+model Client {
+  id                String           @id @default(uuid()) @db.Uuid
+  organizationId    String           @db.Uuid @map("organization_id")
+  fullName          String           @map("full_name")
+  phone             String?
+  email             String?
+  companyName       String?          @map("company_name")
+  address           String?
+  assignedAdvisorId String?          @db.Uuid @map("assigned_advisor_id")
+  status            String           @default("active")
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  cases             Case[]
+  farms             Farm[]
+  visits            TechnicalVisit[]
+
+  @@index([organizationId])
+  @@index([assignedAdvisorId])
+  @@map("clients")
+}
+
+model Farm {
+  id                String           @id @default(uuid()) @db.Uuid
+  clientId          String           @db.Uuid @map("client_id")
+  organizationId    String           @db.Uuid @map("organization_id")
+  name              String
+  speciesType       String           @map("species_type")
+  location          String?
+  capacity          Int?
+  assignedAdvisorId String?          @db.Uuid @map("assigned_advisor_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  cases             Case[]
+  client            Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fcaCalcs          FcaCalculation[]
+  roiCalcs          RoiCalculation[]
+  visits            TechnicalVisit[]
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([assignedAdvisorId])
+  @@map("farms")
+}
+
+model Case {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @db.Uuid @map("organization_id")
+  clientId       String        @db.Uuid @map("client_id")
+  farmId         String?       @db.Uuid @map("farm_id")
+  caseNumber     Int           @default(autoincrement()) @unique @map("case_number")
+  title          String
+  description    String?
+  severity       String        @default("medium")
+  status         String        @default("open")
+  assignedTechId String?       @db.Uuid @map("assigned_tech_id")
+  source         String        @default("manual")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  closedAt       DateTime?     @map("closed_at")
+  messages       CaseMessage[]
+  client         Client        @relation(fields: [clientId], references: [id])
+  farm           Farm?         @relation(fields: [farmId], references: [id])
+  visits         TechnicalVisit[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([clientId])
+  @@index([farmId])
+  @@index([assignedTechId])
+  @@map("cases")
+}
+
+model CaseMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  caseId      String   @db.Uuid @map("case_id")
+  userId      String   @db.Uuid @map("user_id")
+  content     String
+  messageType String   @default("note") @map("message_type")
+  createdAt   DateTime @default(now()) @map("created_at")
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([userId])
+  @@map("case_messages")
+}
+
+model TechnicalVisit {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @db.Uuid @map("organization_id")
+  caseId          String?  @db.Uuid @map("case_id")
+  clientId        String   @db.Uuid @map("client_id")
+  farmId          String   @db.Uuid @map("farm_id")
+  advisorId       String   @db.Uuid @map("advisor_id")
+  visitDate       DateTime @map("visit_date")
+  birdCount       Int?     @map("bird_count")
+  mortalityCount  Int?     @map("mortality_count")
+  feedConversion  Float?   @map("feed_conversion")
+  avgBodyWeight   Float?   @map("avg_body_weight")
+  animalCount     Int?     @map("animal_count")
+  dailyWeightGain Float?   @map("daily_weight_gain")
+  feedConsumption Float?   @map("feed_consumption")
+  observations    String?
+  recommendations String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  case            Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  client          Client   @relation(fields: [clientId], references: [id])
+  farm            Farm     @relation(fields: [farmId], references: [id])
+
+  @@index([organizationId])
+  @@index([caseId])
+  @@index([clientId])
+  @@index([farmId])
+  @@index([advisorId])
+  @@map("technical_visits")
+}
+
+model FcaCalculation {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid @map("user_id")
+  organizationId   String   @db.Uuid @map("organization_id")
+  farmId           String?  @db.Uuid @map("farm_id")
+  feedConsumedKg   Float    @map("feed_consumed_kg")
+  birdWeightKg     Float    @map("bird_weight_kg")
+  mortalityCount   Int      @map("mortality_count")
+  birdCount        Int      @map("bird_count")
+  feedCostPerKg    Float    @map("feed_cost_per_kg")
+  fcaResult        Float    @map("fca_result")
+  productionCost   Float    @map("production_cost")
+  estimatedLosses  Float    @map("estimated_losses")
+  potentialSavings Float    @map("potential_savings")
+  createdAt        DateTime @default(now()) @map("created_at")
+  farm             Farm?    @relation(fields: [farmId], references: [id])
+
+  @@index([organizationId])
+  @@index([farmId])
+  @@index([userId])
+  @@map("fca_calculations")
+}
+
+model RoiCalculation {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid @map("user_id")
+  organizationId  String   @db.Uuid @map("organization_id")
+  farmId          String?  @db.Uuid @map("farm_id")
+  feedSavings     Float    @map("feed_savings")
+  weightGainValue Float    @map("weight_gain_value")
+  additiveCost    Float    @map("additive_cost")
+  roiPercentage   Float    @map("roi_percentage")
+  netValue        Float    @map("net_value")
+  breakEven       Float    @map("break_even")
+  createdAt       DateTime @default(now()) @map("created_at")
+  farm            Farm?    @relation(fields: [farmId], references: [id])
+
+  @@index([organizationId])
+  @@index([farmId])
+  @@index([userId])
+  @@map("roi_calculations")
+}
+
+model KnowledgeArticle {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid @map("organization_id")
+  title          String
+  content        String
+  category       String
+  speciesType    String   @default("both") @map("species_type")
+  tags           String[]
+  isPublished    Boolean  @default(false) @map("is_published")
+  createdBy      String   @db.Uuid @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@index([category])
+  @@index([isPublished])
+  @@index([createdBy])
+  @@map("knowledge_articles")
+}

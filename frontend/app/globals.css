@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* Paleta Norgtech — Verde agrícola + Naranja */
+    --norgtech-green: #2d6a4f;
+    --norgtech-green-dark: #1b4332;
+    --norgtech-orange: #f97316;
+    --norgtech-light: #f0fdf4;
+
+    --background: 0 0% 96%;
+    --foreground: 151 40% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 151 40% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 151 40% 12%;
+    --primary: 154 41% 30%;           /* #2d6a4f verde Norgtech */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 138 30% 95%;
+    --secondary-foreground: 154 41% 22%;
+    --muted: 138 20% 96%;
+    --muted-foreground: 151 15% 42%;
+    --accent: 24 95% 53%;             /* #f97316 naranja Norgtech */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 138 20% 86%;
+    --input: 138 20% 86%;
+    --ring: 154 41% 30%;
+    --chart-1: 154 41% 30%;           /* Verde */
+    --chart-2: 24 95% 53%;            /* Naranja */
+    --chart-3: 142 52% 47%;           /* Verde claro */
+    --chart-4: 45 93% 58%;            /* Amarillo */
+    --chart-5: 0 84% 60%;             /* Rojo */
+    --radius: 0.625rem;
+    --sidebar-background: 151 40% 14%;  /* #1b4332 verde oscuro */
+    --sidebar-foreground: 138 30% 92%;
+    --sidebar-primary: 24 95% 53%;      /* naranja como acento en sidebar */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 151 35% 22%;
+    --sidebar-accent-foreground: 138 30% 94%;
+    --sidebar-border: 151 30% 20%;
+    --sidebar-ring: 24 95% 53%;
+  }
+  .dark {
+    --background: 151 35% 7%;
+    --foreground: 138 20% 92%;
+    --card: 151 35% 10%;
+    --card-foreground: 138 20% 92%;
+    --popover: 151 35% 10%;
+    --popover-foreground: 138 20% 92%;
+    --primary: 142 52% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 151 25% 16%;
+    --secondary-foreground: 138 20% 90%;
+    --muted: 151 20% 14%;
+    --muted-foreground: 138 10% 62%;
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 151 20% 20%;
+    --input: 151 20% 20%;
+    --ring: 24 95% 53%;
+    --chart-1: 142 52% 47%;
+    --chart-2: 24 95% 53%;
+    --chart-3: 154 41% 30%;
+    --chart-4: 45 93% 58%;
+    --chart-5: 0 84% 60%;
+    --sidebar-background: 151 40% 7%;
+    --sidebar-foreground: 138 20% 90%;
+    --sidebar-primary: 24 95% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 151 30% 15%;
+    --sidebar-accent-foreground: 138 20% 94%;
+    --sidebar-border: 151 25% 16%;
+    --sidebar-ring: 24 95% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+}
+
+/* Smooth transitions for interactive elements */
+@layer base {
+  a,
+  button,
+  [role="button"] {
+    @apply cursor-pointer;
+  }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
