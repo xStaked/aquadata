@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { calculateCalculatedFca } from '@/lib/fca'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Camera, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Camera, Upload, Loader2, CheckCircle, AlertCircle, CalendarDays, CalendarRange } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
 
@@ -28,6 +28,13 @@ interface Batch {
 }
 
 type FcaMode = 'default' | 'calculated'
+type ReportType = 'daily' | 'weekly'
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
 
 interface OcrResult {
   record_date: string | null
@@ -84,6 +91,7 @@ export function UploadForm({
   batches: Batch[]
   defaultFca: number | null
 }) {
+  const [resolvedDefaultFca, setResolvedDefaultFca] = useState<number | null>(defaultFca)
   const [step, setStep] = useState<'upload' | 'processing' | 'review' | 'done'>('upload')
   const [selectedBatch, setSelectedBatch] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -92,7 +100,41 @@ export function UploadForm({
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fcaMode, setFcaMode] = useState<FcaMode>(defaultFca != null ? 'default' : 'calculated')
+  const [reportType, setReportType] = useState<ReportType>('daily')
+  const [weekEndDate, setWeekEndDate] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadDefaultFca = async () => {
+      try {
+        const response = await fetch('/api/organization/default-fca', { cache: 'no-store' })
+        if (!response.ok) return
+
+        const result = await response.json()
+        if (cancelled) return
+
+        const nextDefaultFca =
+          typeof result.defaultFca === 'number' && Number.isFinite(result.defaultFca)
+            ? result.defaultFca
+            : null
+
+        setResolvedDefaultFca(nextDefaultFca)
+        setFcaMode((current) =>
+          current === 'default' || nextDefaultFca == null ? current : 'default'
+        )
+      } catch {
+        // Keep server-rendered fallback when the refresh request fails.
+      }
+    }
+
+    void loadDefaultFca()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -138,7 +180,10 @@ export function UploadForm({
 
       setOcrData(result.data)
       setEditedData(result.data)
-      setFcaMode(defaultFca != null ? 'default' : 'calculated')
+      setFcaMode(resolvedDefaultFca != null ? 'default' : 'calculated')
+      if (reportType === 'weekly' && result.data.record_date) {
+        setWeekEndDate(addDays(result.data.record_date, 6))
+      }
       setStep('review')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar imagen')
@@ -159,6 +204,8 @@ export function UploadForm({
       await confirmProductionRecord({
         batch_id: selectedBatch,
         record_date: editedData.record_date!,
+        report_type: reportType,
+        week_end_date: reportType === 'weekly' ? weekEndDate || null : null,
         fish_count: editedData.fish_count ?? null,
         feed_kg: editedData.feed_kg ?? null,
         avg_weight_g: editedData.avg_weight_g ?? null,
@@ -190,7 +237,9 @@ export function UploadForm({
     setEditedData({})
     setError(null)
     setSelectedBatch('')
-    setFcaMode(defaultFca != null ? 'default' : 'calculated')
+    setFcaMode(resolvedDefaultFca != null ? 'default' : 'calculated')
+    setReportType('daily')
+    setWeekEndDate('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -223,6 +272,32 @@ export function UploadForm({
           <CardContent>
             {step === 'upload' && (
               <div className="flex flex-col gap-4">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReportType('daily')}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
+                      reportType === 'daily'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                    }`}
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Diario
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportType('weekly')}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
+                      reportType === 'weekly'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                    }`}
+                  >
+                    <CalendarRange className="h-3.5 w-3.5" />
+                    Semanal
+                  </button>
+                </div>
                 <div className="grid gap-2">
                   <Label>Lote de destino</Label>
                   <Select value={selectedBatch} onValueChange={setSelectedBatch}>
@@ -303,7 +378,7 @@ export function UploadForm({
                   avg_weight_g: editedData.avg_weight_g ?? null,
                   mortality_count: editedData.mortality_count ?? null,
                 })
-                const effectiveFca = fcaMode === 'default' ? defaultFca : calculatedFca
+                const effectiveFca = fcaMode === 'default' ? resolvedDefaultFca : calculatedFca
 
                 return (
                   <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -322,8 +397,8 @@ export function UploadForm({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {defaultFca != null ? (
-                              <SelectItem value="default">Usar configurado ({defaultFca.toFixed(2)})</SelectItem>
+                            {resolvedDefaultFca != null ? (
+                              <SelectItem value="default">Usar configurado ({resolvedDefaultFca.toFixed(2)})</SelectItem>
                             ) : null}
                             <SelectItem value="calculated">Usar calculado</SelectItem>
                           </SelectContent>
@@ -341,7 +416,7 @@ export function UploadForm({
                       <div className="rounded-md border bg-background px-3 py-2">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Configurado finca</p>
                         <p className="mt-1 font-semibold text-foreground">
-                          {defaultFca != null ? defaultFca.toFixed(2) : 'No configurado'}
+                          {resolvedDefaultFca != null ? resolvedDefaultFca.toFixed(2) : 'No configurado'}
                         </p>
                       </div>
                       <div className="rounded-md border bg-background px-3 py-2">
@@ -356,25 +431,70 @@ export function UploadForm({
               })()}
 
               <div className="flex flex-col gap-4">
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="record_date">Fecha</Label>
-                    {ocrData.confidence.record_date > 0 && (
-                      <ConfidenceBadge value={ocrData.confidence.record_date} />
-                    )}
-                  </div>
-                  <DatePicker
-                    id="record_date"
-                    value={editedData.record_date || ''}
-                    onChange={(value) => setEditedData({ ...editedData, record_date: value })}
-                    placeholder="Selecciona la fecha del reporte"
-                  />
+                <div className="flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+                  {reportType === 'daily' ? (
+                    <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <CalendarRange className="h-3.5 w-3.5 text-primary" />
+                  )}
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                    Reporte {reportType === 'daily' ? 'Diario' : 'Semanal'}
+                  </span>
                 </div>
+
+                {reportType === 'daily' ? (
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="record_date">Fecha</Label>
+                      {ocrData.confidence.record_date > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.record_date} />
+                      )}
+                    </div>
+                    <DatePicker
+                      id="record_date"
+                      value={editedData.record_date || ''}
+                      onChange={(value) => setEditedData({ ...editedData, record_date: value })}
+                      placeholder="Selecciona la fecha del reporte"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="record_date">Semana</Label>
+                      {ocrData.confidence.record_date > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.record_date} />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DatePicker
+                        id="record_date"
+                        value={editedData.record_date || ''}
+                        onChange={(value) => {
+                          setEditedData({ ...editedData, record_date: value })
+                          setWeekEndDate(addDays(value, 6))
+                        }}
+                        placeholder="Inicio de semana"
+                        buttonClassName="flex-1"
+                      />
+                      <span className="text-xs text-muted-foreground shrink-0">al</span>
+                      <DatePicker
+                        id="week_end_date"
+                        value={weekEndDate}
+                        onChange={setWeekEndDate}
+                        placeholder="Fin de semana"
+                        buttonClassName="flex-1"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Alimento y mortalidad como <span className="font-semibold text-foreground">totales</span>; calidad del agua como <span className="font-semibold text-foreground">promedios</span>.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <div className="flex items-center">
-                      <Label htmlFor="feed_kg">Alimento (kg)</Label>
+                      <Label htmlFor="feed_kg">{reportType === 'weekly' ? 'Alimento total (kg)' : 'Alimento (kg)'}</Label>
                       {ocrData.confidence.feed_kg > 0 && (
                         <ConfidenceBadge value={ocrData.confidence.feed_kg} />
                       )}
@@ -407,7 +527,7 @@ export function UploadForm({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <div className="flex items-center">
-                      <Label htmlFor="mortality_count">Mortalidad</Label>
+                      <Label htmlFor="mortality_count">{reportType === 'weekly' ? 'Mortalidad total' : 'Mortalidad'}</Label>
                       {ocrData.confidence.mortality_count > 0 && (
                         <ConfidenceBadge value={ocrData.confidence.mortality_count} />
                       )}

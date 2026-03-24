@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { calculateCalculatedFca } from '@/lib/fca'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -19,6 +19,8 @@ import {
   Fish,
   Droplets,
   Calculator,
+  CalendarDays,
+  CalendarRange,
 } from 'lucide-react'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
 
@@ -30,6 +32,13 @@ interface Batch {
 }
 
 type FcaMode = 'default' | 'calculated'
+type ReportType = 'daily' | 'weekly'
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
 
 function FieldLabel({
   children,
@@ -98,14 +107,19 @@ export function ManualRecordForm({
   batches: Batch[]
   defaultFca: number | null
 }) {
+  const [resolvedDefaultFca, setResolvedDefaultFca] = useState<number | null>(defaultFca)
   const [selectedBatch, setSelectedBatch] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
   const [fcaMode, setFcaMode] = useState<FcaMode>(defaultFca != null ? 'default' : 'calculated')
+  const [reportType, setReportType] = useState<ReportType>('daily')
+
+  const today = new Date().toISOString().split('T')[0]
 
   const [formData, setFormData] = useState({
-    record_date: new Date().toISOString().split('T')[0],
+    record_date: today,
+    week_end_date: addDays(today, 6),
     fish_count: '',
     feed_kg: '',
     avg_weight_g: '',
@@ -121,6 +135,38 @@ export function ManualRecordForm({
     alkalinity_mg_l: '',
     notes: '',
   })
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadDefaultFca = async () => {
+      try {
+        const response = await fetch('/api/organization/default-fca', { cache: 'no-store' })
+        if (!response.ok) return
+
+        const result = await response.json()
+        if (cancelled) return
+
+        const nextDefaultFca =
+          typeof result.defaultFca === 'number' && Number.isFinite(result.defaultFca)
+            ? result.defaultFca
+            : null
+
+        setResolvedDefaultFca(nextDefaultFca)
+        setFcaMode((current) =>
+          current === 'default' || nextDefaultFca == null ? current : 'default'
+        )
+      } catch {
+        // Keep server-rendered fallback when the refresh request fails.
+      }
+    }
+
+    void loadDefaultFca()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -143,6 +189,8 @@ export function ManualRecordForm({
       await confirmProductionRecord({
         batch_id: selectedBatch,
         record_date: formData.record_date,
+        report_type: reportType,
+        week_end_date: reportType === 'weekly' ? formData.week_end_date : null,
         fish_count: toNum(formData.fish_count),
         feed_kg: toNum(formData.feed_kg),
         avg_weight_g: toNum(formData.avg_weight_g),
@@ -167,13 +215,25 @@ export function ManualRecordForm({
     }
   }
 
+  const handleReportTypeChange = (type: ReportType) => {
+    setReportType(type)
+    if (type === 'weekly') {
+      setFormData((prev) => ({
+        ...prev,
+        week_end_date: addDays(prev.record_date, 6),
+      }))
+    }
+  }
+
   const resetForm = () => {
     setDone(false)
     setError(null)
     setSelectedBatch('')
-    setFcaMode(defaultFca != null ? 'default' : 'calculated')
+    setReportType('daily')
+    setFcaMode(resolvedDefaultFca != null ? 'default' : 'calculated')
     setFormData({
-      record_date: new Date().toISOString().split('T')[0],
+      record_date: today,
+      week_end_date: addDays(today, 6),
       fish_count: '',
       feed_kg: '',
       avg_weight_g: '',
@@ -242,6 +302,34 @@ export function ManualRecordForm({
       </div>
 
       <div className="space-y-8 p-6">
+        {/* ── Tipo de Reporte ── */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => handleReportTypeChange('daily')}
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
+              reportType === 'daily'
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+            }`}
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Diario
+          </button>
+          <button
+            type="button"
+            onClick={() => handleReportTypeChange('weekly')}
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
+              reportType === 'weekly'
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+            }`}
+          >
+            <CalendarRange className="h-3.5 w-3.5" />
+            Semanal
+          </button>
+        </div>
+
         {/* ── Lote & Fecha ── */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
@@ -259,20 +347,49 @@ export function ManualRecordForm({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-col gap-2">
-            <FieldLabel htmlFor="m_record_date">Fecha del registro</FieldLabel>
-            <DatePicker
-              id="m_record_date"
-              value={formData.record_date}
-              onChange={(value) => updateField('record_date', value)}
-              buttonClassName="h-9"
-            />
-          </div>
+          {reportType === 'daily' ? (
+            <div className="flex flex-col gap-2">
+              <FieldLabel htmlFor="m_record_date">Fecha del registro</FieldLabel>
+              <DatePicker
+                id="m_record_date"
+                value={formData.record_date}
+                onChange={(value) => updateField('record_date', value)}
+                buttonClassName="h-9"
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <FieldLabel>Semana</FieldLabel>
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  id="m_record_date"
+                  value={formData.record_date}
+                  onChange={(value) => {
+                    updateField('record_date', value)
+                    setFormData((prev) => ({ ...prev, record_date: value, week_end_date: addDays(value, 6) }))
+                  }}
+                  buttonClassName="h-9 flex-1"
+                />
+                <span className="text-xs text-muted-foreground shrink-0">al</span>
+                <DatePicker
+                  id="m_week_end_date"
+                  value={formData.week_end_date}
+                  onChange={(value) => updateField('week_end_date', value)}
+                  buttonClassName="h-9 flex-1"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Datos de Producción ── */}
         <div className="space-y-4">
           <SectionHeader icon={Fish} title="Datos de Producción" variant="primary" />
+          {reportType === 'weekly' && (
+            <p className="text-[11px] text-muted-foreground">
+              Para reporte semanal: ingresa alimento y mortalidad <span className="font-semibold text-foreground">totales</span> de la semana; peso promedio y calidad del agua como <span className="font-semibold text-foreground">promedio</span>.
+            </p>
+          )}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
               <FieldLabel htmlFor="m_fish_count" unit="ind">Nº de Peces</FieldLabel>
@@ -286,7 +403,9 @@ export function ManualRecordForm({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <FieldLabel htmlFor="m_feed_kg" unit="kg">Alimento</FieldLabel>
+              <FieldLabel htmlFor="m_feed_kg" unit="kg">
+                {reportType === 'weekly' ? 'Alimento total' : 'Alimento'}
+              </FieldLabel>
               <Input
                 id="m_feed_kg"
                 type="number"
@@ -310,7 +429,9 @@ export function ManualRecordForm({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <FieldLabel htmlFor="m_mortality_count" unit="ind">Mortalidad</FieldLabel>
+              <FieldLabel htmlFor="m_mortality_count" unit="ind">
+                {reportType === 'weekly' ? 'Mortalidad total' : 'Mortalidad'}
+              </FieldLabel>
               <Input
                 id="m_mortality_count"
                 type="number"
@@ -331,7 +452,7 @@ export function ManualRecordForm({
             feed_kg: formData.feed_kg !== '' ? Number(formData.feed_kg) : null,
             mortality_count: formData.mortality_count !== '' ? Number(formData.mortality_count) : 0,
           })
-          const fcaEfectivo = fcaMode === 'default' ? defaultFca : fcaCalculado
+          const fcaEfectivo = fcaMode === 'default' ? resolvedDefaultFca : fcaCalculado
           return (
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
               <div className="mb-3 flex items-center gap-2">
@@ -377,8 +498,8 @@ export function ManualRecordForm({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {defaultFca != null ? (
-                        <SelectItem value="default">Usar configurado ({defaultFca.toFixed(2)})</SelectItem>
+                      {resolvedDefaultFca != null ? (
+                        <SelectItem value="default">Usar configurado ({resolvedDefaultFca.toFixed(2)})</SelectItem>
                       ) : null}
                       <SelectItem value="calculated">Usar calculado</SelectItem>
                     </SelectContent>
@@ -386,7 +507,7 @@ export function ManualRecordForm({
                 </div>
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p>Calculado: {fcaCalculado != null ? fcaCalculado.toFixed(2) : '-'}</p>
-                  <p>Configurado finca: {defaultFca != null ? defaultFca.toFixed(2) : 'No configurado'}</p>
+                  <p>Configurado finca: {resolvedDefaultFca != null ? resolvedDefaultFca.toFixed(2) : 'No configurado'}</p>
                 </div>
               </div>
             </div>
@@ -395,7 +516,11 @@ export function ManualRecordForm({
 
         {/* ── Calidad del Agua ── */}
         <div className="space-y-4">
-          <SectionHeader icon={Droplets} title="Calidad del Agua" variant="accent" />
+          <SectionHeader
+            icon={Droplets}
+            title={reportType === 'weekly' ? 'Calidad del Agua (promedios)' : 'Calidad del Agua'}
+            variant="accent"
+          />
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
               <FieldLabel htmlFor="m_temperature_c" unit="°C">Temperatura</FieldLabel>

@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache'
 interface ProductionData {
   batch_id: string
   record_date: string
+  report_type: 'daily' | 'weekly'
+  week_end_date: string | null
   fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
@@ -73,6 +75,8 @@ export async function confirmProductionRecord(data: ProductionData) {
   const { error } = await supabase.from('production_records').insert({
     batch_id: data.batch_id,
     record_date: data.record_date,
+    report_type: data.report_type,
+    week_end_date: data.week_end_date,
     fish_count: data.fish_count,
     feed_kg: data.feed_kg,
     avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,

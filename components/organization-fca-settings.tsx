@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { updateOrganizationDefaultFca } from '@/app/dashboard/settings/actions'
 import { Button } from '@/components/ui/button'
@@ -15,8 +16,10 @@ export function OrganizationFcaSettings({
   farmName: string
   initialDefaultFca: number | null
 }) {
+  const router = useRouter()
   const [value, setValue] = useState(initialDefaultFca != null ? String(initialDefaultFca) : '')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [isPending, startTransition] = useTransition()
 
   const handleSave = () => {
@@ -32,10 +35,15 @@ export function OrganizationFcaSettings({
     }
 
     setError('')
+    setSuccess('')
     startTransition(async () => {
       try {
-        await updateOrganizationDefaultFca(parsedValue)
+        const updated = await updateOrganizationDefaultFca(parsedValue)
+        setValue(updated.defaultFca != null ? String(updated.defaultFca) : '')
+        setSuccess('Configuración guardada')
+        router.refresh()
       } catch (saveError) {
+        setSuccess('')
         setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar la configuración')
       }
     })
@@ -70,6 +78,12 @@ export function OrganizationFcaSettings({
         {error ? (
           <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             {error}
+          </p>
+        ) : null}
+
+        {success ? (
+          <p className="rounded-md border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {success}
           </p>
         ) : null}
 

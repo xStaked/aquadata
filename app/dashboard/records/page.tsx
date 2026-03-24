@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, CalendarDays, CalendarRange } from 'lucide-react'
 import { format } from 'date-fns'
 import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -18,9 +18,9 @@ import { RecordEditModal } from '@/components/record-edit-modal'
 export default async function RecordsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pond?: string; from?: string; to?: string; page?: string }>
+  searchParams: Promise<{ pond?: string; from?: string; to?: string; page?: string; type?: string }>
 }) {
-  const { pond: pondFilter, from: fromDateFilter, to: toDateFilter, page: pageParam } = await searchParams
+  const { pond: pondFilter, from: fromDateFilter, to: toDateFilter, page: pageParam, type: typeFilter } = await searchParams
   const currentPage = Number(pageParam) > 0 ? Math.floor(Number(pageParam)) : 1
   const pageSize = 20
   const supabase = await createClient()
@@ -53,6 +53,8 @@ export default async function RecordsPage({
     fca_source: 'calculated' | 'default' | null
     calculated_biomass_kg: number | null
     notes: string | null
+    report_type: 'daily' | 'weekly' | null
+    week_end_date: string | null
     created_at: string
     batch_id: string
   }> = []
@@ -111,6 +113,10 @@ export default async function RecordsPage({
             recordsQuery = recordsQuery.lte('record_date', toDateFilter)
           }
 
+          if (typeFilter === 'daily' || typeFilter === 'weekly') {
+            recordsQuery = recordsQuery.eq('report_type', typeFilter)
+          }
+
           const from = (currentPage - 1) * pageSize
           const to = from + pageSize - 1
           const { data: recs, count } = await recordsQuery.range(from, to)
@@ -131,11 +137,14 @@ export default async function RecordsPage({
   const activePondFilter =
     pondFilter && ponds.some((pond) => pond.id === pondFilter) ? pondFilter : undefined
 
+  const activeTypeFilter = typeFilter === 'daily' || typeFilter === 'weekly' ? typeFilter : undefined
+
   const buildPageHref = (page: number) => {
     const params = new URLSearchParams()
     if (activePondFilter) params.set('pond', activePondFilter)
     if (fromDateFilter) params.set('from', fromDateFilter)
     if (toDateFilter) params.set('to', toDateFilter)
+    if (activeTypeFilter) params.set('type', activeTypeFilter)
     if (page > 1) params.set('page', String(page))
     const query = params.toString()
     return query ? `/dashboard/records?${query}` : '/dashboard/records'
@@ -216,6 +225,21 @@ export default async function RecordsPage({
                 buttonClassName="justify-between text-sm"
               />
             </div>
+            <div className="flex min-w-[160px] flex-col gap-1">
+              <label htmlFor="type" className="text-sm font-medium text-foreground">
+                Tipo
+              </label>
+              <select
+                id="type"
+                name="type"
+                defaultValue={activeTypeFilter ?? 'all'}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="all">Todos</option>
+                <option value="daily">Diario</option>
+                <option value="weekly">Semanal</option>
+              </select>
+            </div>
             <button
               type="submit"
               className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
@@ -257,6 +281,7 @@ export default async function RecordsPage({
                 <TableRow>
                   <TableHead className="text-center">Editar</TableHead>
                   <TableHead>Fecha</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Estanque</TableHead>
                   <TableHead className="text-right">Nº Peces</TableHead>
                   <TableHead className="text-right">Alimento (kg)</TableHead>
@@ -305,7 +330,26 @@ export default async function RecordsPage({
                       />
                     </TableCell>
                     <TableCell className="font-medium">
-                      {format(new Date(rec.record_date), 'dd/MM/yyyy')}
+                      {rec.report_type === 'weekly' && rec.week_end_date ? (
+                        <span className="whitespace-nowrap">
+                          {format(new Date(rec.record_date), 'dd/MM')} – {format(new Date(rec.week_end_date), 'dd/MM/yyyy')}
+                        </span>
+                      ) : (
+                        format(new Date(rec.record_date), 'dd/MM/yyyy')
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {rec.report_type === 'weekly' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                          <CalendarRange className="h-3 w-3" />
+                          Semanal
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <CalendarDays className="h-3 w-3" />
+                          Diario
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{batchPondMap[rec.batch_id] || '-'}</Badge>
