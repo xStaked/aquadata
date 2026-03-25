@@ -7,10 +7,10 @@
 
 ### Case Library
 
-- [ ] **CASE-01**: Aquavet admin can create a structured bioremediation case with required fields for issue, zone, species, product, treatment approach, dose, outcome, and status
+- [x] **CASE-01**: Aquavet admin can create a structured bioremediation case with required fields for issue, zone, species, product, treatment approach, dose, outcome, and status
 - [ ] **CASE-02**: Aquavet admin can edit and update an existing bioremediation case without direct database access
-- [ ] **CASE-03**: Aquavet admin can mark a case as draft, approved, or retired so only approved cases are eligible for chatbot grounding
-- [ ] **CASE-04**: The system stores review metadata for each case, including author, last review date, and current publication status
+- [x] **CASE-03**: Aquavet admin can mark a case as draft, approved, or retired so only approved cases are eligible for chatbot grounding
+- [x] **CASE-04**: The system stores review metadata for each case, including author, last review date, and current publication status
 
 ### Chat Experience
 
@@ -70,10 +70,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CASE-01 | Phase 1 | Pending |
+| CASE-01 | Phase 1 | Complete |
 | CASE-02 | Phase 1 | Pending |
-| CASE-03 | Phase 1 | Pending |
-| CASE-04 | Phase 1 | Pending |
+| CASE-03 | Phase 1 | Complete |
+| CASE-04 | Phase 1 | Complete |
 | CHAT-01 | Phase 3 | Pending |
 | CHAT-02 | Phase 3 | Pending |
 | CHAT-03 | Phase 3 | Pending |

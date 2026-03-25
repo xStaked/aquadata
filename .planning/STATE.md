@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: Ready to execute
+stopped_at: Initial roadmap creation with full requirement-to-phase traceability
+last_updated: "2026-03-25T02:22:25.625Z"
+progress:
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
+---
+
 # Project State
 
 ## Project Reference
@@ -5,20 +19,17 @@
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Operational reports must turn into useful technical guidance and commercial insight without requiring a human from Aquavet to answer every routine question.
-**Current focus:** Phase 1 - Case Library Governance
+**Current focus:** Phase 01 — case-library-governance
 
 ## Current Position
 
-Phase: 1 of 4 (Case Library Governance)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-24 - Roadmap created and v1 requirements mapped to phases
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 01 (case-library-governance) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: -
 - Total execution time: 0.0 hours
@@ -30,6 +41,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: -
 - Trend: Stable
 
@@ -43,6 +55,7 @@ Recent decisions affecting current work:
 - Phase 1 first: governed case data is the dependency for trustworthy retrieval and chat behavior.
 - Chat remains embedded in the existing calculator and does not replace deterministic calculator outputs.
 - Rollout stays scoped to punctual bioremediation consultation, not a general farm-management assistant.
+- [Phase 01]: Grounding eligibility is enforced in both the write actions and the database trigger so non-approved cases cannot be grounding-eligible.
 
 ### Pending Todos
 
