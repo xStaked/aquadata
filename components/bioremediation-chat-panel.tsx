@@ -1,113 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Bot, Send, AlertTriangle, CheckCircle2, HelpCircle, ArrowUpRight, Loader2, MessageSquare } from 'lucide-react'
+import { Bot, Send, AlertTriangle, Loader2, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import type { ChatMessage, ChatResponseKind, ChatCitation, CalculatorContext } from '@/hooks/use-bioremediation-chat'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function kindBadge(kind: ChatResponseKind) {
-  if (kind === 'answer') {
-    return (
-      <Badge className="gap-1 bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
-        <CheckCircle2 className="h-3 w-3" />
-        Respuesta
-      </Badge>
-    )
-  }
-  if (kind === 'clarify') {
-    return (
-      <Badge className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-        <HelpCircle className="h-3 w-3" />
-        Pregunta de aclaración
-      </Badge>
-    )
-  }
-  return (
-    <Badge className="gap-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-      <ArrowUpRight className="h-3 w-3" />
-      Escalar a Aquavet
-    </Badge>
-  )
-}
-
-function CitationCard({ citation }: { citation: ChatCitation }) {
-  return (
-    <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs">
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-foreground">{citation.issue}</span>
-        <span className="shrink-0 tabular-nums text-muted-foreground">
-          {Math.round(citation.score * 100)}% coincidencia
-        </span>
-      </div>
-      <div className="mt-1 text-muted-foreground">
-        {citation.species} · {citation.zone} · {citation.productName}
-      </div>
-      <div className="mt-1 text-foreground">
-        Dosis aplicada: {citation.dose} {citation.doseUnit}
-      </div>
-      <div className="mt-1 text-muted-foreground">{citation.outcome}</div>
-    </div>
-  )
-}
-
-function AssistantMessage({ message }: { message: ChatMessage }) {
-  const kind = message.kind ?? 'answer'
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-          <Bot className="h-3.5 w-3.5 text-primary" />
-        </div>
-        {kindBadge(kind)}
-      </div>
-
-      <div className="rounded-xl rounded-tl-sm bg-muted/40 px-4 py-3 text-sm">
-        <p className="leading-relaxed text-foreground">{message.recommendation}</p>
-
-        {message.rationale && (
-          <p className="mt-2 text-xs text-muted-foreground">{message.rationale}</p>
-        )}
-
-        {message.followUpQuestion && (
-          <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/30">
-            <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <p className="text-xs text-amber-700 dark:text-amber-300">{message.followUpQuestion}</p>
-          </div>
-        )}
-
-        {message.citations && message.citations.length > 0 && (
-          <div className="mt-3 flex flex-col gap-1.5">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Casos Aquavet citados
-            </p>
-            {message.citations.map((citation) => (
-              <CitationCard key={citation.caseId} citation={citation} />
-            ))}
-          </div>
-        )}
-
-        {message.calculatorGuardrailNote && (
-          <div className="mt-3 flex items-start gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="text-xs text-muted-foreground">{message.calculatorGuardrailNote}</p>
-          </div>
-        )}
-
-        {typeof message.confidence === 'number' && (
-          <p className="mt-2 text-right text-xs text-muted-foreground">
-            Confianza: {Math.round(message.confidence * 100)}%
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
+import { BioremediationChatMessage } from '@/components/bioremediation-chat-message'
+import type { ChatMessage, CalculatorContext } from '@/hooks/use-bioremediation-chat'
 
 function UserMessage({ message }: { message: ChatMessage }) {
   return (
@@ -243,7 +142,7 @@ export function BioremediationChatPanel({
               message.role === 'user' ? (
                 <UserMessage key={message.id} message={message} />
               ) : (
-                <AssistantMessage key={message.id} message={message} />
+                <BioremediationChatMessage key={message.id} message={message} />
               ),
             )
           )}
