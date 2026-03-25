@@ -488,7 +488,7 @@ export function BioremediationForm() {
           isSending={isSending}
           error={chatError}
           calculatorContext={calculatorContext}
-          onSend={sendMessage}
+          onSend={() => sendMessage()}
         />
       </section>
 
