@@ -14,6 +14,12 @@ import type { LanguageModel } from 'ai'
 
 export type AIProvider = 'google' | 'anthropic' | 'openai'
 
+export interface DeepSeekTextConfig {
+  apiKey: string
+  baseUrl: string
+  model: string
+}
+
 interface AIModelConfig {
   /** Model used for image analysis / OCR */
   vision: LanguageModel
@@ -51,4 +57,18 @@ export function getVisionModel(): LanguageModel {
 
 export function getTextModel(): LanguageModel {
   return MODEL_CATALOG[ACTIVE_PROVIDER].text
+}
+
+export function getDeepSeekTextConfig(): DeepSeekTextConfig {
+  const apiKey = process.env.DEEPSEEK_API_KEY
+
+  if (!apiKey) {
+    throw new Error('Missing DEEPSEEK_API_KEY environment variable')
+  }
+
+  return {
+    apiKey,
+    baseUrl: process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com',
+    model: process.env.DEEPSEEK_CHAT_MODEL ?? 'deepseek-chat',
+  }
 }
