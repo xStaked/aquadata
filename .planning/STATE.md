@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-25T03:08:29.436Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-25T03:18:21.451Z"
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -46,6 +46,7 @@ Plan: 2 of 2
 - Trend: Stable
 
 | Phase 02 P01 | 3min | 3 tasks | 4 files |
+| Phase 02 P02 | 8min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Create and edit share a single dialog component so all case fields stay aligned with the shared case schema.
 - [Phase 02]: Chat persistence stores organization_id, calculator context snapshots, and escalation flags directly on auditable rows.
 - [Phase 02]: Retrieval only reads approved and grounding-eligible cases, then applies structured product and species filters before ranking.
+- [Phase 02]: DeepSeek stays behind a server-only adapter with env-driven config resolved from lib/ai/provider.ts.
+- [Phase 02]: Low-evidence retrieval clarifies or escalates before generation so the calculator remains the numeric source of truth.
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-25T03:08:29.433Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-25T03:18:21.448Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

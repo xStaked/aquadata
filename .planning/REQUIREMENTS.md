@@ -19,11 +19,11 @@
 - [ ] **CHAT-03**: The chatbot can ask a narrow clarifying question when required context is missing or ambiguous
 - [ ] **CHAT-04**: The chatbot returns answers in a structured format that includes recommendation, rationale, confidence, and cited Aquavet case references
 - [ ] **CHAT-05**: The chatbot can explicitly decline to answer and direct the producer to Aquavet support when no safe grounded answer exists
-- [ ] **CHAT-06**: The chatbot preserves the existing deterministic calculator as the numeric source of truth and does not silently replace calculator logic
+- [x] **CHAT-06**: The chatbot preserves the existing deterministic calculator as the numeric source of truth and does not silently replace calculator logic
 
 ### Retrieval and Safety
 
-- [ ] **SAFE-01**: Chat requests are processed through an authenticated server-side route and never call the model directly from the browser
+- [x] **SAFE-01**: Chat requests are processed through an authenticated server-side route and never call the model directly from the browser
 - [x] **SAFE-02**: The retrieval pipeline filters candidate cases by structured context such as product, species, zone, and publication status before ranking answers
 - [x] **SAFE-03**: The system only cites approved Aquavet cases in chatbot answers
 - [x] **SAFE-04**: The system records the cited case IDs and confidence state for every chatbot answer
@@ -79,8 +79,8 @@
 | CHAT-03 | Phase 3 | Pending |
 | CHAT-04 | Phase 3 | Pending |
 | CHAT-05 | Phase 3 | Pending |
-| CHAT-06 | Phase 2 | Pending |
-| SAFE-01 | Phase 2 | Pending |
+| CHAT-06 | Phase 2 | Complete |
+| SAFE-01 | Phase 2 | Complete |
 | SAFE-02 | Phase 2 | Complete |
 | SAFE-03 | Phase 2 | Complete |
 | SAFE-04 | Phase 2 | Complete |

@@ -47,7 +47,7 @@ Plans:
 **Plans**: 1/2 plans complete
 Plans:
 - [x] 02-01-PLAN.md — Create the tenant-safe chat persistence, shared contracts, and approved-case retrieval layer
-- [ ] 02-02-PLAN.md — Implement the server-side DeepSeek adapter, grounded orchestration service, and authenticated chat route
+- [x] 02-02-PLAN.md — Implement the server-side DeepSeek adapter, grounded orchestration service, and authenticated chat route
 
 ### Phase 3: In-Calculator Chat Experience
 **Goal**: Producers can ask punctual bioremediation questions inside the existing calculator and receive structured, case-grounded guidance with clear uncertainty handling.
