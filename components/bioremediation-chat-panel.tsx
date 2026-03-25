@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { BioremediationChatMessage } from '@/components/bioremediation-chat-message'
+import { BioremediationChatFeedback } from '@/components/bioremediation-chat-feedback'
 import type { ChatMessage, CalculatorContext } from '@/hooks/use-bioremediation-chat'
 
 function UserMessage({ message }: { message: ChatMessage }) {
@@ -142,7 +143,9 @@ export function BioremediationChatPanel({
               message.role === 'user' ? (
                 <UserMessage key={message.id} message={message} />
               ) : (
-                <BioremediationChatMessage key={message.id} message={message} />
+                <BioremediationChatMessage key={message.id} message={message}>
+                  <BioremediationChatFeedback messageId={message.id} />
+                </BioremediationChatMessage>
               ),
             )
           )}
