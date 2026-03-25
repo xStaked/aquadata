@@ -116,36 +116,29 @@ function buildUnsupportedResponse(
   })
 }
 
-function buildClarifyResponse(
-  sessionId: string,
-  exclusionReasons: string[],
-): Omit<BioremediationChatResponse, 'answerId'> {
-  return buildFallbackResponse({
-    sessionId,
-    kind: 'clarify',
-    recommendation:
-      'Necesito un poco mas de contexto puntual para buscar casos aprobados realmente comparables.',
-    rationale:
-      exclusionReasons.join(' ') ||
-      'La evidencia recuperada es insuficiente para una respuesta confiable con grounding.',
-    confidence: 0.35,
-    lowConfidence: true,
-    requiresEscalation: false,
-    followUpQuestion:
-      'Confirma la zona del problema y el sintoma principal observado antes de continuar.',
-  })
-}
 
-function buildSystemPrompt() {
-  return [
+function buildSystemPrompt(hasCases: boolean) {
+  const base = [
     'Eres un asistente tecnico de bioremediacion para AquaVet.',
     'Responde solo en espanol.',
-    'Usa unicamente los casos aprobados entregados como evidencia.',
     'La calculadora deterministica es la fuente de verdad para la dosis final; no la reemplaces ni inventes nuevas dosis.',
-    'Si falta evidencia suficiente, responde con kind "clarify" o "escalate", nunca improvises.',
     'Solo cites case IDs que aparezcan en la evidencia proporcionada.',
     'Devuelve exclusivamente JSON valido con las claves solicitadas.',
-  ].join(' ')
+  ]
+
+  if (hasCases) {
+    base.push('Usa los casos aprobados entregados como evidencia principal para tu respuesta.')
+  } else {
+    base.push(
+      'No hay casos aprobados disponibles para esta consulta.',
+      'Infiere una respuesta tecnica razonable basandote en tu conocimiento de bioremediacion acuicola.',
+      'Deja claro en tu respuesta que es una inferencia sin respaldo de casos aprobados de Aquavet.',
+      'Usa kind "answer" con confidence bajo (maximo 0.55) y requiresEscalation true para que el productor valide con Aquavet.',
+      'citedCaseIds debe ser un array vacio.',
+    )
+  }
+
+  return base.join(' ')
 }
 
 function buildUserPrompt(
@@ -166,6 +159,15 @@ function buildUserPrompt(
     matchReasons: candidate.matchReasons,
   }))
 
+  const evidenceSection =
+    evidence.length > 0
+      ? ['Casos aprobados disponibles:', JSON.stringify(evidence, null, 2)]
+      : [
+          'Casos aprobados disponibles: ninguno.',
+          'Responde basandote en conocimiento tecnico general de bioremediacion acuicola.',
+          'Indica en la respuesta que no hay casos aprobados de Aquavet que respalden esta recomendacion.',
+        ]
+
   return [
     'Pregunta del productor:',
     input.question,
@@ -176,8 +178,7 @@ function buildUserPrompt(
     'Filtros adicionales:',
     JSON.stringify(input.metadata ?? {}, null, 2),
     '',
-    'Casos aprobados disponibles:',
-    JSON.stringify(evidence, null, 2),
+    ...evidenceSection,
     '',
     'Responde con JSON usando este formato exacto:',
     JSON.stringify(
@@ -314,6 +315,7 @@ function normalizeModelResponse(params: {
   sessionId: string
   candidates: BioremediationRetrievalCandidate[]
   modelResponse: z.infer<typeof modelResponseSchema>
+  inferredWithoutCases?: boolean
 }): Omit<BioremediationChatResponse, 'answerId'> {
   const candidateMap = new Map(params.candidates.map((candidate) => [candidate.id, candidate]))
   const citations = params.modelResponse.citedCaseIds
@@ -321,38 +323,27 @@ function normalizeModelResponse(params: {
     .filter((candidate): candidate is BioremediationRetrievalCandidate => Boolean(candidate))
     .map(buildCitation)
 
-  const lowConfidence =
-    params.modelResponse.confidence < LOW_CONFIDENCE_THRESHOLD || citations.length === 0
+  // When inferring without cases, cap confidence and force escalation flag so the user
+  // knows the answer is not grounded in Aquavet-approved cases.
+  const effectiveConfidence = params.inferredWithoutCases
+    ? Math.min(params.modelResponse.confidence, 0.5)
+    : params.modelResponse.confidence
 
-  if (params.modelResponse.kind === 'answer' && citations.length === 0) {
-    return buildFallbackResponse({
-      sessionId: params.sessionId,
-      kind: 'escalate',
-      recommendation:
-        'No puedo sostener una respuesta tecnica con casos aprobados suficientes para esta consulta.',
-      rationale:
-        'El modelo no pudo respaldar la respuesta con casos aprobados citables, por lo que es mas seguro escalar.',
-      confidence: Math.min(params.modelResponse.confidence, 0.25),
-      lowConfidence: true,
-      requiresEscalation: true,
-      followUpQuestion:
-        'Consulta con Aquavet antes de cambiar la dosis o el protocolo aplicado en el estanque.',
-    })
-  }
+  const lowConfidence =
+    effectiveConfidence < LOW_CONFIDENCE_THRESHOLD || (citations.length === 0 && !params.inferredWithoutCases)
 
   return {
     sessionId: params.sessionId,
-    kind: citations.length === 0 && params.modelResponse.kind === 'answer'
-      ? 'escalate'
-      : params.modelResponse.kind,
+    kind: params.modelResponse.kind,
     recommendation: params.modelResponse.recommendation,
     rationale: params.modelResponse.rationale,
     followUpQuestion: params.modelResponse.followUpQuestion,
-    confidence: params.modelResponse.confidence,
+    confidence: effectiveConfidence,
     citations,
     citedCaseIds: citations.map((citation) => citation.caseId),
     lowConfidence,
     requiresEscalation:
+      params.inferredWithoutCases ||
       params.modelResponse.requiresEscalation ||
       params.modelResponse.kind === 'escalate' ||
       (lowConfidence && params.modelResponse.kind !== 'clarify'),
@@ -381,34 +372,36 @@ export async function createBioremediationChatResponse(
 
   let response: Omit<BioremediationChatResponse, 'answerId'>
 
-  if (retrievalResult.insufficient || retrievalResult.candidates.length === 0) {
-    response = buildUnsupportedResponse(
-      sessionId,
-      input.calculatorContext,
-      retrievalResult.exclusionReasons,
-    )
-  } else if (retrievalResult.lowEvidence) {
-    response = buildClarifyResponse(sessionId, retrievalResult.exclusionReasons)
-  } else {
-    const { object } = await generateDeepSeekObject({
-      schema: modelResponseSchema,
-      messages: [
-        {
-          role: 'system',
-          content: buildSystemPrompt(),
-        },
-        {
-          role: 'user',
-          content: buildUserPrompt(input, retrievalResult.candidates),
-        },
-      ],
-    })
+  {
+    const hasCases = retrievalResult.candidates.length > 0
+    try {
+      const { object } = await generateDeepSeekObject({
+        schema: modelResponseSchema,
+        messages: [
+          {
+            role: 'system',
+            content: buildSystemPrompt(hasCases),
+          },
+          {
+            role: 'user',
+            content: buildUserPrompt(input, retrievalResult.candidates),
+          },
+        ],
+      })
 
-    response = normalizeModelResponse({
-      sessionId,
-      candidates: retrievalResult.candidates,
-      modelResponse: object,
-    })
+      response = normalizeModelResponse({
+        sessionId,
+        candidates: retrievalResult.candidates,
+        modelResponse: object,
+        inferredWithoutCases: !hasCases,
+      })
+    } catch {
+      response = buildUnsupportedResponse(
+        sessionId,
+        input.calculatorContext,
+        ['El modelo no pudo generar una respuesta valida. Intenta reformular tu pregunta.'],
+      )
+    }
   }
 
   const answerId = await insertAssistantMessage({
