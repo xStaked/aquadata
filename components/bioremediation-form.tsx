@@ -18,6 +18,8 @@ import {
   fmtDose,
   type ProductKey,
 } from '@/hooks/use-bioremediation'
+import { useBioremediationChat } from '@/hooks/use-bioremediation-chat'
+import { BioremediationChatPanel } from '@/components/bioremediation-chat-panel'
 
 // ─── Product UI config (kept here — contains JSX icons) ──────────────────────
 
@@ -70,6 +72,25 @@ export function BioremediationForm() {
     canCalculate, previewArea, previewHa, previewVolume,
     result, isSaving, saved, handleCalculate, handleSave,
   } = useBioremediation()
+
+  const {
+    messages,
+    draft,
+    setDraft,
+    isSending,
+    error: chatError,
+    calculatorContext,
+    sendMessage,
+  } = useBioremediationChat({
+    selectedProduct,
+    species,
+    areaM2,
+    depth,
+    ageMonths,
+    stockingDensity,
+    aeration,
+    result,
+  })
 
   const prod = selectedProduct ? PRODUCTS[selectedProduct] : null
 
@@ -450,6 +471,26 @@ export function BioremediationForm() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Asistente de bioremediación ──────────────── */}
+      <section>
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Asistente</p>
+          <p className="mt-0.5 text-base font-semibold text-foreground">Consulta al asistente Aquavet</p>
+          <p className="text-sm text-muted-foreground">
+            Preguntas sobre dosis, protocolo o situaciones específicas del estanque respondidas con casos de campo reales
+          </p>
+        </div>
+        <BioremediationChatPanel
+          messages={messages}
+          draft={draft}
+          setDraft={setDraft}
+          isSending={isSending}
+          error={chatError}
+          calculatorContext={calculatorContext}
+          onSend={sendMessage}
+        />
+      </section>
 
     </div>
   )
