@@ -88,3 +88,295 @@ OPENAI_API_KEY=           # optional, for OpenAI fallback
 
 *No recent activity*
 </claude-mem-context>
+
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
+
+**AquaVet Operations Platform**
+
+This is a brownfield operational platform for Aquavet and its aquaculture producers. Producers use it to register pond-level operational reports, review reference calculations for costs and expected earnings, and access tools like the bioremediation calculator without depending on direct back-and-forth with the Aquavet team. Aquavet uses an admin panel to monitor each client with a specific focus on bioremediation needs and commercial opportunities.
+
+**Core Value:** Operational reports must turn into useful technical guidance and commercial insight without requiring a human from Aquavet to answer every routine question.
+
+### Constraints
+
+- **Tech stack**: Must extend the existing Next.js 16 + Supabase application — avoid introducing a disconnected backend architecture without clear need
+- **Product continuity**: The current system is already in use — new work should preserve existing producer/admin workflows
+- **Domain accuracy**: Chatbot answers must align with Aquavet's real field experience and product usage patterns — incorrect dosage guidance creates operational risk
+- **Scope discipline**: This cycle is focused on reducing repetitive human consultation through case-grounded AI in the calculator — avoid broadening into unrelated modules
+- **Data semantics**: Operational and profitability outputs are reference values, not exact client accounting — wording and UX must preserve that expectation
+<!-- GSD:project-end -->
+
+<!-- GSD:stack-start source:codebase/STACK.md -->
+## Technology Stack
+
+## Summary
+## Core Runtime
+- Runtime: Node.js app managed with `pnpm`
+- Framework: `next@16.1.6`
+- UI: `react@19`, `react-dom@19`
+- Language: `typescript@5.7.3`
+- Styling: `tailwindcss`, `tailwindcss-animate`, utility-first styling in JSX
+- Build scripts: `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint`
+## Frontend Stack
+- Routing and layouts live under `app/`
+- Feature UI lives under `components/`
+- Reusable primitives live under `components/ui/`
+- Forms rely on `react-hook-form` and `@hookform/resolvers`
+- Validation uses `zod`
+- Icons use `lucide-react`
+- Data visualization uses `recharts`
+- Theme handling uses `next-themes`
+- `app/layout.tsx` configures the root app shell
+- `app/dashboard/layout.tsx` and `app/admin/layout.tsx` define protected shells
+- `components/bioremediation-form.tsx` is a representative interactive client form
+## Backend and Data Stack
+- Auth and database client libraries: `@supabase/ssr`, `@supabase/supabase-js`
+- Server Supabase factory: `lib/supabase/server.ts`
+- Browser Supabase factory: `lib/supabase/client.ts`
+- Request/session proxy: `lib/supabase/proxy.ts`
+- Schema and migrations are SQL-first in `scripts/`
+- `scripts/001_create_schema.sql`
+- `scripts/003_market_prices_table.sql`
+- `scripts/005_water_quality_fields.sql`
+- `scripts/010_admin_module.sql`
+- `scripts/015_organization_update_policy.sql`
+## AI and Automation Stack
+- Core AI SDK: `ai`
+- Google provider package: `@ai-sdk/google`
+- Provider selector: `lib/ai/provider.ts`
+- OCR entrypoint: `app/api/ocr/route.ts`
+- `lib/ai/provider.ts` sets `ACTIVE_PROVIDER` to `google`
+- OCR currently uses `google('gemini-2.5-flash')`
+- Alternate catalog entries exist for Anthropic and OpenAI through gateway-style model IDs
+## Operational Libraries
+- Spreadsheet export/import: `xlsx`
+- PDF generation: `jspdf`, `jspdf-autotable`
+- Drag-and-drop: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
+- `components/records-export.tsx`
+- `components/admin/csv-export-button.tsx`
+- `components/ponds-sortable-grid.tsx`
+## Configuration Files
+- Package manifest: `package.json`
+- TypeScript config: `tsconfig.json`
+- Next.js config: `next.config.mjs`
+- Tailwind config: `tailwind.config.ts`
+- PostCSS config: `postcss.config.mjs`
+- shadcn component config: `components.json`
+- `next.config.mjs` sets `typescript.ignoreBuildErrors = true`
+- `next.config.mjs` also sets `images.unoptimized = true`
+- Turbopack root is pinned explicitly in `next.config.mjs`
+## Environment Variables
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL`
+- `GOOGLE_GENERATIVE_AI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `OPENAI_API_KEY`
+- `README.md`
+- `CLAUDE.md`
+- `lib/supabase/server.ts`
+- `lib/supabase/client.ts`
+## Build and Quality Baseline
+- Linting exists through `eslint .`
+- No automated test framework is configured
+- The documented minimum validation is `pnpm lint` plus `pnpm build`
+- Production build currently tolerates TypeScript errors because of `ignoreBuildErrors`
+## Stack Implications
+- This is a full-stack monorepo-style single app, not a separated frontend/backend deployment
+- The repo is already AI-capable, so adding a chatbot to bioremediation should extend existing provider patterns instead of introducing a disconnected integration
+- Supabase is the operational source of truth, so any experience-memory or case-library feature should likely align with existing SQL migration patterns in `scripts/`
+<!-- GSD:stack-end -->
+
+<!-- GSD:conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+## Language and Presentation
+- Product UI text is primarily in Spanish
+- Domain language is aquaculture-specific and operator-facing
+- Code comments are sparse and usually reserved for clarifying non-obvious behavior
+- `components/bioremediation-form.tsx`
+- `app/api/ocr/route.ts`
+- `README.md`
+## TypeScript and Imports
+- TypeScript is used across app code
+- Path alias `@/` is the normal import style
+- Types are often declared inline near the feature using them
+- Strict mode is enabled in `tsconfig.json`, but build enforcement is weakened by `next.config.mjs`
+- `hooks/use-bioremediation.ts`
+- `lib/ai/provider.ts`
+- `lib/auth/roles.ts`
+## Component Conventions
+- Server components are the default inside `app/`
+- Interactive components declare `'use client'`
+- UI composition relies on Tailwind utility classes directly in JSX
+- Shared building blocks come from `components/ui/`
+- Server component page: `app/dashboard/bioremediation/page.tsx`
+- Client form: `components/bioremediation-form.tsx`
+- Shared primitive: `components/ui/card.tsx`
+## State and Logic Placement
+- simple route shell in `app/`
+- interactive UI in `components/`
+- reusable feature logic in a hook
+- external service access in `lib/`
+- `app/dashboard/bioremediation/page.tsx`
+- `components/bioremediation-form.tsx`
+- `hooks/use-bioremediation.ts`
+## Supabase Usage Rules
+- browser: `lib/supabase/client.ts`
+- server: `lib/supabase/server.ts`
+- protect general operator surfaces through session-aware layouts
+- protect admin surfaces through `requireAdminUser()`
+## Styling Conventions
+- Tailwind utility classes are preferred over separate CSS modules
+- Theme tokens rely on CSS variables and semantic classes such as `bg-background`, `text-foreground`, `text-muted-foreground`
+- shadcn-style primitives set the baseline visual language
+- `app/globals.css`
+- `tailwind.config.ts`
+- `components/ui/*`
+## Error Handling Patterns
+- route handlers usually return JSON errors
+- client components sometimes use `alert()` for failure feedback
+- some library failures fall back to mock data with `console.warn` or `console.error`
+- `app/api/ocr/route.ts`
+- `app/api/market-prices/sync/route.ts`
+- `hooks/use-bioremediation.ts`
+- `components/pond-actions.tsx`
+## Data and Validation Conventions
+- Zod is used where structured AI outputs or form schemas need explicit validation
+- Numeric parsing is often done locally with `Number(...)`
+- Dates are normalized to ISO strings using `toISOString().split('T')[0]`
+- `app/api/ocr/route.ts`
+- `components/upload-form.tsx`
+- `components/manual-record-form.tsx`
+## File and Naming Conventions
+- Route files are framework-standard lowercase names
+- Feature files are descriptive kebab-case
+- Utility functions are colocated in the file where they are most needed unless reused
+- SQL migration files use numeric ordering prefixes
+- `app/dashboard/records/actions.ts`
+- `components/monthly-feed-form.tsx`
+- `scripts/014_report_type.sql`
+## Git and Workflow Conventions
+- use conventional commits such as `feat:`, `fix:`, `style:`
+- keep commits atomic
+- validate with `pnpm lint` and `pnpm build`
+## Implications For Future Changes
+- A new chatbot feature should keep Spanish UX copy
+- Shared AI access should likely extend `lib/ai/` instead of embedding provider calls in JSX
+- User-visible error handling would benefit from using existing toast patterns instead of adding more `alert()` calls
+<!-- GSD:conventions-end -->
+
+<!-- GSD:architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+## Summary
+## High-Level Shape
+- UI entrypoints: `app/**/*.tsx`
+- Shared client UI: `components/**/*.tsx`
+- Stateful client feature logic: `hooks/**/*.ts(x)`
+- Server/browser integration helpers: `lib/**/*.ts`
+- SQL schema evolution: `scripts/*.sql`
+## Main Layers
+## 1. Route and Layout Layer
+- request entrypoints
+- shell composition
+- high-level auth redirects
+- server-side data loading for pages
+- `app/layout.tsx`
+- `app/page.tsx`
+- `app/dashboard/layout.tsx`
+- `app/admin/layout.tsx`
+- `app/api/ocr/route.ts`
+- `app/api/market-prices/sync/route.ts`
+## 2. Feature UI Layer
+- forms
+- tables
+- charts
+- navigation
+- per-feature interactions
+- `components/upload-form.tsx`
+- `components/manual-record-form.tsx`
+- `components/bioremediation-form.tsx`
+- `components/analytics-charts.tsx`
+- `components/dashboard-sidebar.tsx`
+## 3. Domain / Integration Layer
+- Supabase clients
+- auth-role guards
+- market-price retrieval
+- AI provider selection
+- formatting and utility helpers
+- `lib/supabase/server.ts`
+- `lib/supabase/client.ts`
+- `lib/supabase/proxy.ts`
+- `lib/auth/roles.ts`
+- `lib/ai/provider.ts`
+- `lib/market-data.ts`
+- `lib/sipsa/client.ts`
+## 4. Persistence Layer
+- schema creation
+- table changes
+- RLS policies
+- seed/demo data
+- `scripts/001_create_schema.sql`
+- `scripts/002_seed_demo_data.sql`
+- `scripts/010_admin_module.sql`
+## Auth and Request Flow
+- `app/admin/layout.tsx` calls `requireAdminUser()` from `lib/auth/roles.ts`
+- non-admin users are redirected to `/dashboard`
+## Data Flow Patterns
+## Server-rendered feature pages
+- page/layout fetches with the server Supabase client
+- passes data or renders server-driven content directly
+- `app/page.tsx`
+- `app/dashboard/page.tsx`
+- `app/admin/page.tsx`
+## Client-driven forms with local calculation
+- client component owns UI
+- hook encapsulates state and feature logic
+- optional save action writes directly to Supabase from browser client
+- `components/bioremediation-form.tsx`
+- `hooks/use-bioremediation.ts`
+## API-route mediated AI processing
+- client uploads or sends JSON to route handler
+- route invokes AI provider
+- route returns structured result
+- user validates or saves downstream
+- `app/api/ocr/route.ts`
+- `components/upload-form.tsx`
+## Architectural Strengths
+- Simple to navigate for a single-product team
+- Clear distinction between browser and server Supabase clients
+- SQL migrations make data-model changes explicit
+- Existing provider abstraction gives one reasonable insertion point for new AI capabilities
+## Architectural Weak Spots
+- Business logic is spread between pages, components, hooks, and route handlers instead of dedicated domain services
+- Some features write to Supabase directly from the client, which can complicate auditing and richer validation
+- The build is configured to ignore TypeScript errors, weakening the safety net
+- There is no canonical backend pattern yet for conversational AI, retrieval, or field-case knowledge storage
+## Likely Extension Path For Bioremediation Chat
+- UI entry in `app/dashboard/bioremediation/page.tsx` or a child component
+- server route under `app/api/` for chat completion / retrieval
+- shared AI orchestration helper under `lib/ai/` or a new `lib/bioremediation/`
+- SQL migration for curated case memory if cases must be editable or queryable
+<!-- GSD:architecture-end -->
+
+<!-- GSD:workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd:debug` for investigation and bug fixing
+- `/gsd:execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- GSD:workflow-end -->
+
+<!-- GSD:profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- GSD:profile-end -->
