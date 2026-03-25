@@ -1,10 +1,13 @@
 import type { z } from 'zod'
 import {
+  bioremediationChatRequestSchema,
+  bioremediationChatResponseSchema,
   calculatorContextSchema,
   chatMessageSchema,
   chatSessionSchema,
   citationSchema,
   messageRoleValues,
+  retrievalMetadataSchema,
   responseKindValues,
 } from '@/lib/bioremediation-chat/schema'
 import type { BioremediationCaseRow } from '@/lib/case-library/types'
@@ -17,9 +20,15 @@ export type BioremediationChatCalculatorContext = z.infer<typeof calculatorConte
 
 export type BioremediationChatCitation = z.infer<typeof citationSchema>
 
+export type BioremediationChatRequest = z.infer<typeof bioremediationChatRequestSchema>
+
+export type BioremediationChatResponse = z.infer<typeof bioremediationChatResponseSchema>
+
 export type BioremediationChatMessage = z.infer<typeof chatMessageSchema>
 
 export type BioremediationChatSession = z.infer<typeof chatSessionSchema>
+
+export type BioremediationChatRetrievalMetadata = z.infer<typeof retrievalMetadataSchema>
 
 export type BioremediationRetrievalCandidate = Pick<
   BioremediationCaseRow,

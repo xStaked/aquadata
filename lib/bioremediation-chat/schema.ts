@@ -36,6 +36,13 @@ export const citationSchema = z.object({
   rationale: optionalTrimmedString,
 })
 
+export const retrievalMetadataSchema = z.object({
+  product: optionalTrimmedString,
+  species: optionalTrimmedString,
+  zone: optionalTrimmedString,
+  issue: optionalTrimmedString,
+})
+
 export const chatMessageSchema = z.object({
   id: z.string().uuid(),
   sessionId: z.string().uuid(),
@@ -59,4 +66,26 @@ export const chatSessionSchema = z.object({
   lastDeterministicDoseG: z.number().nonnegative().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+})
+
+export const bioremediationChatRequestSchema = z.object({
+  sessionId: z.string().uuid().optional(),
+  question: z.string().trim().min(1).max(1500),
+  calculatorContext: calculatorContextSchema,
+  metadata: retrievalMetadataSchema.optional(),
+})
+
+export const bioremediationChatResponseSchema = z.object({
+  sessionId: z.string().uuid(),
+  answerId: z.string().uuid(),
+  kind: z.enum(responseKindValues),
+  recommendation: z.string().trim().min(1),
+  rationale: z.string().trim().min(1),
+  followUpQuestion: optionalTrimmedString,
+  confidence: z.number().min(0).max(1),
+  citations: z.array(citationSchema),
+  citedCaseIds: z.array(z.string().uuid()),
+  lowConfidence: z.boolean(),
+  requiresEscalation: z.boolean(),
+  calculatorGuardrailNote: z.string().trim().min(1),
 })

@@ -243,7 +243,7 @@ export async function retrieveApprovedCaseEvidence({
     throw new Error(`Failed to retrieve approved bioremediation cases: ${error.message}`)
   }
 
-  const approvedRows = (data ?? []) as BioremediationCaseRow[]
+  const approvedRows = (data ?? []) as unknown as BioremediationCaseRow[]
   const filteredRows = filterApprovedCases(approvedRows, requiredFilters)
 
   if (filteredRows.length === 0) {
