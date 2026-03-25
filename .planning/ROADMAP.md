@@ -12,7 +12,7 @@ This roadmap extends the existing AquaVet platform with a bounded bioremediation
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Case Library Governance** - Aquavet can manage an approved, reviewable bioremediation case corpus from the admin workflow.
+- [x] **Phase 1: Case Library Governance** - Aquavet can manage an approved, reviewable bioremediation case corpus from the admin workflow. (completed 2026-03-25)
 - [ ] **Phase 2: Secure Retrieval and Audit Backbone** - Chat requests are processed safely server-side with grounded retrieval, session isolation, and audit traces.
 - [ ] **Phase 3: In-Calculator Chat Experience** - Producers can use a bounded assistant inside the calculator with structured answers, clarifications, escalation, and feedback.
 - [ ] **Phase 4: Evaluation and Rollout Controls** - Aquavet can validate supported questions and keep the feature positioned as a scoped calculator assistant.
@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Aquavet admin can edit an existing case from the product without database access and see the latest saved values when they return.
   3. Aquavet admin can move a case between draft, approved, and retired states, and only approved cases are marked as usable for assistant grounding.
   4. Aquavet admin can review authorship, last review date, and current publication state for each case while managing the library.
-**Plans**: 2 plans
+**Plans**: 2/2 plans complete
 Plans:
 - [x] 01-01-PLAN.md — Create the governed case-library schema, types, and admin-only write contract
 - [x] 01-02-PLAN.md — Deliver the admin case-library management surface and manual validation checklist
@@ -75,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Case Library Governance | 0/TBD | Not started | - |
+| 1. Case Library Governance | 2/2 | Complete | 2026-03-25 |
 | 2. Secure Retrieval and Audit Backbone | 0/TBD | Not started | - |
 | 3. In-Calculator Chat Experience | 0/TBD | Not started | - |
 | 4. Evaluation and Rollout Controls | 0/TBD | Not started | - |
