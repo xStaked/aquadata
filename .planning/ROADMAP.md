@@ -44,10 +44,11 @@ Plans:
   3. Every stored answer includes the cited approved case IDs, confidence state, and whether the interaction required escalation or was low confidence.
   4. Producer chat sessions and message history remain isolated to the correct tenant and retain the related calculator context for later review.
   5. The calculator remains the visible numeric source of truth, and assistant responses do not silently replace deterministic calculator outputs.
-**Plans**: 1/2 plans complete
+**Plans**: 2/3 plans complete
 Plans:
 - [x] 02-01-PLAN.md — Create the tenant-safe chat persistence, shared contracts, and approved-case retrieval layer
 - [x] 02-02-PLAN.md — Implement the server-side DeepSeek adapter, grounded orchestration service, and authenticated chat route
+- [ ] 02-03-PLAN.md — Add producer read RLS policy for approved grounding-eligible cases (gap closure)
 
 ### Phase 3: In-Calculator Chat Experience
 **Goal**: Producers can ask punctual bioremediation questions inside the existing calculator and receive structured, case-grounded guidance with clear uncertainty handling.
@@ -82,6 +83,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Case Library Governance | 2/2 | Complete | 2026-03-25 |
-| 2. Secure Retrieval and Audit Backbone | 1/2 | In Progress | - |
+| 2. Secure Retrieval and Audit Backbone | 2/3 | In Progress | - |
 | 3. In-Calculator Chat Experience | 2/2 | Planned | - |
 | 4. Evaluation and Rollout Controls | 0/TBD | Not started | - |
