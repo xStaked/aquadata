@@ -20,11 +20,11 @@ Operational reports must turn into useful technical guidance and commercial insi
 - ✓ Aquavet staff can monitor client operations from an admin-focused bioremediation panel — existing
 - ✓ Producers can use the bioremediation calculator to resolve dosing questions without always contacting Aquavet staff — existing
 - ✓ The product already includes OCR infrastructure for extracting report information from uploaded images — existing
+- ✓ Aquavet can curate governed bioremediation cases from the existing admin workflow, including create, edit, and publication-state management — validated in Phase 1: Case Library Governance
 
 ### Active
 
 - [ ] Add a chatbot inside the calculator that answers punctual bioremediation questions using curated Aquavet field cases
-- [ ] Let Aquavet encode real-world case knowledge such as issue, zone, treatment approach, and dose so the assistant can ground its answers in company experience
 - [ ] Reduce producer dependence on human support for recurring dosing and troubleshooting questions while keeping answers aligned with Aquavet practice
 
 ### Out of Scope
@@ -37,6 +37,10 @@ Operational reports must turn into useful technical guidance and commercial insi
 ## Context
 
 Aquavet sells bioremediation products to aquaculture producers and needs the product to serve both operational tracking and technical-commercial support. The core data model revolves around pond reports because those reports drive calculations, analytics, sales context, and bioremediation opportunities. The current codebase is a Next.js plus Supabase application with producer and admin surfaces, a SIPSA integration for market-price reference, and an OCR route already in place for report ingestion. The current product is functional; this initialization is for planning incremental improvements requested by the client, not for defining a net-new product from scratch.
+
+## Current State
+
+Phase 1 is complete. Aquavet now has a governed case-library workflow inside the existing admin bioremediation module, including structured case persistence, admin-only mutations, and Spanish-first management UI for `draft`, `approved`, and `retired` states.
 
 ## Constraints
 
@@ -73,4 +77,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 after initialization*
+*Last updated: 2026-03-25 after Phase 1 completion*
