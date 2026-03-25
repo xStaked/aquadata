@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-03-25T04:48:04.132Z"
+status: Ready to execute
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-25T05:04:36.846Z"
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Operational reports must turn into useful technical guidance and commercial insight without requiring a human from Aquavet to answer every routine question.
-**Current focus:** Phase 02 — secure-retrieval-and-audit-backbone
+**Current focus:** Phase 03 — in-calculator-chat-experience
 
 ## Current Position
 
-Phase: 03
-Plan: Not started
+Phase: 03 (in-calculator-chat-experience) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Plan: Not started
 | Phase 02 P01 | 3min | 3 tasks | 4 files |
 | Phase 02 P02 | 8min | 3 tasks | 7 files |
 | Phase 02 P03 | 1min | 1 tasks | 1 files |
+| Phase 03 P01 | 5min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 02]: DeepSeek stays behind a server-only adapter with env-driven config resolved from lib/ai/provider.ts.
 - [Phase 02]: Low-evidence retrieval clarifies or escalates before generation so the calculator remains the numeric source of truth.
 - [Phase 02]: Producer read policy uses TO authenticated and mirrors retrieval.ts filters so the grounding pipeline is consistent with the DB policy
+- [Phase 03]: Panel receives props from hook; no direct fetch calls inside panel component
+- [Phase 03]: Chat panel placed as dedicated section below reference table so calculator remains visually dominant
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-25T04:44:54.923Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-03-25T05:04:36.844Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

@@ -14,9 +14,9 @@
 
 ### Chat Experience
 
-- [ ] **CHAT-01**: Producer can open a chatbot inside the existing bioremediation calculator workflow
-- [ ] **CHAT-02**: Producer can ask a punctual dosage or troubleshooting question using the active calculator context as grounding input
-- [ ] **CHAT-03**: The chatbot can ask a narrow clarifying question when required context is missing or ambiguous
+- [x] **CHAT-01**: Producer can open a chatbot inside the existing bioremediation calculator workflow
+- [x] **CHAT-02**: Producer can ask a punctual dosage or troubleshooting question using the active calculator context as grounding input
+- [x] **CHAT-03**: The chatbot can ask a narrow clarifying question when required context is missing or ambiguous
 - [ ] **CHAT-04**: The chatbot returns answers in a structured format that includes recommendation, rationale, confidence, and cited Aquavet case references
 - [ ] **CHAT-05**: The chatbot can explicitly decline to answer and direct the producer to Aquavet support when no safe grounded answer exists
 - [x] **CHAT-06**: The chatbot preserves the existing deterministic calculator as the numeric source of truth and does not silently replace calculator logic
@@ -74,9 +74,9 @@
 | CASE-02 | Phase 1 | Complete |
 | CASE-03 | Phase 1 | Complete |
 | CASE-04 | Phase 1 | Complete |
-| CHAT-01 | Phase 3 | Pending |
-| CHAT-02 | Phase 3 | Pending |
-| CHAT-03 | Phase 3 | Pending |
+| CHAT-01 | Phase 3 | Complete |
+| CHAT-02 | Phase 3 | Complete |
+| CHAT-03 | Phase 3 | Complete |
 | CHAT-04 | Phase 3 | Pending |
 | CHAT-05 | Phase 3 | Pending |
 | CHAT-06 | Phase 2 | Complete |

@@ -62,7 +62,7 @@ Plans:
   5. Producer or Aquavet can capture basic usefulness feedback on the answer from the product interface.
 **Plans**: 2/2 plans ready
 Plans:
-- [ ] 03-01-PLAN.md — Embed the assistant into the current calculator workflow with automatic calculator-context handoff
+- [x] 03-01-PLAN.md — Embed the assistant into the current calculator workflow with automatic calculator-context handoff
 - [ ] 03-02-PLAN.md — Render structured answer states and capture per-answer usefulness feedback
 **UI hint**: yes
 
@@ -84,5 +84,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Case Library Governance | 2/2 | Complete | 2026-03-25 |
 | 2. Secure Retrieval and Audit Backbone | 3/3 | Complete   | 2026-03-25 |
-| 3. In-Calculator Chat Experience | 2/2 | Planned | - |
+| 3. In-Calculator Chat Experience | 1/2 | In Progress|  |
 | 4. Evaluation and Rollout Controls | 0/TBD | Not started | - |
