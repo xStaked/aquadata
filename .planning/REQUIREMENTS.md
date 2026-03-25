@@ -8,7 +8,7 @@
 ### Case Library
 
 - [x] **CASE-01**: Aquavet admin can create a structured bioremediation case with required fields for issue, zone, species, product, treatment approach, dose, outcome, and status
-- [ ] **CASE-02**: Aquavet admin can edit and update an existing bioremediation case without direct database access
+- [x] **CASE-02**: Aquavet admin can edit and update an existing bioremediation case without direct database access
 - [x] **CASE-03**: Aquavet admin can mark a case as draft, approved, or retired so only approved cases are eligible for chatbot grounding
 - [x] **CASE-04**: The system stores review metadata for each case, including author, last review date, and current publication status
 
@@ -37,7 +37,7 @@
 
 ### Operations and Quality
 
-- [ ] **OPS-01**: Aquavet can review and manage the case library from the existing admin surface
+- [x] **OPS-01**: Aquavet can review and manage the case library from the existing admin surface
 - [ ] **OPS-02**: The project defines a repeatable evaluation set for supported chatbot questions before rollout
 - [ ] **OPS-03**: The rollout plan limits the chatbot to targeted bioremediation consultation inside the calculator and does not present it as a general-purpose assistant
 
@@ -71,7 +71,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CASE-01 | Phase 1 | Complete |
-| CASE-02 | Phase 1 | Pending |
+| CASE-02 | Phase 1 | Complete |
 | CASE-03 | Phase 1 | Complete |
 | CASE-04 | Phase 1 | Complete |
 | CHAT-01 | Phase 3 | Pending |
@@ -88,7 +88,7 @@
 | AUD-01 | Phase 2 | Pending |
 | AUD-02 | Phase 2 | Pending |
 | AUD-03 | Phase 3 | Pending |
-| OPS-01 | Phase 1 | Pending |
+| OPS-01 | Phase 1 | Complete |
 | OPS-02 | Phase 4 | Pending |
 | OPS-03 | Phase 4 | Pending |
 

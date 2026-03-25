@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
+status: Phase complete — ready for verification
 stopped_at: Initial roadmap creation with full requirement-to-phase traceability
-last_updated: "2026-03-25T02:22:25.625Z"
+last_updated: "2026-03-25T02:29:49.084Z"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - Chat remains embedded in the existing calculator and does not replace deterministic calculator outputs.
 - Rollout stays scoped to punctual bioremediation consultation, not a general farm-management assistant.
 - [Phase 01]: Grounding eligibility is enforced in both the write actions and the database trigger so non-approved cases cannot be grounding-eligible.
+- [Phase 01]: The governed case library stays inside the existing bioremediation admin module instead of becoming a separate admin area.
+- [Phase 01]: Create and edit share a single dialog component so all case fields stay aligned with the shared case schema.
 
 ### Pending Todos
 

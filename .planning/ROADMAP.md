@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 Plans:
 - [x] 01-01-PLAN.md — Create the governed case-library schema, types, and admin-only write contract
-- [ ] 01-02-PLAN.md — Deliver the admin case-library management surface and manual validation checklist
+- [x] 01-02-PLAN.md — Deliver the admin case-library management surface and manual validation checklist
 **UI hint**: yes
 
 ### Phase 2: Secure Retrieval and Audit Backbone
