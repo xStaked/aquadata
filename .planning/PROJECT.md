@@ -21,6 +21,7 @@ Operational reports must turn into useful technical guidance and commercial insi
 - ✓ Producers can use the bioremediation calculator to resolve dosing questions without always contacting Aquavet staff — existing
 - ✓ The product already includes OCR infrastructure for extracting report information from uploaded images — existing
 - ✓ Aquavet can curate governed bioremediation cases from the existing admin workflow, including create, edit, and publication-state management — validated in Phase 1: Case Library Governance
+- ✓ An authenticated server-side retrieval and audit pipeline exists that can fetch approved cases for grounded chat responses, enforce tenant safety, and log all interactions — validated in Phase 2: Secure Retrieval and Audit Backbone
 
 ### Active
 
@@ -40,7 +41,7 @@ Aquavet sells bioremediation products to aquaculture producers and needs the pro
 
 ## Current State
 
-Phase 1 is complete. Aquavet now has a governed case-library workflow inside the existing admin bioremediation module, including structured case persistence, admin-only mutations, and Spanish-first management UI for `draft`, `approved`, and `retired` states.
+Phase 1 and Phase 2 are complete. Aquavet now has a governed case-library workflow inside the existing admin bioremediation module. The server-side retrieval and audit backbone is in place: producers can retrieve approved, grounding-eligible cases via a secure server route, all interactions are stored as audit traces, and a producer-facing RLS policy gates case access to `status = 'approved' AND status_usable_for_grounding = true`.
 
 ## Constraints
 
