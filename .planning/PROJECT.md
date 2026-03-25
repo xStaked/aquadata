@@ -22,10 +22,10 @@ Operational reports must turn into useful technical guidance and commercial insi
 - ✓ The product already includes OCR infrastructure for extracting report information from uploaded images — existing
 - ✓ Aquavet can curate governed bioremediation cases from the existing admin workflow, including create, edit, and publication-state management — validated in Phase 1: Case Library Governance
 - ✓ An authenticated server-side retrieval and audit pipeline exists that can fetch approved cases for grounded chat responses, enforce tenant safety, and log all interactions — validated in Phase 2: Secure Retrieval and Audit Backbone
+- ✓ An in-calculator chat experience is live: producers can ask bioremediation dosage and troubleshooting questions without leaving the calculator, with automatic context handoff, structured answer rendering (recommendation/rationale/confidence/citations), explicit escalation to Aquavet support, and per-answer usefulness feedback — validated in Phase 3: In-Calculator Chat Experience
 
 ### Active
 
-- [ ] Add a chatbot inside the calculator that answers punctual bioremediation questions using curated Aquavet field cases
 - [ ] Reduce producer dependence on human support for recurring dosing and troubleshooting questions while keeping answers aligned with Aquavet practice
 
 ### Out of Scope
@@ -41,7 +41,7 @@ Aquavet sells bioremediation products to aquaculture producers and needs the pro
 
 ## Current State
 
-Phase 1 and Phase 2 are complete. Aquavet now has a governed case-library workflow inside the existing admin bioremediation module. The server-side retrieval and audit backbone is in place: producers can retrieve approved, grounding-eligible cases via a secure server route, all interactions are stored as audit traces, and a producer-facing RLS policy gates case access to `status = 'approved' AND status_usable_for_grounding = true`.
+Phases 1–3 are complete. Aquavet has a governed case-library workflow inside the existing admin bioremediation module. The server-side retrieval and audit backbone is in place, and the in-calculator chat experience is now live: producers can ask dosage and troubleshooting questions directly inside the bioremediation calculator without leaving their workflow. The assistant automatically carries calculator context (product, species, pond area, depth, stocking density, aeration, dose) into each question, renders structured responses with recommendations, rationale, confidence levels, and Aquavet case citations, handles clarification and escalation states explicitly, and collects per-answer usefulness feedback. Phase 4 (evaluation and rollout controls) is the next milestone target.
 
 ## Constraints
 
@@ -78,4 +78,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 1 completion*
+*Last updated: 2026-03-25 after Phase 3 completion*
