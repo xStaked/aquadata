@@ -24,15 +24,15 @@
 ### Retrieval and Safety
 
 - [ ] **SAFE-01**: Chat requests are processed through an authenticated server-side route and never call the model directly from the browser
-- [ ] **SAFE-02**: The retrieval pipeline filters candidate cases by structured context such as product, species, zone, and publication status before ranking answers
-- [ ] **SAFE-03**: The system only cites approved Aquavet cases in chatbot answers
-- [ ] **SAFE-04**: The system records the cited case IDs and confidence state for every chatbot answer
-- [ ] **SAFE-05**: The system prevents cross-tenant exposure of producer chat sessions and organization data
+- [x] **SAFE-02**: The retrieval pipeline filters candidate cases by structured context such as product, species, zone, and publication status before ranking answers
+- [x] **SAFE-03**: The system only cites approved Aquavet cases in chatbot answers
+- [x] **SAFE-04**: The system records the cited case IDs and confidence state for every chatbot answer
+- [x] **SAFE-05**: The system prevents cross-tenant exposure of producer chat sessions and organization data
 
 ### Audit and Feedback
 
-- [ ] **AUD-01**: The system stores each producer chat session and message history with the related calculator context
-- [ ] **AUD-02**: The system stores whether an answer required escalation or was considered low confidence
+- [x] **AUD-01**: The system stores each producer chat session and message history with the related calculator context
+- [x] **AUD-02**: The system stores whether an answer required escalation or was considered low confidence
 - [ ] **AUD-03**: Producer or Aquavet can capture basic feedback on chatbot usefulness to support future case-library improvement
 
 ### Operations and Quality
@@ -81,12 +81,12 @@
 | CHAT-05 | Phase 3 | Pending |
 | CHAT-06 | Phase 2 | Pending |
 | SAFE-01 | Phase 2 | Pending |
-| SAFE-02 | Phase 2 | Pending |
-| SAFE-03 | Phase 2 | Pending |
-| SAFE-04 | Phase 2 | Pending |
-| SAFE-05 | Phase 2 | Pending |
-| AUD-01 | Phase 2 | Pending |
-| AUD-02 | Phase 2 | Pending |
+| SAFE-02 | Phase 2 | Complete |
+| SAFE-03 | Phase 2 | Complete |
+| SAFE-04 | Phase 2 | Complete |
+| SAFE-05 | Phase 2 | Complete |
+| AUD-01 | Phase 2 | Complete |
+| AUD-02 | Phase 2 | Complete |
 | AUD-03 | Phase 3 | Pending |
 | OPS-01 | Phase 1 | Complete |
 | OPS-02 | Phase 4 | Pending |
