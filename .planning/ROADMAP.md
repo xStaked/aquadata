@@ -28,7 +28,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Aquavet admin can edit an existing case from the product without database access and see the latest saved values when they return.
   3. Aquavet admin can move a case between draft, approved, and retired states, and only approved cases are marked as usable for assistant grounding.
   4. Aquavet admin can review authorship, last review date, and current publication state for each case while managing the library.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Create the governed case-library schema, types, and admin-only write contract
+- [ ] 01-02-PLAN.md — Deliver the admin case-library management surface and manual validation checklist
 **UI hint**: yes
 
 ### Phase 2: Secure Retrieval and Audit Backbone
