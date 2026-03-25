@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { requireAdminUser } from '@/lib/auth/roles'
-import { Droplets, FlaskConical, TestTube2 } from 'lucide-react'
+import { ArrowRight, BookOpenText, Droplets, FlaskConical, TestTube2 } from 'lucide-react'
 import { CsvExportButton } from '@/components/admin/csv-export-button'
+import Link from 'next/link'
 
 export default async function AdminBioremediationPage({
   searchParams,
@@ -193,6 +194,28 @@ export default async function AdminBioremediationPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BookOpenText className="h-4 w-4 text-primary" />
+              Biblioteca de casos gobernada
+            </CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Gestiona los casos aprobados, retirados o en borrador que serviran como fuente
+              gobernada para el assistant de bioremediacion.
+            </p>
+          </div>
+          <Link
+            href="/admin/bioremediation/cases"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Ir a biblioteca de casos
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </CardHeader>
+      </Card>
 
       <Card>
         <CardHeader>
