@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Case Library Governance** - Aquavet can manage an approved, reviewable bioremediation case corpus from the admin workflow. (completed 2026-03-25)
 - [x] **Phase 2: Secure Retrieval and Audit Backbone** - Chat requests are processed safely server-side with grounded retrieval, session isolation, DeepSeek invocation, and audit traces. (completed 2026-03-25)
-- [ ] **Phase 3: In-Calculator Chat Experience** - Producers can use a bounded DeepSeek assistant inside the calculator with structured answers, clarifications, escalation, and feedback.
+- [x] **Phase 3: In-Calculator Chat Experience** - Producers can use a bounded DeepSeek assistant inside the calculator with structured answers, clarifications, escalation, and feedback. (completed 2026-03-25)
 - [ ] **Phase 4: Evaluation and Rollout Controls** - Aquavet can validate supported questions and keep the feature positioned as a scoped calculator assistant.
 
 ## Phase Details
@@ -63,7 +63,7 @@ Plans:
 **Plans**: 2/2 plans ready
 Plans:
 - [x] 03-01-PLAN.md — Embed the assistant into the current calculator workflow with automatic calculator-context handoff
-- [ ] 03-02-PLAN.md — Render structured answer states and capture per-answer usefulness feedback
+- [x] 03-02-PLAN.md — Render structured answer states and capture per-answer usefulness feedback
 **UI hint**: yes
 
 ### Phase 4: Evaluation and Rollout Controls
@@ -84,5 +84,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Case Library Governance | 2/2 | Complete | 2026-03-25 |
 | 2. Secure Retrieval and Audit Backbone | 3/3 | Complete   | 2026-03-25 |
-| 3. In-Calculator Chat Experience | 1/2 | In Progress|  |
+| 3. In-Calculator Chat Experience | 2/2 | Complete   | 2026-03-25 |
 | 4. Evaluation and Rollout Controls | 0/TBD | Not started | - |

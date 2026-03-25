@@ -17,8 +17,8 @@
 - [x] **CHAT-01**: Producer can open a chatbot inside the existing bioremediation calculator workflow
 - [x] **CHAT-02**: Producer can ask a punctual dosage or troubleshooting question using the active calculator context as grounding input
 - [x] **CHAT-03**: The chatbot can ask a narrow clarifying question when required context is missing or ambiguous
-- [ ] **CHAT-04**: The chatbot returns answers in a structured format that includes recommendation, rationale, confidence, and cited Aquavet case references
-- [ ] **CHAT-05**: The chatbot can explicitly decline to answer and direct the producer to Aquavet support when no safe grounded answer exists
+- [x] **CHAT-04**: The chatbot returns answers in a structured format that includes recommendation, rationale, confidence, and cited Aquavet case references
+- [x] **CHAT-05**: The chatbot can explicitly decline to answer and direct the producer to Aquavet support when no safe grounded answer exists
 - [x] **CHAT-06**: The chatbot preserves the existing deterministic calculator as the numeric source of truth and does not silently replace calculator logic
 
 ### Retrieval and Safety
@@ -33,7 +33,7 @@
 
 - [x] **AUD-01**: The system stores each producer chat session and message history with the related calculator context
 - [x] **AUD-02**: The system stores whether an answer required escalation or was considered low confidence
-- [ ] **AUD-03**: Producer or Aquavet can capture basic feedback on chatbot usefulness to support future case-library improvement
+- [x] **AUD-03**: Producer or Aquavet can capture basic feedback on chatbot usefulness to support future case-library improvement
 
 ### Operations and Quality
 
@@ -77,8 +77,8 @@
 | CHAT-01 | Phase 3 | Complete |
 | CHAT-02 | Phase 3 | Complete |
 | CHAT-03 | Phase 3 | Complete |
-| CHAT-04 | Phase 3 | Pending |
-| CHAT-05 | Phase 3 | Pending |
+| CHAT-04 | Phase 3 | Complete |
+| CHAT-05 | Phase 3 | Complete |
 | CHAT-06 | Phase 2 | Complete |
 | SAFE-01 | Phase 2 | Complete |
 | SAFE-02 | Phase 2 | Complete |
@@ -87,7 +87,7 @@
 | SAFE-05 | Phase 2 | Complete |
 | AUD-01 | Phase 2 | Complete |
 | AUD-02 | Phase 2 | Complete |
-| AUD-03 | Phase 3 | Pending |
+| AUD-03 | Phase 3 | Complete |
 | OPS-01 | Phase 1 | Complete |
 | OPS-02 | Phase 4 | Pending |
 | OPS-03 | Phase 4 | Pending |
