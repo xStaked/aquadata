@@ -13,7 +13,7 @@ This roadmap extends the existing AquaVet platform with a bounded bioremediation
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Case Library Governance** - Aquavet can manage an approved, reviewable bioremediation case corpus from the admin workflow. (completed 2026-03-25)
-- [ ] **Phase 2: Secure Retrieval and Audit Backbone** - Chat requests are processed safely server-side with grounded retrieval, session isolation, DeepSeek invocation, and audit traces.
+- [x] **Phase 2: Secure Retrieval and Audit Backbone** - Chat requests are processed safely server-side with grounded retrieval, session isolation, DeepSeek invocation, and audit traces. (completed 2026-03-25)
 - [ ] **Phase 3: In-Calculator Chat Experience** - Producers can use a bounded DeepSeek assistant inside the calculator with structured answers, clarifications, escalation, and feedback.
 - [ ] **Phase 4: Evaluation and Rollout Controls** - Aquavet can validate supported questions and keep the feature positioned as a scoped calculator assistant.
 
@@ -48,7 +48,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Create the tenant-safe chat persistence, shared contracts, and approved-case retrieval layer
 - [x] 02-02-PLAN.md — Implement the server-side DeepSeek adapter, grounded orchestration service, and authenticated chat route
-- [ ] 02-03-PLAN.md — Add producer read RLS policy for approved grounding-eligible cases (gap closure)
+- [x] 02-03-PLAN.md — Add producer read RLS policy for approved grounding-eligible cases (gap closure)
 
 ### Phase 3: In-Calculator Chat Experience
 **Goal**: Producers can ask punctual bioremediation questions inside the existing calculator and receive structured, case-grounded guidance with clear uncertainty handling.
@@ -83,6 +83,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Case Library Governance | 2/2 | Complete | 2026-03-25 |
-| 2. Secure Retrieval and Audit Backbone | 2/3 | In Progress | - |
+| 2. Secure Retrieval and Audit Backbone | 3/3 | Complete   | 2026-03-25 |
 | 3. In-Calculator Chat Experience | 2/2 | Planned | - |
 | 4. Evaluation and Rollout Controls | 0/TBD | Not started | - |
