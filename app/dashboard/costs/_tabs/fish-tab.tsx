@@ -44,7 +44,7 @@ export function FishTab({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCOP(totalFishRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Basado en biomasa actual</p>
+            <p className="text-xs text-muted-foreground">Basado en biomasa comercial estimada (85%)</p>
           </CardContent>
         </Card>
 
@@ -81,9 +81,9 @@ export function FishTab({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {batches.reduce((s, b) => s + b.biomass_kg, 0).toFixed(0)} <span className="text-sm font-normal">kg</span>
+              {batches.reduce((s, b) => s + b.commercial_biomass_kg, 0).toFixed(0)} <span className="text-sm font-normal">kg</span>
             </div>
-            <p className="text-xs text-muted-foreground">{batches.length} lotes activos</p>
+            <p className="text-xs text-muted-foreground">{batches.length} lotes activos · peso comercial</p>
           </CardContent>
         </Card>
       </div>
@@ -162,7 +162,9 @@ export function FishTab({
                     <TableCell>
                       <div className="flex flex-col">
                         <span>{b.biomass_kg.toFixed(1)} kg</span>
-                        <span className="text-xs text-muted-foreground">Avg: {b.avg_weight}g</span>
+                        <span className="text-xs text-muted-foreground">
+                          Entero: {b.biomass_kg.toFixed(1)} kg · Comercial: {b.commercial_biomass_kg.toFixed(1)} kg
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>{formatCOP(b.sale_price)}</TableCell>

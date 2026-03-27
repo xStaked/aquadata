@@ -1,4 +1,5 @@
 export const PRICE_PER_LITER = 52500
+export const WHOLE_TO_EVISCERATED_FACTOR = 0.85
 
 export type Treatment = {
   id: string
@@ -20,6 +21,7 @@ export type BatchSummary = {
   population: number
   avg_weight: number
   biomass_kg: number
+  commercial_biomass_kg: number
   sale_price: number
   projected_revenue: number
   total_feed_cost: number

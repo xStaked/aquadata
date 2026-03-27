@@ -10,6 +10,7 @@ import { FishTab } from './_tabs/fish-tab'
 import { BioTab } from './_tabs/bio-tab'
 import {
   PRICE_PER_LITER,
+  WHOLE_TO_EVISCERATED_FACTOR,
   type Treatment,
   type BatchSummary,
   type Concentrate,
@@ -139,12 +140,13 @@ export default async function CostsPage() {
       const population = b.current_population || 0
       // biomasa (kg) = nº peces × avg_weight_kg (ya está en kg)
       const biomassKg = population * avgWeightKg
+      const commercialBiomassKg = biomassKg * WHOLE_TO_EVISCERATED_FACTOR
 
       const marketRef = marketPrices.find(mp =>
         pondInfo?.species.toLowerCase().includes(mp.species.toLowerCase().split(' ')[0])
       )
       const salePrice = b.sale_price_per_kg || marketRef?.price_avg || 9000
-      const projectedRevenue = biomassKg * salePrice
+      const projectedRevenue = commercialBiomassKg * salePrice
 
       const totalFeedCost = feedRecs.reduce((s: number, r: any) =>
         s + (Number(r.kg_used) || 0) * (Number(r.cost_per_kg) || 0), 0)
@@ -173,6 +175,7 @@ export default async function CostsPage() {
         population,
         avg_weight: avgWeightKg,
         biomass_kg: biomassKg,
+        commercial_biomass_kg: commercialBiomassKg,
         sale_price: salePrice,
         projected_revenue: projectedRevenue,
         total_feed_cost: totalFeedCost,
