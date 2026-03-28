@@ -1,0 +1,351 @@
+'use client'
+
+import { useRef, useState } from 'react'
+import { CheckCircle2, Loader2, Upload, XCircle } from 'lucide-react'
+import { bulkUpsertBioremediationCases } from '@/app/admin/bioremediation/cases/actions'
+import { caseInputSchema } from '@/lib/case-library/schema'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+
+const CSV_HEADERS = ['issue', 'zone', 'species', 'product_name', 'treatment_approach', 'dose', 'dose_unit', 'outcome', 'notes']
+
+type ValidationResult = {
+  row: number
+  data: Record<string, string>
+  valid: boolean
+  error?: string
+}
+
+function downloadTemplate() {
+  const header = CSV_HEADERS.join(',')
+  const example = [
+    '"Amonia alta despues de lluvia"',
+    '"Caribe"',
+    '"Tilapia roja"',
+    '"AquaVet BioClear"',
+    '"Aplicacion directa en estanque"',
+    '2.5',
+    '"L"',
+    '"Reduccion de amonia en 48h"',
+    '"Caso de ejemplo"',
+  ].join(',')
+  const csvContent = `${header}\n${example}`
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'plantilla-casos-bioremediacion.csv'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = []
+  let current = ''
+  let insideQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+    if (char === '"') {
+      if (insideQuotes && line[i + 1] === '"') {
+        current += '"'
+        i++
+      } else {
+        insideQuotes = !insideQuotes
+      }
+    } else if (char === ',' && !insideQuotes) {
+      result.push(current.trim())
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  result.push(current.trim())
+  return result
+}
+
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } | { headerError: string } {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0)
+  if (lines.length === 0) {
+    return { headerError: 'El archivo CSV esta vacio.' }
+  }
+
+  const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase().trim())
+  const expectedHeaders = CSV_HEADERS
+
+  const missingHeaders = expectedHeaders.filter((h) => !headers.includes(h))
+  if (missingHeaders.length > 0) {
+    return { headerError: 'Las columnas del CSV no coinciden con la plantilla esperada' }
+  }
+
+  const rows: Record<string, string>[] = []
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i])
+    const row: Record<string, string> = {}
+    headers.forEach((header, index) => {
+      row[header] = values[index] ?? ''
+    })
+    rows.push(row)
+  }
+
+  return { headers, rows }
+}
+
+export function CaseCsvImportDialog() {
+  const [open, setOpen] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [headerError, setHeaderError] = useState<string | null>(null)
+  const [validationResults, setValidationResults] = useState<ValidationResult[]>([])
+  const [isImporting, setIsImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ inserted: number; errors: string[] } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const validRows = validationResults.filter((r) => r.valid)
+  const invalidRows = validationResults.filter((r) => !r.valid)
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0] ?? null
+    setFile(selected)
+    setHeaderError(null)
+    setValidationResults([])
+    setImportResult(null)
+
+    if (!selected) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      const parsed = parseCSV(text)
+
+      if ('headerError' in parsed) {
+        setHeaderError(parsed.headerError)
+        return
+      }
+
+      const results: ValidationResult[] = parsed.rows.map((row, index) => {
+        const result = caseInputSchema.safeParse({ ...row, status: 'draft' })
+        if (result.success) {
+          return { row: index + 1, data: row, valid: true }
+        }
+        const fieldErrors = result.error.flatten().fieldErrors
+        const firstError = Object.values(fieldErrors).find((e) => e && e.length > 0)?.[0]
+        return {
+          row: index + 1,
+          data: row,
+          valid: false,
+          error: firstError ?? 'Datos invalidos',
+        }
+      })
+
+      setValidationResults(results)
+    }
+    reader.readAsText(selected)
+  }
+
+  const handleImport = async () => {
+    if (validRows.length === 0) return
+
+    setIsImporting(true)
+    setImportResult(null)
+
+    try {
+      const validData = validRows.map((r) => ({ ...r.data, status: 'draft' }))
+      const result = await bulkUpsertBioremediationCases(validData)
+      setImportResult(result)
+      setTimeout(() => {
+        setOpen(false)
+      }, 1500)
+    } catch (err) {
+      setImportResult({
+        inserted: 0,
+        errors: [err instanceof Error ? err.message : 'Error al importar los casos'],
+      })
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next) {
+      setFile(null)
+      setHeaderError(null)
+      setValidationResults([])
+      setImportResult(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const previewRows = validationResults.slice(0, 5)
+  const remainingCount = validationResults.length - 5
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Upload className="h-4 w-4" />
+          Importar CSV
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Importar casos desde CSV</DialogTitle>
+          <DialogDescription>
+            Descarga la plantilla, completa los casos y sube el archivo para importarlos como borradores.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-5 py-2">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" type="button" onClick={downloadTemplate}>
+              Descargar plantilla CSV
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Descarga el archivo de ejemplo con las columnas correctas
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium" htmlFor="csv-file-input">
+              Seleccionar archivo CSV
+            </label>
+            <input
+              id="csv-file-input"
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleFileChange}
+              className="block w-full cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-primary file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary-foreground"
+            />
+          </div>
+
+          {headerError ? (
+            <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {headerError}
+            </p>
+          ) : null}
+
+          {validationResults.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-4">
+                <p className="text-sm font-medium">Vista previa</p>
+                <span className="text-xs text-muted-foreground">{validationResults.length} filas encontradas</span>
+                <span className="flex items-center gap-1 text-xs text-green-600">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {validRows.length} validas
+                </span>
+                {invalidRows.length > 0 ? (
+                  <span className="flex items-center gap-1 text-xs text-destructive">
+                    <XCircle className="h-3.5 w-3.5" />
+                    {invalidRows.length} con errores
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="overflow-x-auto rounded-md border border-border">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Fila</th>
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Problema</th>
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Especie</th>
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Producto</th>
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Dosis</th>
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {previewRows.map((result) => (
+                      <tr key={result.row} className={result.valid ? '' : 'bg-destructive/5'}>
+                        <td className="px-3 py-2 text-muted-foreground">{result.row}</td>
+                        <td className="max-w-[180px] truncate px-3 py-2">{result.data.issue || '-'}</td>
+                        <td className="px-3 py-2">{result.data.species || '-'}</td>
+                        <td className="max-w-[120px] truncate px-3 py-2">{result.data.product_name || '-'}</td>
+                        <td className="px-3 py-2">
+                          {result.data.dose ? `${result.data.dose} ${result.data.dose_unit || 'L'}` : '-'}
+                        </td>
+                        <td className="px-3 py-2">
+                          {result.valid ? (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Valida
+                            </span>
+                          ) : (
+                            <span className="flex flex-col gap-0.5 text-destructive">
+                              <span className="flex items-center gap-1">
+                                <XCircle className="h-3.5 w-3.5 shrink-0" />
+                                Error
+                              </span>
+                              <span className="text-[10px] leading-tight text-destructive/80">
+                                {result.error}
+                              </span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {remainingCount > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  ... y {remainingCount} {remainingCount === 1 ? 'fila mas' : 'filas mas'}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {importResult ? (
+            importResult.inserted > 0 ? (
+              <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                {importResult.inserted} {importResult.inserted === 1 ? 'caso importado exitosamente' : 'casos importados exitosamente'}
+              </p>
+            ) : (
+              <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {importResult.errors[0] ?? 'No se pudieron importar los casos'}
+              </p>
+            )
+          ) : null}
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isImporting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={handleImport}
+            disabled={isImporting || validRows.length === 0}
+          >
+            {isImporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Importando...
+              </>
+            ) : (
+              `Importar ${validRows.length > 0 ? validRows.length : ''} casos validos`
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

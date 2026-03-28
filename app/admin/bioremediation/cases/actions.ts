@@ -62,6 +62,51 @@ export async function upsertBioremediationCase(input: unknown): Promise<void> {
   revalidateCaseLibraryPaths()
 }
 
+export async function bulkUpsertBioremediationCases(
+  cases: unknown[]
+): Promise<{ inserted: number; errors: string[] }> {
+  const { supabase, user } = await requireAdminUser()
+  const errors: string[] = []
+  const validRecords: object[] = []
+
+  for (let i = 0; i < cases.length; i++) {
+    const result = caseInputSchema.safeParse(cases[i])
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors
+      const firstError = Object.values(fieldErrors).find((e) => e && e.length > 0)?.[0]
+      errors.push(`Fila ${i + 1}: ${firstError ?? 'Datos invalidos'}`)
+      continue
+    }
+    const payload = result.data
+    validRecords.push({
+      issue: payload.issue,
+      zone: payload.zone,
+      species: payload.species,
+      product_name: payload.product_name,
+      treatment_approach: payload.treatment_approach,
+      dose: payload.dose,
+      dose_unit: payload.dose_unit,
+      outcome: payload.outcome,
+      status: 'draft' as const,
+      notes: payload.notes ?? null,
+      status_usable_for_grounding: false,
+      last_reviewed_by: null,
+      last_reviewed_at: null,
+      author_id: user.id,
+    })
+  }
+
+  if (validRecords.length > 0) {
+    const { error } = await supabase.from('bioremediation_cases').insert(validRecords)
+    if (error) {
+      throw new Error(error.message)
+    }
+  }
+
+  revalidateCaseLibraryPaths()
+  return { inserted: validRecords.length, errors }
+}
+
 export async function transitionBioremediationCaseStatus(input: {
   id: string
   status: CaseStatus
