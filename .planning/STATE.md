@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
 stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-25T05:14:54.822Z"
+last_updated: "2026-03-28T16:35:09Z"
 progress:
   total_phases: 4
   completed_phases: 3
@@ -86,6 +86,7 @@ Recent decisions affecting current work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260328-fbs | Add CSV bulk import for bioremediation cases in the admin panel | 2026-03-28 | 7977a7c | [260328-fbs-add-csv-bulk-import-for-bioremediation-c](./quick/260328-fbs-add-csv-bulk-import-for-bioremediation-c/) |
+| 260328-fzg | Add custom sale prices per species in settings | 2026-03-28 | d765562 | [260328-fzg-add-custom-sale-prices-per-species-in-se](./quick/260328-fzg-add-custom-sale-prices-per-species-in-se/) |
 
 ### Blockers/Concerns
 
@@ -95,5 +96,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-28
-Last activity: 2026-03-28 - Completed quick task 260328-fbs: Add CSV bulk import for bioremediation cases in the admin panel
+Last activity: 2026-03-28 - Completed quick task 260328-fzg: Add custom sale prices per species in settings
 Resume file: None
