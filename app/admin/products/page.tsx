@@ -9,7 +9,9 @@ export default async function AdminProductsPage() {
 
   const { data: products = [] } = await supabase
     .from('bioremediation_products')
-    .select('id, name, category, description, dose_unit, species_scope, presentation, is_active, image_url')
+    .select(
+      'id, name, category, description, dose_unit, species_scope, presentation, is_active, image_url, application_method, sort_order',
+    )
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true })
 

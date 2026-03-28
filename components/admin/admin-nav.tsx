@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { BarChart3, FlaskConical, ShieldCheck, Users } from 'lucide-react'
+import { BarChart3, FlaskConical, ShieldCheck, Tags, Users } from 'lucide-react'
 
 const items = [
   { href: '/admin', label: 'Resumen', icon: ShieldCheck },
   { href: '/admin/producers', label: 'Productores', icon: Users },
+  { href: '/admin/products', label: 'Productos', icon: Tags },
   { href: '/admin/bioremediation', label: 'Bioremediacion', icon: FlaskConical },
   { href: '/admin/analytics', label: 'Analiticas', icon: BarChart3 },
 ]

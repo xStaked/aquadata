@@ -32,4 +32,9 @@ export const bioremediationProductStatusSchema = z.object({
   isActive: z.boolean(),
 })
 
+export const bioremediationProductUpdateSchema = bioremediationProductInputSchema.merge(
+  z.object({ id: z.string().uuid() }),
+)
+
 export type BioremediationProductFormValues = z.infer<typeof bioremediationProductInputSchema>
+export type BioremediationProductUpdateValues = z.infer<typeof bioremediationProductUpdateSchema>

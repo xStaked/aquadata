@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Package } from 'lucide-react'
+import { Loader2, Package, Pencil } from 'lucide-react'
 import { toggleBioremediationProductStatus } from '@/app/admin/products/actions'
+import { ProductFormDialog } from '@/components/admin/products/product-form-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -14,6 +15,8 @@ export type ProductTableRow = {
   dose_unit: string
   species_scope: string[]
   presentation: string | null
+  application_method: string | null
+  sort_order: number
   is_active: boolean
   image_url: string | null
 }
@@ -116,16 +119,39 @@ export function ProductTable({ rows }: { rows: ProductTableRow[] }) {
                     </Badge>
                   </td>
                   <td className="px-4 py-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggle(row)}
-                      disabled={isPending}
-                    >
-                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      {row.is_active ? 'Desactivar' : 'Activar'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <ProductFormDialog
+                        mode="edit"
+                        defaultValues={{
+                          id: row.id,
+                          name: row.name,
+                          category: row.category,
+                          description: row.description,
+                          presentation: row.presentation ?? '',
+                          dose_unit: row.dose_unit,
+                          application_method: row.application_method ?? '',
+                          species_scope: row.species_scope.join(', '),
+                          sort_order: String(row.sort_order),
+                          image_url: row.image_url ?? '',
+                        }}
+                        trigger={
+                          <Button type="button" variant="ghost" size="sm">
+                            <Pencil className="h-4 w-4" />
+                            Editar
+                          </Button>
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggle(row)}
+                        disabled={isPending}
+                      >
+                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {row.is_active ? 'Desactivar' : 'Activar'}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               )

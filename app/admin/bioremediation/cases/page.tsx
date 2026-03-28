@@ -34,17 +34,25 @@ export default async function AdminBioremediationCasesPage({
     casesQuery = casesQuery.eq('product_name', selectedProduct)
   }
 
-  const [casesRes, filterOptionsRes, profilesRes] = await Promise.allSettled([
+  const [casesRes, filterOptionsRes, profilesRes, productCatalogRes] = await Promise.allSettled([
     casesQuery,
     supabase
       .from('bioremediation_cases')
       .select('status, species, product_name, status_usable_for_grounding'),
     supabase.from('profiles').select('id, full_name'),
+    supabase
+      .from('bioremediation_products')
+      .select('name')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true }),
   ])
 
   const caseRows = casesRes.status === 'fulfilled' ? casesRes.value.data ?? [] : []
   const filterRows = filterOptionsRes.status === 'fulfilled' ? filterOptionsRes.value.data ?? [] : []
   const profiles = profilesRes.status === 'fulfilled' ? profilesRes.value.data ?? [] : []
+  const productCatalog =
+    productCatalogRes.status === 'fulfilled' ? productCatalogRes.value.data ?? [] : []
 
   const profileMap = new Map(
     profiles.map((profile) => [profile.id, profile.full_name || 'Administrador Aquavet']),
@@ -59,9 +67,12 @@ export default async function AdminBioremediationCasesPage({
   const speciesOptions = Array.from(new Set(filterRows.map((row) => row.species))).sort((a, b) =>
     a.localeCompare(b),
   )
-  const productOptions = Array.from(new Set(filterRows.map((row) => row.product_name))).sort((a, b) =>
-    a.localeCompare(b),
-  )
+  const productOptions = Array.from(
+    new Set([
+      ...productCatalog.map((row) => row.name),
+      ...filterRows.map((row) => row.product_name),
+    ]),
+  ).sort((a, b) => a.localeCompare(b))
 
   const approvedCount = rows.filter((row) => row.status === 'approved').length
   const draftCount = rows.filter((row) => row.status === 'draft').length
@@ -87,7 +98,7 @@ export default async function AdminBioremediationCasesPage({
 
         <div className="flex items-center gap-2">
           <CaseCsvImportDialog />
-          <CaseFormDialog />
+          <CaseFormDialog productOptions={productOptions} />
         </div>
       </div>
 
@@ -183,7 +194,7 @@ export default async function AdminBioremediationCasesPage({
           </form>
         </CardHeader>
         <CardContent>
-          <CaseTable rows={rows} />
+          <CaseTable rows={rows} productOptions={productOptions} />
         </CardContent>
       </Card>
     </div>

@@ -23,6 +23,7 @@ type CaseFormDialogProps = {
   defaultValues?: Partial<BioremediationCaseFormValues>
   mode?: 'create' | 'edit'
   trigger?: ReactNode
+  productOptions?: string[]
 }
 
 type CaseFormState = {
@@ -69,6 +70,7 @@ export function CaseFormDialog({
   defaultValues,
   mode = 'create',
   trigger,
+  productOptions = [],
 }: CaseFormDialogProps) {
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -86,6 +88,14 @@ export function CaseFormDialog({
   const setField = <K extends keyof CaseFormState>(field: K, value: CaseFormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }))
   }
+
+  const resolvedProductOptions = Array.from(
+    new Set(
+      [...productOptions, form.product_name]
+        .map((option) => option.trim())
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => a.localeCompare(b))
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -160,12 +170,22 @@ export function CaseFormDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor={`case-product-${mode}`}>Producto</Label>
-            <Input
+            <select
               id={`case-product-${mode}`}
               value={form.product_name}
               onChange={(event) => setField('product_name', event.target.value)}
-              placeholder="AquaVet BioClear"
-            />
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Seleccionar producto</option>
+              {resolvedProductOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              El catalogo admin gobierna esta lista. Los valores historicos fuera del catalogo se conservan para edicion.
+            </p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor={`case-treatment-${mode}`}>Enfoque de tratamiento</Label>
@@ -266,13 +286,16 @@ export function CaseFormDialog({
 
 export function CaseEditDialog({
   defaultValues,
+  productOptions,
 }: {
   defaultValues: Partial<BioremediationCaseFormValues>
+  productOptions?: string[]
 }) {
   return (
     <CaseFormDialog
       mode="edit"
       defaultValues={defaultValues}
+      productOptions={productOptions}
       trigger={
         <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-primary">
           <Pencil className="h-4 w-4" />

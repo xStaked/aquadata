@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import {
   bioremediationProductInputSchema,
   bioremediationProductStatusSchema,
+  bioremediationProductUpdateSchema,
 } from '@/lib/bioremediation-products/schema'
 import { requireAdminUser } from '@/lib/auth/roles'
 import { randomUUID } from 'crypto'
@@ -98,6 +99,52 @@ export async function createBioremediationProduct(input: unknown) {
 
   if (error) {
     throw new Error(error.message || 'No se pudo crear el producto.')
+  }
+
+  revalidateProductPaths()
+  return data
+}
+
+export async function updateBioremediationProduct(input: unknown) {
+  const { supabase } = await requireAdminUser()
+  const payload = bioremediationProductUpdateSchema.parse(input)
+  const slug = slugifyProductName(payload.name)
+
+  if (!slug) {
+    throw new Error('El nombre del producto no es valido para generar un identificador.')
+  }
+
+  const { data: existingSlug } = await supabase
+    .from('bioremediation_products')
+    .select('id')
+    .eq('slug', slug)
+    .neq('id', payload.id)
+    .maybeSingle()
+
+  if (existingSlug) {
+    throw new Error('Ya existe otro producto con un nombre equivalente.')
+  }
+
+  const { data, error } = await supabase
+    .from('bioremediation_products')
+    .update({
+      name: payload.name,
+      slug,
+      category: payload.category,
+      description: payload.description,
+      presentation: payload.presentation ?? null,
+      dose_unit: payload.dose_unit,
+      application_method: payload.application_method ?? null,
+      species_scope: payload.species_scope,
+      sort_order: payload.sort_order,
+      image_url: payload.image_url ?? null,
+    })
+    .eq('id', payload.id)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message || 'No se pudo actualizar el producto.')
   }
 
   revalidateProductPaths()

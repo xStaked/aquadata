@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createInvitationCode } from '@/app/admin/actions'
 import { requireAdminUser } from '@/lib/auth/roles'
-import { Building2, Users, Waves, Fish, Ticket, UserRound, ArrowRight } from 'lucide-react'
+import { Building2, Users, Waves, Fish, Ticket, UserRound, ArrowRight, Tags } from 'lucide-react'
 import type { ComponentType } from 'react'
 import Link from 'next/link'
 
@@ -180,22 +180,31 @@ export default async function AdminPage() {
           <CardTitle className="text-base">Modulos administrativos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[
               {
                 href: '/admin/producers',
                 title: 'Productores',
                 description: 'Clientes, usuarios, granjas y registros globales',
+                icon: Users,
+              },
+              {
+                href: '/admin/products',
+                title: 'Productos',
+                description: 'Catalogo administrable de productos y caracteristicas base',
+                icon: Tags,
               },
               {
                 href: '/admin/bioremediation',
                 title: 'Bioremediacion',
                 description: 'Tratamientos, dosis y efectividad por granja',
+                icon: Fish,
               },
               {
                 href: '/admin/analytics',
                 title: 'Analiticas',
                 description: 'Tendencias operativas y riesgos por periodo',
+                icon: Building2,
               },
             ].map((module) => (
               <Link
@@ -204,7 +213,10 @@ export default async function AdminPage() {
                 className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-primary/5"
               >
                 <p className="flex items-center justify-between font-medium text-foreground">
-                  {module.title}
+                  <span className="inline-flex items-center gap-2">
+                    <module.icon className="h-4 w-4 text-primary" />
+                    {module.title}
+                  </span>
                   <ArrowRight className="h-4 w-4 text-primary" />
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">{module.description}</p>

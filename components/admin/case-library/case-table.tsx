@@ -48,7 +48,13 @@ function buildDefaultValues(row: CaseTableRow): Partial<BioremediationCaseFormVa
   }
 }
 
-export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
+export function CaseTable({
+  rows,
+  productOptions = [],
+}: {
+  rows: CaseTableRow[]
+  productOptions?: string[]
+}) {
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -139,7 +145,10 @@ export function CaseTable({ rows }: { rows: CaseTableRow[] }) {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex flex-col gap-3">
-                    <CaseEditDialog defaultValues={buildDefaultValues(row)} />
+                    <CaseEditDialog
+                      defaultValues={buildDefaultValues(row)}
+                      productOptions={productOptions}
+                    />
                     <div className="flex flex-wrap gap-2">
                       {statusOptions.map((option) => {
                         const actionKey = `${row.id}:${option.value}`

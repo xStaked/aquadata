@@ -16,7 +16,7 @@ export default async function AdminBioremediationPage({
 
   const { supabase } = await requireAdminUser()
 
-  const [orgsRes, pondsRes, profilesRes, treatmentsRes, calcsRes] = await Promise.allSettled([
+  const [orgsRes, pondsRes, profilesRes, treatmentsRes, calcsRes, productsRes] = await Promise.allSettled([
     supabase.from('organizations').select('id, name').order('name'),
     supabase.from('ponds').select('id, name, organization_id').order('name'),
     supabase.from('profiles').select('id, full_name, organization_id'),
@@ -30,6 +30,12 @@ export default async function AdminBioremediationPage({
       .select('id, user_id, volume_m3, bioremediation_dose, notes, created_at')
       .order('created_at', { ascending: false })
       .limit(500),
+    supabase
+      .from('bioremediation_products')
+      .select('name')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true }),
   ])
 
   const orgs = orgsRes.status === 'fulfilled' ? orgsRes.value.data ?? [] : []
@@ -37,6 +43,7 @@ export default async function AdminBioremediationPage({
   const profiles = profilesRes.status === 'fulfilled' ? profilesRes.value.data ?? [] : []
   const rawTreatments = treatmentsRes.status === 'fulfilled' ? treatmentsRes.value.data ?? [] : []
   const calcs = calcsRes.status === 'fulfilled' ? calcsRes.value.data ?? [] : []
+  const catalogProducts = productsRes.status === 'fulfilled' ? productsRes.value.data ?? [] : []
 
   const orgMap = new Map(orgs.map((o) => [o.id, o.name]))
   const pondMap = new Map(ponds.map((p) => [p.id, p]))
@@ -86,9 +93,12 @@ export default async function AdminBioremediationPage({
         treatments.filter((t) => t.effectiveness != null).length
       : null
 
-  const productOptions = Array.from(new Set(rawTreatments.map((t) => t.product_name))).sort((a, b) =>
-    a.localeCompare(b)
-  )
+  const productOptions = Array.from(
+    new Set([
+      ...catalogProducts.map((productRow) => productRow.name),
+      ...rawTreatments.map((t) => t.product_name),
+    ]),
+  ).sort((a, b) => a.localeCompare(b))
 
   const treatmentsExportRows = treatments.map((row) => ({
     fecha: row.treatment_date,

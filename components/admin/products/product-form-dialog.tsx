@@ -1,8 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { ImagePlus, Loader2, Plus, X } from 'lucide-react'
-import { createBioremediationProduct, uploadProductImage } from '@/app/admin/products/actions'
+import {
+  createBioremediationProduct,
+  updateBioremediationProduct,
+  uploadProductImage,
+} from '@/app/admin/products/actions'
 import { bioremediationProductInputSchema, productCategoryValues } from '@/lib/bioremediation-products/schema'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,6 +34,12 @@ type ProductFormState = {
   image_url: string
 }
 
+type ProductFormDialogProps = {
+  mode?: 'create' | 'edit'
+  defaultValues?: Partial<ProductFormState & { id: string }>
+  trigger?: ReactNode
+}
+
 const defaultFormState: ProductFormState = {
   name: '',
   category: 'agua',
@@ -42,6 +52,23 @@ const defaultFormState: ProductFormState = {
   image_url: '',
 }
 
+function buildFormState(defaultValues?: Partial<ProductFormState & { id: string }>): ProductFormState {
+  if (!defaultValues) return { ...defaultFormState }
+  return {
+    name: defaultValues.name ?? '',
+    category: defaultValues.category ?? 'agua',
+    description: defaultValues.description ?? '',
+    presentation: defaultValues.presentation ?? '',
+    dose_unit: defaultValues.dose_unit ?? 'L/ha',
+    application_method: defaultValues.application_method ?? '',
+    species_scope: Array.isArray(defaultValues.species_scope)
+      ? (defaultValues.species_scope as string[]).join(', ')
+      : (defaultValues.species_scope ?? ''),
+    sort_order: defaultValues.sort_order != null ? String(defaultValues.sort_order) : '100',
+    image_url: defaultValues.image_url ?? '',
+  }
+}
+
 function getFirstValidationError(fieldErrors: Record<string, string[] | undefined>) {
   for (const errors of Object.values(fieldErrors)) {
     if (errors?.[0]) {
@@ -52,29 +79,46 @@ function getFirstValidationError(fieldErrors: Record<string, string[] | undefine
   return 'Revisa los datos del producto antes de guardar.'
 }
 
-export function ProductFormDialog() {
+export function ProductFormDialog({ mode = 'create', defaultValues, trigger }: ProductFormDialogProps) {
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [form, setForm] = useState<ProductFormState>(defaultFormState)
+  const [form, setForm] = useState<ProductFormState>(() => buildFormState(defaultValues))
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isExistingImage, setIsExistingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) {
-      setForm(defaultFormState)
+      setForm(buildFormState(defaultValues))
       setError(null)
       setSuccess(null)
       setIsSaving(false)
       setImageFile(null)
-      if (imagePreview) {
+      if (imagePreview && !isExistingImage) {
         URL.revokeObjectURL(imagePreview)
       }
-      setImagePreview(null)
+      const existingUrl = defaultValues?.image_url ?? null
+      setImagePreview(existingUrl || null)
+      setIsExistingImage(!!existingUrl)
     }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  // Initialize image preview from defaultValues when dialog first opens
+  useEffect(() => {
+    if (open) {
+      setForm(buildFormState(defaultValues))
+      const existingUrl = defaultValues?.image_url ?? null
+      if (existingUrl && !imageFile) {
+        setImagePreview(existingUrl)
+        setIsExistingImage(true)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const setField = <K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -98,17 +142,19 @@ export function ProductFormDialog() {
 
     setError(null)
     setImageFile(file)
-    if (imagePreview) {
+    if (imagePreview && !isExistingImage) {
       URL.revokeObjectURL(imagePreview)
     }
+    setIsExistingImage(false)
     setImagePreview(URL.createObjectURL(file))
   }
 
   const handleRemoveImage = () => {
     setImageFile(null)
-    if (imagePreview) {
+    if (imagePreview && !isExistingImage) {
       URL.revokeObjectURL(imagePreview)
     }
+    setIsExistingImage(false)
     setImagePreview(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -120,13 +166,13 @@ export function ProductFormDialog() {
     setError(null)
     setSuccess(null)
 
-    let uploadedImageUrl: string | undefined = undefined
+    let resolvedImageUrl: string | undefined = undefined
 
     if (imageFile) {
       try {
         const formData = new FormData()
         formData.append('file', imageFile)
-        uploadedImageUrl = await uploadProductImage(formData)
+        resolvedImageUrl = await uploadProductImage(formData)
       } catch (uploadError) {
         setIsSaving(false)
         setError(
@@ -134,6 +180,9 @@ export function ProductFormDialog() {
         )
         return
       }
+    } else if (isExistingImage && imagePreview) {
+      // Keep the existing image URL unchanged
+      resolvedImageUrl = imagePreview
     }
 
     const parsed = bioremediationProductInputSchema.safeParse({
@@ -145,7 +194,7 @@ export function ProductFormDialog() {
         .map((item) => item.trim())
         .filter(Boolean),
       sort_order: form.sort_order,
-      image_url: uploadedImageUrl,
+      image_url: resolvedImageUrl,
     })
 
     if (!parsed.success) {
@@ -155,8 +204,16 @@ export function ProductFormDialog() {
     }
 
     try {
-      await createBioremediationProduct(parsed.data)
-      setSuccess('Producto guardado correctamente.')
+      if (mode === 'edit') {
+        if (!defaultValues?.id) {
+          throw new Error('ID del producto no disponible.')
+        }
+        await updateBioremediationProduct({ ...parsed.data, id: defaultValues.id })
+        setSuccess('Producto actualizado correctamente.')
+      } else {
+        await createBioremediationProduct(parsed.data)
+        setSuccess('Producto guardado correctamente.')
+      }
       setOpen(false)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el producto.')
@@ -165,19 +222,31 @@ export function ProductFormDialog() {
     }
   }
 
+  const title =
+    mode === 'edit' ? 'Editar producto de bioremediacion' : 'Registrar producto de bioremediacion'
+  const saveLabel = mode === 'edit' ? 'Guardar cambios' : 'Guardar producto'
+
+  const triggerElement = trigger ? (
+    <DialogTrigger asChild>{trigger}</DialogTrigger>
+  ) : (
+    <DialogTrigger asChild>
+      <Button>
+        <Plus className="h-4 w-4" />
+        Nuevo producto
+      </Button>
+    </DialogTrigger>
+  )
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" />
-          Nuevo producto
-        </Button>
-      </DialogTrigger>
+      {triggerElement}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Registrar producto de bioremediacion</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Crea un producto reusable para filtros y captura de casos dentro del panel admin.
+            {mode === 'edit'
+              ? 'Modifica los campos del producto y guarda los cambios.'
+              : 'Crea un producto reusable para filtros y captura de casos dentro del panel admin.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,16 +272,29 @@ export function ProductFormDialog() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground">{imageFile?.name}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRemoveImage}
-                  >
-                    <X className="h-4 w-4" />
-                    Eliminar imagen
-                  </Button>
+                  {!isExistingImage && (
+                    <p className="text-sm text-muted-foreground">{imageFile?.name}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <ImagePlus className="h-4 w-4" />
+                      Cambiar imagen
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="h-4 w-4" />
+                      Eliminar imagen
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -338,7 +420,7 @@ export function ProductFormDialog() {
           </Button>
           <Button type="button" onClick={handleSave} disabled={isSaving}>
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Guardar producto
+            {saveLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
