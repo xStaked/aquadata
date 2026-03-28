@@ -1,5 +1,6 @@
 import { BookOpenText, CircleCheckBig, Clock3, ShieldCheck } from 'lucide-react'
 import { CaseFormDialog } from '@/components/admin/case-library/case-form-dialog'
+import { CaseCsvImportDialog } from '@/components/admin/case-library/case-csv-import-dialog'
 import { CaseTable, type CaseTableRow } from '@/components/admin/case-library/case-table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireAdminUser } from '@/lib/auth/roles'
@@ -84,7 +85,10 @@ export default async function AdminBioremediationCasesPage({
           </div>
         </div>
 
-        <CaseFormDialog />
+        <div className="flex items-center gap-2">
+          <CaseCsvImportDialog />
+          <CaseFormDialog />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
