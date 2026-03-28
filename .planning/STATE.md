@@ -81,6 +81,12 @@ Recent decisions affecting current work:
 - Execute Phase 3 plan 01: embedded calculator assistant shell and chat hook
 - Execute Phase 3 plan 02: structured answer rendering and usefulness feedback
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260328-fbs | Add CSV bulk import for bioremediation cases in the admin panel | 2026-03-28 | 7977a7c | [260328-fbs-add-csv-bulk-import-for-bioremediation-c](./quick/260328-fbs-add-csv-bulk-import-for-bioremediation-c/) |
+
 ### Blockers/Concerns
 
 - Confidence thresholds for answer vs clarify vs escalate still need explicit execution-time calibration and later evaluation cases before rollout.
@@ -88,6 +94,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-25T05:10:47.986Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-28
+Last activity: 2026-03-28 - Completed quick task 260328-fbs: Add CSV bulk import for bioremediation cases in the admin panel
 Resume file: None
