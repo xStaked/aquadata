@@ -26,18 +26,64 @@ type ValidationResult = {
 
 function downloadTemplate() {
   const header = CSV_HEADERS.join(',')
-  const example = [
-    '"Amonia alta despues de lluvia"',
-    '"Caribe"',
-    '"Tilapia roja"',
-    '"AquaVet BioClear"',
-    '"Aplicacion directa en estanque"',
-    '2.5',
-    '"L"',
-    '"Reduccion de amonia en 48h"',
-    '"Caso de ejemplo"',
-  ].join(',')
-  const csvContent = `${header}\n${example}`
+  const rows = [
+    [
+      '"Amonia elevada por sobrecarga de alimentacion"',
+      '"Llanos Orientales"',
+      '"Cachama blanca"',
+      '"BioAquapro"',
+      '"Aplicacion preventiva al amanecer con aireacion activa. Dosis calculada sobre volumen total del estanque de 0.5 ha. Repetir a las 72h si amonia sigue por encima de 1 mg/L."',
+      '3.5',
+      '"L"',
+      '"Reduccion de amonia de 2.8 a 0.6 mg/L en 48 horas. Cosecha sin novedad 12 dias despues."',
+      '"Estanque con 3 anos de produccion continua sin recambio de sedimento"',
+    ],
+    [
+      '"Floracion de cianobacterias post lluvia"',
+      '"Caribe"',
+      '"Tilapia roja"',
+      '"BioAquapro"',
+      '"Intervencion de emergencia a las 6am. Aplicar sobre la superficie sin aireacion las primeras 2 horas para maximizar contacto. Activar aireacion nocturna al segundo dia."',
+      '5',
+      '"L"',
+      '"Quiebre de floracion visible a las 36h. Transparencia del agua recuperada en 4 dias."',
+      '"Floracion asociada a entrada de escorrentia agricola con nitratos"',
+    ],
+    [
+      '"Nitrito alto en etapa de alevinaje"',
+      '"Llanos Orientales"',
+      '"Cachama blanca"',
+      '"BioAquapro"',
+      '"Dosis fraccionada: mitad en la manana y mitad en la tarde. Mantener aireacion continua. No alimentar las primeras 24h."',
+      '1.5',
+      '"L"',
+      '"Nitrito bajo de 0.9 a 0.15 mg/L en 72 horas sin mortalidad adicional."',
+      '"Alevinaje de 25 dias de edad al momento del tratamiento"',
+    ],
+    [
+      '"Exceso de materia organica en fondo por mortalidad parcial"',
+      '"Antioquia"',
+      '"Trucha arcoiris"',
+      '"BioAquapro"',
+      '"Aplicacion directa sobre zona de acumulacion usando manguera sumergida. Complementar con recambio del 20% del agua al tercer dia."',
+      '2',
+      '"L"',
+      '"Reduccion visible de capa organica en fondo. DBO reducida de 18 a 6 mg/L en 5 dias."',
+      '"Mortalidad previa de aprox 8% por cambio brusco de temperatura"',
+    ],
+    [
+      '"Colapso de oxigeno post-alimentacion en dia nublado"',
+      '"Llanos Orientales"',
+      '"Cachama negra"',
+      '"BioAquapro"',
+      '"Suspension inmediata de alimentacion. Aplicacion de emergencia distribuida en todo el espejo de agua desde lancha. Aireacion maxima simultanea."',
+      '6',
+      '"L"',
+      '"Recuperacion de oxigeno de 0.8 a 4.2 mg/L en 3 horas. Mortalidad final inferior al 1%."',
+      '"Intervencion de emergencia. Respuesta rapida fue clave para contener la perdida."',
+    ],
+  ]
+  const csvContent = `${header}\n${rows.map((r) => r.join(',')).join('\n')}`
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
