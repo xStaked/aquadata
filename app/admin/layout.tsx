@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ShieldCheck, ArrowLeft } from 'lucide-react'
 import { requireAdminUser } from '@/lib/auth/roles'
 import { AdminNav } from '@/components/admin/admin-nav'
+import { AdminLogoutButton } from '@/components/admin/admin-logout-button'
 
 export default async function AdminLayout({
   children,
@@ -26,13 +27,16 @@ export default async function AdminLayout({
               </div>
             </div>
 
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Ir a Dashboard
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Ir a Dashboard
+              </Link>
+              <AdminLogoutButton />
+            </div>
           </div>
           <AdminNav />
         </div>

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
   Calculator, Save, Fish, Wind,
-  CheckCircle2, AlertCircle,
+  CheckCircle2, AlertCircle, PlayCircle,
 } from 'lucide-react'
 import {
   useBioremediation,
@@ -28,6 +28,7 @@ const PRODUCTS: Record<ProductKey, {
   type: string
   description: string
   image: string
+  videoUrl?: string
   colorClass: string
   selectedClass: string
   badgeClass: string
@@ -40,6 +41,7 @@ const PRODUCTS: Record<ProductKey, {
     type: 'Producto de agua',
     description: 'Tratamiento acuícola de alta concentración. Mejora la calidad del agua y reduce cargas orgánicas.',
     image: '/images/bioaquapro.png',
+    videoUrl: 'https://drive.google.com/file/d/1PBwp7YykJMvnRxtxs5wrpP4pD4jXO13L/preview',
     colorClass: 'text-sky-600 dark:text-sky-400',
     selectedClass: 'border-sky-500 bg-sky-50 dark:bg-sky-950/60 ring-2 ring-sky-500/30',
     badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300',
@@ -152,129 +154,167 @@ export function BioremediationForm() {
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paso 2</p>
           <p className="mt-0.5 text-base font-semibold text-foreground">Parámetros del estanque</p>
+          {selectedProduct === 'bioaquapro' && prod?.videoUrl && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Revisa la guia visual de aplicacion mientras completas los datos del estanque.
+            </p>
+          )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Dimensiones */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Calculator className="h-4 w-4 text-primary" />
-                Área y profundidad
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="areaM2" className="text-xs">Área (m²)</Label>
-                  <Input id="areaM2" type="number" step="0.1" placeholder="200"
-                    value={areaM2} onChange={e => setAreaM2(e.target.value)} />
+        <div className={`grid gap-6 ${selectedProduct === 'bioaquapro' && prod?.videoUrl ? 'xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]' : ''}`}>
+          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-2">
+            {/* Dimensiones */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Calculator className="h-4 w-4 text-primary" />
+                  Área y profundidad
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="areaM2" className="text-xs">Área (m²)</Label>
+                    <Input id="areaM2" type="number" step="0.1" placeholder="200"
+                      value={areaM2} onChange={e => setAreaM2(e.target.value)} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="depth" className="text-xs">Prof. (m)</Label>
+                    <Input id="depth" type="number" step="0.1" placeholder="1.5"
+                      value={depth} onChange={e => setDepth(e.target.value)} />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="depth" className="text-xs">Prof. (m)</Label>
-                  <Input id="depth" type="number" step="0.1" placeholder="1.5"
-                    value={depth} onChange={e => setDepth(e.target.value)} />
-                </div>
-              </div>
-              {previewArea != null && (
-                <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                  Área: <strong className="text-foreground">{previewArea.toFixed(1)} m²</strong>
-                  {' · '}
-                  <strong className="text-foreground">{previewHa!.toFixed(2)} ha</strong>
-                  {previewVolume != null && (
-                    <> · Vol: <strong className="text-foreground">{previewVolume.toFixed(1)} m³</strong></>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Producción */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Fish className="h-4 w-4 text-primary" />
-                Producción
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="species" className="text-xs">Especie</Label>
-                <Select value={species} onValueChange={v => setSpecies(v as typeof species)}>
-                  <SelectTrigger id="species">
-                    <SelectValue placeholder="Seleccionar especie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(SPECIES_CONFIG) as [typeof species, { label: string; baseDosePerHa: number }][]).map(
-                      ([key, { label, baseDosePerHa }]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                          <span className="ml-1.5 text-xs text-muted-foreground">· {baseDosePerHa} g/ha</span>
-                        </SelectItem>
-                      )
+                {previewArea != null && (
+                  <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    Área: <strong className="text-foreground">{previewArea.toFixed(1)} m²</strong>
+                    {' · '}
+                    <strong className="text-foreground">{previewHa!.toFixed(2)} ha</strong>
+                    {previewVolume != null && (
+                      <> · Vol: <strong className="text-foreground">{previewVolume.toFixed(1)} m³</strong></>
                     )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="age" className="text-xs">Edad</Label>
-                  <Select value={ageMonths} onValueChange={setAgeMonths}>
-                    <SelectTrigger id="age">
-                      <SelectValue placeholder="Meses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AGE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {ageMonths && Number(ageMonths) > 2 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400">+15% por edad &gt;2 meses</p>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="density" className="text-xs">Densidad (peces/m²)</Label>
-                  <Input id="density" type="number" step="1" min="1" placeholder="Ej: 7"
-                    value={stockingDensity} onChange={e => setStockingDensity(e.target.value)} />
-                  {stockingDensity && Number(stockingDensity) >= 10 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400">Alta densidad +20%</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="flex items-center gap-1.5 text-xs">
-                  <Wind className="h-3 w-3" />
-                  Aireación
-                </Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {AERATION_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setAeration(opt.value)}
-                      className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs font-medium transition-all duration-150 ${aeration === opt.value
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
-                        }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-                {selectedProduct === 'bioterrapro' && aeration === '0' && (
-                  <div className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/40">
-                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <p className="text-xs text-amber-700 dark:text-amber-300">
-                      BioTerraPro sin aireación: se aplicará la <strong>mitad de la dosis</strong>
-                    </p>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Producción */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Fish className="h-4 w-4 text-primary" />
+                  Producción
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="species" className="text-xs">Especie</Label>
+                  <Select value={species} onValueChange={v => setSpecies(v as typeof species)}>
+                    <SelectTrigger id="species">
+                      <SelectValue placeholder="Seleccionar especie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(SPECIES_CONFIG) as [typeof species, { label: string; baseDosePerHa: number }][]).map(
+                        ([key, { label, baseDosePerHa }]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                            <span className="ml-1.5 text-xs text-muted-foreground">· {baseDosePerHa} g/ha</span>
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="age" className="text-xs">Edad</Label>
+                    <Select value={ageMonths} onValueChange={setAgeMonths}>
+                      <SelectTrigger id="age">
+                        <SelectValue placeholder="Meses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AGE_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {ageMonths && Number(ageMonths) > 2 && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">+15% por edad &gt;2 meses</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="density" className="text-xs">Densidad (peces/m²)</Label>
+                    <Input id="density" type="number" step="1" min="1" placeholder="Ej: 7"
+                      value={stockingDensity} onChange={e => setStockingDensity(e.target.value)} />
+                    {stockingDensity && Number(stockingDensity) >= 10 && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">Alta densidad +20%</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs">
+                    <Wind className="h-3 w-3" />
+                    Aireación
+                  </Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {AERATION_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setAeration(opt.value)}
+                        className={`cursor-pointer rounded-lg border px-2 py-2 text-center text-xs font-medium transition-all duration-150 ${aeration === opt.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                          }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedProduct === 'bioterrapro' && aeration === '0' && (
+                    <div className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/40">
+                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        BioTerraPro sin aireación: se aplicará la <strong>mitad de la dosis</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {selectedProduct === 'bioaquapro' && prod?.videoUrl && (
+            <Card className="overflow-hidden border-sky-200/80 bg-sky-50/40 xl:sticky xl:top-6 xl:self-start">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                  <PlayCircle className="h-4 w-4" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em]">Guia visual</span>
+                </div>
+                <CardTitle className="text-lg text-foreground">Como aplicar {prod.name}</CardTitle>
+                <CardDescription>
+                  Deja este video como referencia mientras completas el calculo. Lo mantenemos al costado para no interrumpir el flujo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="overflow-hidden rounded-xl border border-sky-100 bg-black shadow-sm">
+                  <div className="aspect-video">
+                    <iframe
+                      src={prod.videoUrl}
+                      title={`Video de aplicacion de ${prod.name}`}
+                      className="h-full w-full"
+                      allow="autoplay; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Recomendado: revisa primero el modo de aplicacion y luego confirma area, profundidad y aireacion.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <Button
