@@ -36,6 +36,8 @@ export default async function CostsPage() {
   let feedRecords: FeedRecord[] = []
   let harvests: HarvestRecord[] = []
 
+  let customFishPrices: Record<string, number> = {}
+
   if (profile?.organization_id) {
     const [
       { data: ponds },
@@ -44,6 +46,7 @@ export default async function CostsPage() {
       { data: rawConcentrates },
       { data: rawFeedRecords },
       { data: rawHarvests },
+      { data: orgData },
     ] = await Promise.all([
       supabase
         .from('ponds')
@@ -82,7 +85,14 @@ export default async function CostsPage() {
         .from('harvest_records')
         .select('id, batch_id, harvest_date, total_animals, avg_weight_whole_g, avg_weight_eviscerated_g, labor_cost, notes')
         .order('harvest_date', { ascending: false }),
+      supabase
+        .from('organizations')
+        .select('custom_fish_prices')
+        .eq('id', profile.organization_id)
+        .single(),
     ])
+
+    customFishPrices = (orgData?.custom_fish_prices ?? {}) as Record<string, number>
 
     const pondMap: Record<string, { name: string; species: string }> = {}
     const pondOrderMap: Record<string, number> = {}
@@ -145,7 +155,9 @@ export default async function CostsPage() {
       const marketRef = marketPrices.find(mp =>
         pondInfo?.species.toLowerCase().includes(mp.species.toLowerCase().split(' ')[0])
       )
-      const salePrice = b.sale_price_per_kg || marketRef?.price_avg || 9000
+      const speciesKey = pondInfo?.species ?? ''
+      const orgCustomPrice = customFishPrices[speciesKey] || null
+      const salePrice = b.sale_price_per_kg || orgCustomPrice || marketRef?.price_avg || 9000
       const projectedRevenue = commercialBiomassKg * salePrice
 
       const totalFeedCost = feedRecs.reduce((s: number, r: any) =>

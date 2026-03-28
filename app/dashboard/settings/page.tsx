@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 
 import { OrganizationFcaSettings } from '@/components/organization-fca-settings'
+import { OrganizationFishPriceSettings } from '@/components/organization-fish-price-settings'
+import { getColombianMarketPrices } from '@/lib/market-data'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function SettingsPage() {
@@ -19,11 +21,33 @@ export default async function SettingsPage() {
     redirect('/dashboard')
   }
 
-  const { data: organization } = await supabase
-    .from('organizations')
-    .select('name, default_fca')
-    .eq('id', profile.organization_id)
-    .single()
+  const [{ data: organization }, { data: ponds }, marketPrices] = await Promise.all([
+    supabase
+      .from('organizations')
+      .select('name, default_fca, custom_fish_prices')
+      .eq('id', profile.organization_id)
+      .single(),
+    supabase
+      .from('ponds')
+      .select('species')
+      .eq('organization_id', profile.organization_id),
+    getColombianMarketPrices('BOGOTÁ'),
+  ])
+
+  const species = [...new Set((ponds ?? []).map(p => p.species).filter(Boolean))] as string[]
+
+  // Build a market price map keyed by species using the same fuzzy match as the costs page
+  const marketPriceMap: Record<string, number> = {}
+  for (const s of species) {
+    const match = marketPrices.find(mp =>
+      s.toLowerCase().includes(mp.species.toLowerCase().split(' ')[0])
+    )
+    if (match) {
+      marketPriceMap[s] = match.price_avg
+    }
+  }
+
+  const initialPrices = (organization?.custom_fish_prices ?? {}) as Record<string, number>
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,6 +61,12 @@ export default async function SettingsPage() {
       <OrganizationFcaSettings
         farmName={organization?.name ?? 'tu finca'}
         initialDefaultFca={organization?.default_fca != null ? Number(organization.default_fca) : null}
+      />
+
+      <OrganizationFishPriceSettings
+        species={species}
+        initialPrices={initialPrices}
+        marketPrices={marketPriceMap}
       />
     </div>
   )
