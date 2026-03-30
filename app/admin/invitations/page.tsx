@@ -3,11 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Ticket, CheckCircle2, XCircle } from 'lucide-react'
 
-type ProfileRelation = {
-  full_name: string | null
-  email: string | null
-} | null
-
 type InvitationCode = {
   id: string
   code: string
@@ -16,7 +11,6 @@ type InvitationCode = {
   used_by: string | null
   used_at: string | null
   created_at: string
-  profiles: ProfileRelation
 }
 
 export default async function AdminInvitationsPage() {
@@ -24,7 +18,7 @@ export default async function AdminInvitationsPage() {
 
   const { data: codes = [] } = await supabase
     .from('invitation_codes')
-    .select('id, code, description, used, used_by, used_at, created_at, profiles:used_by(full_name, email)')
+    .select('id, code, description, used, used_by, used_at, created_at')
     .order('created_at', { ascending: false })
 
   const typedCodes = (codes as unknown as InvitationCode[]) ?? []
@@ -98,10 +92,6 @@ export default async function AdminInvitationsPage() {
                 </thead>
                 <tbody>
                   {typedCodes.map((code) => {
-                    const profile = code.profiles
-                    const usedByName = profile
-                      ? profile.full_name || profile.email || '-'
-                      : '-'
                     return (
                       <tr key={code.id} className="border-b border-border/70">
                         <td className="py-3 pr-4">
@@ -117,7 +107,7 @@ export default async function AdminInvitationsPage() {
                             <Badge variant="default">Disponible</Badge>
                           )}
                         </td>
-                        <td className="py-3 pr-4 text-muted-foreground">{usedByName}</td>
+                        <td className="py-3 pr-4 text-muted-foreground">{code.used_by ?? '-'}</td>
                         <td className="py-3 pr-4 text-muted-foreground">
                           {code.used_at
                             ? new Date(code.used_at).toLocaleDateString('es-CO')
