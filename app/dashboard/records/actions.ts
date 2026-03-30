@@ -47,7 +47,7 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
 
   const { data: existingRecord, error: existingRecordError } = await supabase
     .from('production_records')
-    .select('id, batch_id, mortality_count')
+    .select('id, batch_id, fish_count, mortality_count')
     .eq('id', data.id)
     .single()
 
@@ -55,20 +55,20 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     throw new Error('No se pudo cargar el registro')
   }
 
+  const { data: batch, error: batchError } = await supabase
+    .from('batches')
+    .select('id, current_population, initial_population')
+    .eq('id', existingRecord.batch_id)
+    .single()
+
+  if (batchError || !batch) {
+    throw new Error('No se pudo cargar el lote del registro')
+  }
+
   const mortalityDelta = (data.mortality_count ?? 0) - (existingRecord.mortality_count ?? 0)
+  const currentPopulation = batch.current_population ?? batch.initial_population
 
   if (mortalityDelta !== 0) {
-    const { data: batch, error: batchError } = await supabase
-      .from('batches')
-      .select('id, current_population, initial_population')
-      .eq('id', existingRecord.batch_id)
-      .single()
-
-    if (batchError || !batch) {
-      throw new Error('No se pudo actualizar la población del lote')
-    }
-
-    const currentPopulation = batch.current_population ?? batch.initial_population
     const nextPopulation = Math.max(0, currentPopulation - mortalityDelta)
 
     const { error: batchUpdateError } = await supabase
@@ -81,7 +81,11 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     }
   }
 
-  const { calculated_fca, calculated_biomass_kg } = calculateDerivedValues(data)
+  const resolvedFishCount = data.fish_count ?? existingRecord.fish_count ?? currentPopulation ?? null
+  const { calculated_fca, calculated_biomass_kg } = calculateDerivedValues({
+    ...data,
+    fish_count: resolvedFishCount,
+  })
 
   let defaultFca: number | null = null
   if (profile?.organization_id) {
@@ -104,7 +108,7 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     .from('production_records')
     .update({
       record_date: data.record_date,
-      fish_count: data.fish_count,
+      fish_count: resolvedFishCount,
       feed_kg: data.feed_kg,
       avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
       mortality_count: data.mortality_count ?? 0,

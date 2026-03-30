@@ -54,6 +54,7 @@ const PRODUCTS: Record<ProductKey, {
     type: 'Producto de suelo',
     description: 'Bioremediador de fondos de estanque. Para sedimentos y suelos con alta carga orgánica.',
     image: '/images/bioterrapro.png',
+    videoUrl: 'https://drive.google.com/file/d/1utTDn1FOzYbv2mucOLMvoRmAwfe76Hdi/preview',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
     selectedClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 ring-2 ring-emerald-500/30',
     badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
@@ -154,14 +155,14 @@ export function BioremediationForm() {
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paso 2</p>
           <p className="mt-0.5 text-base font-semibold text-foreground">Parámetros del estanque</p>
-          {selectedProduct === 'bioaquapro' && prod?.videoUrl && (
+          {selectedProduct && prod?.videoUrl && (
             <p className="mt-1 text-sm text-muted-foreground">
               Revisa la guia visual de aplicacion mientras completas los datos del estanque.
             </p>
           )}
         </div>
 
-        <div className={`grid gap-6 ${selectedProduct === 'bioaquapro' && prod?.videoUrl ? 'xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]' : ''}`}>
+        <div className={`grid gap-6 ${selectedProduct && prod?.videoUrl ? 'xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]' : ''}`}>
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-2">
             {/* Dimensiones */}
             <Card>
@@ -285,10 +286,18 @@ export function BioremediationForm() {
             </Card>
           </div>
 
-          {selectedProduct === 'bioaquapro' && prod?.videoUrl && (
-            <Card className="overflow-hidden border-sky-200/80 bg-sky-50/40 xl:sticky xl:top-6 xl:self-start">
+          {selectedProduct && prod?.videoUrl && (
+            <Card className={`overflow-hidden xl:sticky xl:top-6 xl:self-start ${
+              selectedProduct === 'bioaquapro'
+                ? 'border-sky-200/80 bg-sky-50/40'
+                : 'border-emerald-200/80 bg-emerald-50/40'
+            }`}>
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                <div className={`flex items-center gap-2 ${
+                  selectedProduct === 'bioaquapro'
+                    ? 'text-sky-700 dark:text-sky-300'
+                    : 'text-emerald-700 dark:text-emerald-300'
+                }`}>
                   <PlayCircle className="h-4 w-4" />
                   <span className="text-xs font-semibold uppercase tracking-[0.18em]">Guia visual</span>
                 </div>
@@ -298,7 +307,9 @@ export function BioremediationForm() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="overflow-hidden rounded-xl border border-sky-100 bg-black shadow-sm">
+                <div className={`overflow-hidden rounded-xl border bg-black shadow-sm ${
+                  selectedProduct === 'bioaquapro' ? 'border-sky-100' : 'border-emerald-100'
+                }`}>
                   <div className="aspect-video">
                     <iframe
                       src={prod.videoUrl}

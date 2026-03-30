@@ -31,14 +31,20 @@ export async function confirmProductionRecord(data: ProductionData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
 
-  const { calculated_fca, calculated_biomass_kg } = calculateCalculatedFca(data)
-
   // Get batch info for mortality update
   const { data: batch } = await supabase
     .from('batches')
     .select('current_population, initial_population')
     .eq('id', data.batch_id)
     .single()
+
+  const resolvedFishCount =
+    data.fish_count ?? batch?.current_population ?? batch?.initial_population ?? null
+
+  const { calculated_fca, calculated_biomass_kg } = calculateCalculatedFca({
+    ...data,
+    fish_count: resolvedFishCount,
+  })
 
   // Update mortality in batch
   if (data.mortality_count && data.mortality_count > 0 && batch) {
@@ -77,7 +83,7 @@ export async function confirmProductionRecord(data: ProductionData) {
     record_date: data.record_date,
     report_type: data.report_type,
     week_end_date: data.week_end_date,
-    fish_count: data.fish_count,
+    fish_count: resolvedFishCount,
     feed_kg: data.feed_kg,
     avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
     mortality_count: data.mortality_count ?? 0,

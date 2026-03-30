@@ -29,6 +29,7 @@ interface Batch {
   pond_name: string
   start_date: string
   status: string
+  estimated_fish_count: number | null
 }
 
 type FcaMode = 'default' | 'calculated'
@@ -173,6 +174,8 @@ export function ManualRecordForm({
   }
 
   const toNum = (v: string) => (v === '' ? null : Number(v))
+  const selectedBatchPopulation =
+    batches.find((batch) => batch.id === selectedBatch)?.estimated_fish_count ?? null
 
   const handleSubmit = async () => {
     if (!selectedBatch) {
@@ -191,7 +194,7 @@ export function ManualRecordForm({
         record_date: formData.record_date,
         report_type: reportType,
         week_end_date: reportType === 'weekly' ? formData.week_end_date : null,
-        fish_count: toNum(formData.fish_count),
+        fish_count: toNum(formData.fish_count) ?? selectedBatchPopulation,
         feed_kg: toNum(formData.feed_kg),
         avg_weight_g: toNum(formData.avg_weight_g),
         mortality_count: toNum(formData.mortality_count),
@@ -446,8 +449,10 @@ export function ManualRecordForm({
 
         {/* ── Valores Calculados ── */}
         {(() => {
+          const resolvedFishCount =
+            formData.fish_count !== '' ? Number(formData.fish_count) : selectedBatchPopulation
           const { calculated_biomass_kg: biomasa, calculated_fca: fcaCalculado } = calculateCalculatedFca({
-            fish_count: formData.fish_count !== '' ? Number(formData.fish_count) : null,
+            fish_count: resolvedFishCount,
             avg_weight_g: formData.avg_weight_g !== '' ? Number(formData.avg_weight_g) : null,
             feed_kg: formData.feed_kg !== '' ? Number(formData.feed_kg) : null,
             mortality_count: formData.mortality_count !== '' ? Number(formData.mortality_count) : 0,
@@ -471,6 +476,11 @@ export function ManualRecordForm({
                     {biomasa !== null ? biomasa.toFixed(2) : <span className="text-sm font-normal text-muted-foreground">Ingresa nº peces y peso</span>}
                   </p>
                   <p className="text-[10px] text-muted-foreground">(peces − mortalidad) × peso prom.</p>
+                  {formData.fish_count === '' && selectedBatchPopulation != null ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      Usando población actual del lote: {selectedBatchPopulation}
+                    </p>
+                  ) : null}
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

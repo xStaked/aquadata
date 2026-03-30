@@ -25,6 +25,7 @@ interface Batch {
   pond_name: string
   start_date: string
   status: string
+  estimated_fish_count: number | null
 }
 
 type FcaMode = 'default' | 'calculated'
@@ -103,6 +104,8 @@ export function UploadForm({
   const [reportType, setReportType] = useState<ReportType>('daily')
   const [weekEndDate, setWeekEndDate] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const selectedBatchPopulation =
+    batches.find((batch) => batch.id === selectedBatch)?.estimated_fish_count ?? null
 
   useEffect(() => {
     let cancelled = false
@@ -206,7 +209,7 @@ export function UploadForm({
         record_date: editedData.record_date!,
         report_type: reportType,
         week_end_date: reportType === 'weekly' ? weekEndDate || null : null,
-        fish_count: editedData.fish_count ?? null,
+        fish_count: editedData.fish_count ?? selectedBatchPopulation,
         feed_kg: editedData.feed_kg ?? null,
         avg_weight_g: editedData.avg_weight_g ?? null,
         mortality_count: editedData.mortality_count ?? null,
@@ -372,8 +375,9 @@ export function UploadForm({
             </CardHeader>
             <CardContent>
               {(() => {
+                const resolvedFishCount = editedData.fish_count ?? selectedBatchPopulation
                 const { calculated_fca: calculatedFca } = calculateCalculatedFca({
-                  fish_count: editedData.fish_count ?? null,
+                  fish_count: resolvedFishCount,
                   feed_kg: editedData.feed_kg ?? null,
                   avg_weight_g: editedData.avg_weight_g ?? null,
                   mortality_count: editedData.mortality_count ?? null,
@@ -426,6 +430,11 @@ export function UploadForm({
                         </p>
                       </div>
                     </div>
+                    {editedData.fish_count == null && selectedBatchPopulation != null ? (
+                      <p className="mt-3 text-[11px] text-muted-foreground">
+                        Usando población actual del lote para el cálculo: {selectedBatchPopulation} peces.
+                      </p>
+                    ) : null}
                   </div>
                 )
               })()}

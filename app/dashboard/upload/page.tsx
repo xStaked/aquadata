@@ -20,6 +20,7 @@ export default async function UploadPage() {
     pond_name: string
     start_date: string
     status: string
+    estimated_fish_count: number | null
   }> = []
 
   if (profile?.organization_id) {
@@ -47,7 +48,7 @@ export default async function UploadPage() {
       const pondIds = ponds.map(p => p.id)
       const { data: activeBatches } = await supabase
         .from('batches')
-        .select('id, pond_id, start_date, status')
+        .select('id, pond_id, start_date, status, current_population, initial_population')
         .in('pond_id', pondIds)
         .eq('status', 'active')
 
@@ -64,6 +65,12 @@ export default async function UploadPage() {
           pond_name: ponds.find(p => p.id === b.pond_id)?.name ?? 'Estanque',
           start_date: b.start_date,
           status: b.status,
+          estimated_fish_count:
+            b.current_population != null
+              ? Number(b.current_population)
+              : b.initial_population != null
+                ? Number(b.initial_population)
+                : null,
         }))
       }
     }
