@@ -88,14 +88,21 @@ export default function SignUpPage() {
       if (signUpError) throw signUpError
 
       // Mark invitation code as used
-      await supabase
+      const updatePayload: Record<string, unknown> = {
+        used: true,
+        used_at: new Date().toISOString(),
+      }
+      if (signUpData.user?.id) {
+        updatePayload.used_by = signUpData.user.id
+      }
+      const { error: updateError } = await supabase
         .from('invitation_codes')
-        .update({
-          used: true,
-          used_by: signUpData.user?.id,
-          used_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', codeData.id)
+        .eq('used', false)
+      if (updateError) {
+        console.error('Error marking invitation code as used:', updateError.message)
+      }
 
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
