@@ -89,6 +89,7 @@ Recent decisions affecting current work:
 | 260328-fzg | Add custom sale prices per species in settings | 2026-03-28 | d765562 | [260328-fzg-add-custom-sale-prices-per-species-in-se](./quick/260328-fzg-add-custom-sale-prices-per-species-in-se/) |
 | 260328-apc | Add admin product catalog with characteristics | 2026-03-28 | working-tree | [260328-apc-add-admin-product-catalog-with-character](./quick/260328-apc-add-admin-product-catalog-with-character/) |
 | 260328-gcx | Add image upload to admin product catalog | 2026-03-28 | 13e7cc9 | [260328-gcx-agregar-imagen-a-productos-admin](./quick/260328-gcx-agregar-imagen-a-productos-admin/) |
+| 260329-qvv | Add admin invitations page with full codes table and nav link | 2026-03-29 | d6b7070 | [260329-qvv-agregar-apartado-en-el-panel-de-admin-pa](./quick/260329-qvv-agregar-apartado-en-el-panel-de-admin-pa/) |
 
 ### Blockers/Concerns
 
@@ -97,6 +98,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-28
-Last activity: 2026-03-28 - Completed quick task 260328-gcx: Add image upload to admin product catalog
+Last session: 2026-03-29
+Last activity: 2026-03-29 - Completed quick task 260329-qvv: Add admin invitations page with full codes table and nav link
 Resume file: None
