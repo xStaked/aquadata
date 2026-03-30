@@ -128,6 +128,13 @@ export default async function AdminPage() {
                 Crear codigo
               </button>
             </form>
+            <Link
+              href="/admin/invitations"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              Ver todos
+              <ArrowRight className="h-3 w-3" />
+            </Link>
           </CardContent>
         </Card>
 
@@ -193,6 +200,12 @@ export default async function AdminPage() {
                 title: 'Productos',
                 description: 'Catalogo administrable de productos y caracteristicas base',
                 icon: Tags,
+              },
+              {
+                href: '/admin/invitations',
+                title: 'Invitaciones',
+                description: 'Codigos de acceso para nuevos productores',
+                icon: Ticket,
               },
               {
                 href: '/admin/bioremediation',
