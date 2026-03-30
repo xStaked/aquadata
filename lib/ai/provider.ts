@@ -14,6 +14,11 @@ import type { LanguageModel } from 'ai'
 
 export type AIProvider = 'google' | 'anthropic' | 'openai'
 
+export interface GoogleVisionModelCandidate {
+  label: string
+  model: LanguageModel
+}
+
 export interface DeepSeekTextConfig {
   apiKey: string
   baseUrl: string
@@ -46,6 +51,10 @@ const MODEL_CATALOG: Record<AIProvider, AIModelConfig> = {
 //  Change this single line to switch providers
 // ──────────────────────────────────────────────
 const ACTIVE_PROVIDER: AIProvider = 'google'
+const GOOGLE_VISION_FALLBACKS = [
+  { label: 'gemini-3-flash-preview', model: google('gemini-3-flash-preview') },
+  { label: 'gemini-2.5-flash-lite', model: google('gemini-2.5-flash-lite') },
+] as const
 
 export function getActiveProvider(): AIProvider {
   return ACTIVE_PROVIDER
@@ -57,6 +66,18 @@ export function getVisionModel(): LanguageModel {
 
 export function getTextModel(): LanguageModel {
   return MODEL_CATALOG[ACTIVE_PROVIDER].text
+}
+
+export function getGoogleVisionModelCandidates(): GoogleVisionModelCandidate[] {
+  return [
+    {
+      label: 'gemini-2.5-flash',
+      model: MODEL_CATALOG.google.vision,
+    },
+    ...GOOGLE_VISION_FALLBACKS.filter(
+      (candidate) => candidate.label !== 'gemini-2.5-flash'
+    ),
+  ]
 }
 
 export function getDeepSeekTextConfig(): DeepSeekTextConfig {
