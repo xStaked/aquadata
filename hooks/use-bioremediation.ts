@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { saveBioremediationCalc } from '@/app/dashboard/bioremediation/actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,13 +153,7 @@ export function useBioremediation() {
     if (!result) return
     setIsSaving(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No autenticado')
-      await supabase.from('bioremediation_calcs').insert({
-        user_id: user.id,
-        // Compatibilidad con el esquema actual (aún exige largo y ancho).
-        // Guardamos el área ingresada como "largo" y ancho unitario.
+      await saveBioremediationCalc({
         pond_length: Number(areaM2),
         pond_width: 1,
         pond_depth: Number(depth),

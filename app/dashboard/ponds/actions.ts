@@ -1,14 +1,23 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getOrgContext } from '@/lib/db/context'
+import {
+  createPond as dbCreatePond,
+  deletePond as dbDeletePond,
+  updatePondOrder as dbUpdatePondOrder,
+  getNextSortOrder,
+  createBatch as dbCreateBatch,
+  closeBatch as dbCloseBatch,
+  updateBatchFinancial as dbUpdateBatchFinancial,
+} from '@/lib/db'
+import { createClient } from '@/lib/supabase/server'
 
 export async function getOrCreateOrganization(orgName: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
 
-  // Use SECURITY DEFINER function to atomically create org + link profile
   const { data, error } = await supabase.rpc('create_organization_for_user', {
     org_name: orgName,
   })
@@ -18,60 +27,48 @@ export async function getOrCreateOrganization(orgName: string) {
 }
 
 export async function createPond(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('No autenticado')
+  const ctx = await getOrgContext()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
+  let orgId = ctx.orgId
 
-  let orgId = profile?.organization_id
-
-  // Auto-create org if needed
+  // Auto-create org if needed (edge case: profile exists but org_id is null)
   if (!orgId) {
-    const orgName = formData.get('org_name') as string || 'Mi Granja'
-    orgId = await getOrCreateOrganization(orgName)
+    const supabase = await createClient()
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', ctx.userId)
+      .single()
+
+    if (!profile?.organization_id) {
+      const orgName = formData.get('org_name') as string || 'Mi Granja'
+      orgId = await getOrCreateOrganization(orgName)
+    }
   }
 
-  const { data: latestPond } = await supabase
-    .from('ponds')
-    .select('sort_order')
-    .eq('organization_id', orgId)
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const sortOrder = await getNextSortOrder(orgId)
 
-  const nextSortOrder =
-    latestPond?.sort_order != null ? Number(latestPond.sort_order) + 1 : 0
-
-  const { error } = await supabase.from('ponds').insert({
+  await dbCreatePond({
     organization_id: orgId,
     name: formData.get('name') as string,
     area_m2: Number(formData.get('area_m2')) || null,
     depth_m: Number(formData.get('depth_m')) || null,
     species: formData.get('species') as string || null,
     status: 'active',
-    sort_order: nextSortOrder,
+    sort_order: sortOrder,
   })
 
-  if (error) throw new Error(error.message)
   revalidatePath('/dashboard/ponds')
 }
 
 export async function deletePond(pondId: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from('ponds').delete().eq('id', pondId)
-  if (error) throw new Error(error.message)
+  const { orgId } = await getOrgContext()
+  await dbDeletePond(pondId, orgId)
   revalidatePath('/dashboard/ponds')
 }
 
 export async function createBatch(formData: FormData) {
-  const supabase = await createClient()
-
-  const { error } = await supabase.from('batches').insert({
+  await dbCreateBatch({
     pond_id: formData.get('pond_id') as string,
     start_date: formData.get('start_date') as string,
     initial_population: Number(formData.get('initial_population')),
@@ -79,28 +76,16 @@ export async function createBatch(formData: FormData) {
     status: 'active',
   })
 
-  if (error) throw new Error(error.message)
   revalidatePath('/dashboard/ponds')
 }
 
 export async function closeBatch(batchId: string) {
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('batches')
-    .update({ status: 'closed', end_date: new Date().toISOString().split('T')[0] })
-    .eq('id', batchId)
-  if (error) throw new Error(error.message)
+  await dbCloseBatch(batchId)
   revalidatePath('/dashboard/ponds')
 }
+
 export async function updateBatchPrice(batchId: string, price: number) {
-  const supabase = await createClient()
-
-  const { error } = await supabase
-    .from('batches')
-    .update({ sale_price_per_kg: price })
-    .eq('id', batchId)
-
-  if (error) throw new Error(error.message)
+  await dbUpdateBatchFinancial(batchId, { sale_price_per_kg: price })
   revalidatePath('/dashboard/costs')
   revalidatePath('/dashboard/ponds')
 }
@@ -112,63 +97,16 @@ export async function updateBatchFinancialConfig(batchId: string, data: {
   avg_weight_at_seeding_g: number | null
   labor_cost_per_month: number
 }) {
-  const supabase = await createClient()
-
-  const { error } = await supabase
-    .from('batches')
-    .update({
-      sale_price_per_kg: data.sale_price_per_kg || null,
-      target_profitability_pct: data.target_profitability_pct,
-      fingerling_cost_per_unit: data.fingerling_cost_per_unit,
-      avg_weight_at_seeding_g: data.avg_weight_at_seeding_g || null,
-      labor_cost_per_month: data.labor_cost_per_month,
-    })
-    .eq('id', batchId)
-
-  if (error) throw new Error(error.message)
+  await dbUpdateBatchFinancial(batchId, data)
   revalidatePath('/dashboard/costs')
   revalidatePath('/dashboard/ponds')
 }
 
 export async function updatePondOrder(pondIds: string[]) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('No autenticado')
+  const { orgId } = await getOrgContext()
   if (!Array.isArray(pondIds) || pondIds.length === 0) return
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.organization_id) throw new Error('Organización no encontrada')
-
-  const { data: pondsInOrg, error: readError } = await supabase
-    .from('ponds')
-    .select('id')
-    .eq('organization_id', profile.organization_id)
-    .in('id', pondIds)
-
-  if (readError) throw new Error(readError.message)
-  if ((pondsInOrg?.length ?? 0) !== pondIds.length) {
-    throw new Error('Lista de estanques inválida')
-  }
-
-  const updates = pondIds.map((id, index) =>
-    supabase
-      .from('ponds')
-      .update({ sort_order: index })
-      .eq('id', id)
-      .eq('organization_id', profile.organization_id)
-  )
-
-  const results = await Promise.all(updates)
-  const failed = results.find((result) => result.error)
-  if (failed?.error) throw new Error(failed.error.message)
+  await dbUpdatePondOrder(pondIds, orgId)
 
   revalidatePath('/dashboard/ponds')
   revalidatePath('/dashboard/costs')

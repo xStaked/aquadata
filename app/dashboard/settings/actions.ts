@@ -1,41 +1,16 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-
-import { createClient } from '@/lib/supabase/server'
+import { getOrgContext } from '@/lib/db/context'
+import { updateOrganization } from '@/lib/db'
 
 export async function updateOrganizationDefaultFca(defaultFca: number | null) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ctx = await getOrgContext()
+  const { orgId } = ctx
 
-  if (!user) {
-    throw new Error('No autenticado')
-  }
+  const updated = await updateOrganization(orgId, { default_fca: defaultFca })
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile?.organization_id) {
-    throw new Error('No se encontró la finca del usuario')
-  }
-
-  const { data: updatedOrganization, error } = await supabase
-    .from('organizations')
-    .update({ default_fca: defaultFca })
-    .eq('id', profile.organization_id)
-    .select('id, default_fca')
-    .single()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  if (!updatedOrganization) {
+  if (!updated) {
     throw new Error('No se pudo actualizar el FCA de la finca')
   }
 
@@ -46,33 +21,16 @@ export async function updateOrganizationDefaultFca(defaultFca: number | null) {
   revalidatePath('/admin/analytics')
 
   return {
-    id: updatedOrganization.id,
-    defaultFca:
-      updatedOrganization.default_fca != null ? Number(updatedOrganization.default_fca) : null,
+    id: updated.id,
+    defaultFca: updated.default_fca != null ? Number(updated.default_fca) : null,
   }
 }
 
 export async function updateOrganizationCustomFishPrices(
   customFishPrices: Record<string, number | null>
 ) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    throw new Error('No autenticado')
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile?.organization_id) {
-    throw new Error('No se encontró la finca del usuario')
-  }
+  const ctx = await getOrgContext()
+  const { orgId } = ctx
 
   // Filter out entries with null, undefined, or zero values — only store species with actual prices
   const cleanedPrices: Record<string, number> = {}
@@ -82,18 +40,9 @@ export async function updateOrganizationCustomFishPrices(
     }
   }
 
-  const { data: updatedOrganization, error } = await supabase
-    .from('organizations')
-    .update({ custom_fish_prices: cleanedPrices })
-    .eq('id', profile.organization_id)
-    .select('id, custom_fish_prices')
-    .single()
+  const updated = await updateOrganization(orgId, { custom_fish_prices: cleanedPrices })
 
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  if (!updatedOrganization) {
+  if (!updated) {
     throw new Error('No se pudo actualizar los precios de la finca')
   }
 
@@ -101,7 +50,7 @@ export async function updateOrganizationCustomFishPrices(
   revalidatePath('/dashboard/costs')
 
   return {
-    id: updatedOrganization.id,
-    customFishPrices: (updatedOrganization.custom_fish_prices ?? {}) as Record<string, number>,
+    id: updated.id,
+    customFishPrices: (updated.custom_fish_prices ?? {}) as Record<string, number>,
   }
 }

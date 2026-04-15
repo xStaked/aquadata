@@ -1,9 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-
-import { createClient } from '@/lib/supabase/server'
+import { getOrgContext } from '@/lib/db/context'
+import { getBatch, updateBatchPopulation, updateRecord } from '@/lib/db'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
+import { getOrganization } from '@/lib/db/repositories/organization-repository'
+import { createClient } from '@/lib/supabase/server'
 
 interface UpdateProductionRecordInput {
   id: string
@@ -30,21 +32,17 @@ function calculateDerivedValues(data: UpdateProductionRecordInput) {
 }
 
 export async function updateProductionRecord(data: UpdateProductionRecordInput) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ctx = await getOrgContext()
+  const { userId, orgId } = ctx
 
-  if (!user) {
-    throw new Error('No autenticado')
+  // Get batch for population tracking
+  const batch = await getBatch(data.id)
+  if (!batch) {
+    throw new Error('No se pudo cargar el lote del registro')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-
+  // Verify record belongs to user's org via batch -> pond -> organization chain
+  const supabase = await createClient()
   const { data: existingRecord, error: existingRecordError } = await supabase
     .from('production_records')
     .select('id, batch_id, fish_count, mortality_count')
@@ -55,48 +53,46 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     throw new Error('No se pudo cargar el registro')
   }
 
-  const { data: batch, error: batchError } = await supabase
+  // Verify batch ownership
+  const { data: batchPond } = await supabase
     .from('batches')
-    .select('id, current_population, initial_population')
+    .select('id, current_population, initial_population, pond_id')
     .eq('id', existingRecord.batch_id)
     .single()
 
-  if (batchError || !batch) {
+  if (!batchPond) {
     throw new Error('No se pudo cargar el lote del registro')
   }
 
+  const { data: pond } = await supabase
+    .from('ponds')
+    .select('organization_id')
+    .eq('id', batchPond.pond_id)
+    .single()
+
+  if (pond?.organization_id !== orgId) {
+    throw new Error('No autorizado')
+  }
+
+  // Update population if mortality changed
   const mortalityDelta = (data.mortality_count ?? 0) - (existingRecord.mortality_count ?? 0)
-  const currentPopulation = batch.current_population ?? batch.initial_population
+  const currentPopulation = batchPond.current_population ?? batchPond.initial_population
 
   if (mortalityDelta !== 0) {
     const nextPopulation = Math.max(0, currentPopulation - mortalityDelta)
-
-    const { error: batchUpdateError } = await supabase
-      .from('batches')
-      .update({ current_population: nextPopulation })
-      .eq('id', existingRecord.batch_id)
-
-    if (batchUpdateError) {
-      throw new Error(batchUpdateError.message)
-    }
+    await updateBatchPopulation(existingRecord.batch_id, nextPopulation)
   }
 
+  // Calculate FCA
   const resolvedFishCount = data.fish_count ?? existingRecord.fish_count ?? currentPopulation ?? null
   const { calculated_fca, calculated_biomass_kg } = calculateDerivedValues({
     ...data,
     fish_count: resolvedFishCount,
   })
 
-  let defaultFca: number | null = null
-  if (profile?.organization_id) {
-    const { data: organization } = await supabase
-      .from('organizations')
-      .select('default_fca')
-      .eq('id', profile.organization_id)
-      .single()
-
-    defaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
-  }
+  // Resolve effective FCA
+  const org = await getOrganization(orgId)
+  const defaultFca = org?.default_fca != null ? Number(org.default_fca) : null
 
   const { effective_fca, fca_source } = resolveEffectiveFca({
     calculatedFca: calculated_fca,
@@ -104,35 +100,29 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     source: data.fca_source,
   })
 
-  const { error: updateError } = await supabase
-    .from('production_records')
-    .update({
-      record_date: data.record_date,
-      fish_count: resolvedFishCount,
-      feed_kg: data.feed_kg,
-      avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
-      mortality_count: data.mortality_count ?? 0,
-      temperature_c: data.temperature_c,
-      oxygen_mg_l: data.oxygen_mg_l,
-      ammonia_mg_l: data.ammonia_mg_l,
-      nitrite_mg_l: data.nitrite_mg_l,
-      nitrate_mg_l: data.nitrate_mg_l,
-      ph: data.ph,
-      phosphate_mg_l: data.phosphate_mg_l,
-      hardness_mg_l: data.hardness_mg_l,
-      alkalinity_mg_l: data.alkalinity_mg_l,
-      notes: data.notes,
-      calculated_fca,
-      effective_fca,
-      fca_source,
-      calculated_biomass_kg,
-      confirmed_by: user.id,
-    })
-    .eq('id', data.id)
-
-  if (updateError) {
-    throw new Error(updateError.message)
-  }
+  // Update record via repository
+  await updateRecord(data.id, {
+    record_date: data.record_date,
+    fish_count: resolvedFishCount,
+    feed_kg: data.feed_kg,
+    avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
+    mortality_count: data.mortality_count ?? 0,
+    temperature_c: data.temperature_c,
+    oxygen_mg_l: data.oxygen_mg_l,
+    ammonia_mg_l: data.ammonia_mg_l,
+    nitrite_mg_l: data.nitrite_mg_l,
+    nitrate_mg_l: data.nitrate_mg_l,
+    ph: data.ph,
+    phosphate_mg_l: data.phosphate_mg_l,
+    hardness_mg_l: data.hardness_mg_l,
+    alkalinity_mg_l: data.alkalinity_mg_l,
+    notes: data.notes,
+    calculated_fca,
+    effective_fca,
+    fca_source,
+    calculated_biomass_kg,
+    confirmed_by: userId,
+  }, orgId)
 
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/records')

@@ -1,19 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getOrgContext } from '@/lib/db/context'
 import { createClient } from '@/lib/supabase/server'
 
-async function getOrgId() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('No autenticado')
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
-  if (!profile?.organization_id) throw new Error('Sin organización')
-  return { supabase, user, orgId: profile.organization_id }
+async function getContext() {
+  const ctx = await getOrgContext()
+  return { ...ctx, supabase: await createClient() }
 }
 
 // ── Concentrados ──────────────────────────────────────────────
@@ -24,7 +17,7 @@ export async function createConcentrate(data: {
   price_per_kg: number
   protein_pct?: number
 }) {
-  const { supabase, orgId } = await getOrgId()
+  const { supabase, orgId } = await getContext()
   const { error } = await supabase.from('feed_concentrates').insert({
     organization_id: orgId,
     name: data.name,
@@ -43,7 +36,7 @@ export async function updateConcentrate(id: string, data: {
   protein_pct?: number
   is_active: boolean
 }) {
-  const { supabase, orgId } = await getOrgId()
+  const { supabase, orgId } = await getContext()
   const { error } = await supabase
     .from('feed_concentrates')
     .update({
@@ -60,7 +53,7 @@ export async function updateConcentrate(id: string, data: {
 }
 
 export async function deleteConcentrate(id: string) {
-  const { supabase, orgId } = await getOrgId()
+  const { supabase, orgId } = await getContext()
   const { error } = await supabase
     .from('feed_concentrates')
     .delete()
@@ -83,7 +76,7 @@ export async function createMonthlyFeedRecord(data: {
   cost_per_kg: number
   notes?: string
 }) {
-  const { supabase } = await getOrgId()
+  const { supabase } = await getContext()
   const { error } = await supabase.from('monthly_feed_records').upsert(
     {
       batch_id: data.batch_id,
@@ -112,7 +105,7 @@ export async function updateMonthlyFeedRecord(id: string, data: {
   kg_used: number
   cost_per_kg: number
 }) {
-  const { supabase } = await getOrgId()
+  const { supabase } = await getContext()
   const { error } = await supabase
     .from('monthly_feed_records')
     .update({
@@ -131,7 +124,7 @@ export async function updateMonthlyFeedRecord(id: string, data: {
 }
 
 export async function deleteMonthlyFeedRecord(id: string) {
-  const { supabase } = await getOrgId()
+  const { supabase } = await getContext()
   const { error } = await supabase.from('monthly_feed_records').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/dashboard/costs')
@@ -148,7 +141,7 @@ export async function createHarvestRecord(data: {
   labor_cost: number
   notes?: string
 }) {
-  const { supabase } = await getOrgId()
+  const { supabase } = await getContext()
   const { error } = await supabase.from('harvest_records').insert({
     batch_id: data.batch_id,
     harvest_date: data.harvest_date,
@@ -163,7 +156,7 @@ export async function createHarvestRecord(data: {
 }
 
 export async function deleteHarvestRecord(id: string) {
-  const { supabase } = await getOrgId()
+  const { supabase } = await getContext()
   const { error } = await supabase.from('harvest_records').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/dashboard/costs')
@@ -178,7 +171,7 @@ export async function updateBatchSalesConfig(batchId: string, data: {
   avg_weight_at_seeding_g?: number
   labor_cost_per_month?: number
 }) {
-  const { supabase } = await getOrgId()
+  const { supabase } = await getContext()
   const update: Record<string, number | undefined> = {}
   if (data.sale_price_per_kg !== undefined) update.sale_price_per_kg = data.sale_price_per_kg
   if (data.target_profitability_pct !== undefined) update.target_profitability_pct = data.target_profitability_pct
