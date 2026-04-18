@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { toast } from '@/hooks/use-toast'
 
 interface RecordEditModalProps {
   defaultFca: number | null
@@ -178,6 +179,12 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
         alkalinity_mg_l: toNullableNumber(form.alkalinity_mg_l),
         fca_source: form.fca_source,
         notes: form.notes.trim() || null,
+      })
+
+      toast({
+        variant: 'success',
+        title: 'Edicion exitosa',
+        description: 'El registro se actualizo correctamente.',
       })
 
       startTransition(() => {

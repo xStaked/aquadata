@@ -1,6 +1,35 @@
 import { createClient } from '@/lib/supabase/server'
 import type { FcaSource, ProductionRecord, ProductionRecordWithBatch } from '@/db/types'
 
+const PRODUCTION_RECORD_SELECT = `
+  id,
+  batch_id,
+  upload_id,
+  record_date,
+  report_type,
+  week_end_date,
+  fish_count,
+  feed_kg,
+  avg_weight_kg,
+  mortality_count,
+  temperature_c,
+  oxygen_mg_l,
+  ammonia_mg_l,
+  nitrite_mg_l,
+  nitrate_mg_l,
+  ph,
+  phosphate_mg_l,
+  hardness_mg_l,
+  alkalinity_mg_l,
+  calculated_fca,
+  effective_fca,
+  fca_source,
+  calculated_biomass_kg,
+  notes,
+  confirmed_by,
+  created_at
+`.replace(/\s+/g, ' ').trim()
+
 /**
  * Fetch all production records for a batch.
  */
@@ -9,7 +38,7 @@ export async function getRecordsByBatch(batchId: string): Promise<ProductionReco
 
   const { data, error } = await supabase
     .from('production_records')
-    .select('*')
+    .select(PRODUCTION_RECORD_SELECT)
     .eq('batch_id', batchId)
     .order('record_date', { ascending: true })
 
@@ -26,7 +55,9 @@ export async function getRecordsByOrg(orgId: string): Promise<ProductionRecordWi
 
   const { data, error } = await supabase
     .from('production_records')
-    .select('*, batches(*, ponds(*))')
+    .select(
+      `${PRODUCTION_RECORD_SELECT}, batches(*, ponds(*))`
+    )
     .filter('batches.ponds.organization_id', 'eq', orgId)
     .order('record_date', { ascending: false })
 
@@ -54,6 +85,7 @@ export async function createRecord(data: {
   fish_count?: number | null
   feed_kg?: number | null
   avg_weight_g?: number | null
+  avg_weight_kg?: number | null
   mortality_count?: number
   temperature_c?: number | null
   oxygen_mg_l?: number | null
@@ -73,6 +105,8 @@ export async function createRecord(data: {
   upload_id?: string | null
 }): Promise<void> {
   const supabase = await createClient()
+  const avgWeightKg =
+    data.avg_weight_kg ?? (data.avg_weight_g != null ? data.avg_weight_g / 1000 : null)
 
   const { error } = await supabase.from('production_records').insert({
     batch_id: data.batch_id,
@@ -81,8 +115,7 @@ export async function createRecord(data: {
     week_end_date: data.week_end_date ?? null,
     fish_count: data.fish_count ?? null,
     feed_kg: data.feed_kg ?? null,
-    avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
-    avg_weight_g: data.avg_weight_g ?? null,
+    avg_weight_kg: avgWeightKg,
     mortality_count: data.mortality_count ?? 0,
     temperature_c: data.temperature_c ?? null,
     oxygen_mg_l: data.oxygen_mg_l ?? null,
@@ -115,6 +148,7 @@ export async function updateRecord(
     fish_count: number | null
     feed_kg: number | null
     avg_weight_g: number | null
+    avg_weight_kg: number | null
     mortality_count: number | null
     temperature_c: number | null
     oxygen_mg_l: number | null
@@ -168,9 +202,12 @@ export async function updateRecord(
   }
 
   const updatePayload: Record<string, unknown> = { ...data }
-  if ('avg_weight_g' in data && data.avg_weight_g != null) {
+  if ('avg_weight_kg' in data) {
+    updatePayload.avg_weight_kg = data.avg_weight_kg ?? null
+  } else if ('avg_weight_g' in data && data.avg_weight_g != null) {
     updatePayload.avg_weight_kg = data.avg_weight_g / 1000
   }
+  delete updatePayload.avg_weight_g
 
   const { error } = await supabase
     .from('production_records')
@@ -188,7 +225,7 @@ export async function getLatestRecordByBatch(batchId: string): Promise<Productio
 
   const { data, error } = await supabase
     .from('production_records')
-    .select('*')
+    .select(PRODUCTION_RECORD_SELECT)
     .eq('batch_id', batchId)
     .order('record_date', { ascending: false })
     .limit(1)
@@ -207,8 +244,13 @@ function normalizeRecord(raw: Record<string, unknown>): ProductionRecord {
     report_type: (raw.report_type as ProductionRecord['report_type']) ?? null,
     week_end_date: (raw.week_end_date as string) ?? null,
     feed_kg: raw.feed_kg != null ? Number(raw.feed_kg) : null,
-    avg_weight_g: raw.avg_weight_g != null ? Number(raw.avg_weight_g) : null,
     avg_weight_kg: raw.avg_weight_kg != null ? Number(raw.avg_weight_kg) : null,
+    avg_weight_g:
+      raw.avg_weight_g != null
+        ? Number(raw.avg_weight_g)
+        : raw.avg_weight_kg != null
+          ? Number(raw.avg_weight_kg) * 1000
+          : null,
     fish_count: raw.fish_count != null ? Number(raw.fish_count) : null,
     mortality_count: raw.mortality_count != null ? Number(raw.mortality_count) : 0,
     temperature_c: raw.temperature_c != null ? Number(raw.temperature_c) : null,

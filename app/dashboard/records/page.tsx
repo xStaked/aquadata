@@ -15,6 +15,33 @@ import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
 import { RecordEditModal } from '@/components/record-edit-modal'
 
+const PRODUCTION_RECORD_FIELDS = `
+  id,
+  record_date,
+  fish_count,
+  feed_kg,
+  avg_weight_kg,
+  mortality_count,
+  temperature_c,
+  oxygen_mg_l,
+  ammonia_mg_l,
+  nitrite_mg_l,
+  nitrate_mg_l,
+  ph,
+  phosphate_mg_l,
+  hardness_mg_l,
+  alkalinity_mg_l,
+  calculated_fca,
+  effective_fca,
+  fca_source,
+  calculated_biomass_kg,
+  notes,
+  report_type,
+  week_end_date,
+  created_at,
+  batch_id
+`.replace(/\s+/g, ' ').trim()
+
 export default async function RecordsPage({
   searchParams,
 }: {
@@ -100,7 +127,7 @@ export default async function RecordsPage({
         if (batchIds.length > 0) {
           let recordsQuery = supabase
             .from('production_records')
-            .select('*', { count: 'exact' })
+            .select(PRODUCTION_RECORD_FIELDS, { count: 'exact' })
             .in('batch_id', batchIds)
             .order('record_date', { ascending: false })
             .order('created_at', { ascending: false })

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getOrgContext } from '@/lib/db/context'
-import { getBatch, updateBatchPopulation, updateRecord } from '@/lib/db'
+import { updateBatchPopulation, updateRecord } from '@/lib/db'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
 import { createClient } from '@/lib/supabase/server'
@@ -34,12 +34,6 @@ function calculateDerivedValues(data: UpdateProductionRecordInput) {
 export async function updateProductionRecord(data: UpdateProductionRecordInput) {
   const ctx = await getOrgContext()
   const { userId, orgId } = ctx
-
-  // Get batch for population tracking
-  const batch = await getBatch(data.id)
-  if (!batch) {
-    throw new Error('No se pudo cargar el lote del registro')
-  }
 
   // Verify record belongs to user's org via batch -> pond -> organization chain
   const supabase = await createClient()
