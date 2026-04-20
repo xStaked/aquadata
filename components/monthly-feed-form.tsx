@@ -68,16 +68,27 @@ interface MonthlyFeedFormProps {
   feedRecords: FeedRecord[]
 }
 
+interface FeedFormState {
+  batch_id: string
+  concentrate_id: string
+  production_stage: 'levante' | 'engorde'
+  year: string
+  month: string
+  kg_used: string
+  cost_per_kg: string
+  notes: string
+}
+
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
 const now = new Date()
-const emptyForm = {
+const emptyForm: FeedFormState = {
   batch_id: '',
   concentrate_id: '',
-  production_stage: 'engorde' as const,
+  production_stage: 'engorde',
   year: String(now.getFullYear()),
   month: String(now.getMonth() + 1),
   kg_used: '',
@@ -91,10 +102,10 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState<FeedFormState>(emptyForm)
   const [error, setError] = useState('')
   const [editTarget, setEditTarget] = useState<FeedRecord | null>(null)
-  const [editForm, setEditForm] = useState(emptyForm)
+  const [editForm, setEditForm] = useState<FeedFormState>(emptyForm)
   const [editError, setEditError] = useState('')
 
   // Inline concentrate quick-create
@@ -102,17 +113,6 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
   const [quickForm, setQuickForm] = useState(emptyQuick)
   const [quickError, setQuickError] = useState('')
   const [pendingSelect, setPendingSelect] = useState('')
-
-  // Auto-select concentrate created inline after router.refresh() updates the props
-  useEffect(() => {
-    if (pendingSelect && concentrates.length > 0) {
-      const found = concentrates.find(c => c.name === pendingSelect)
-      if (found) {
-        handleConcentrateChange(found.id)
-        setPendingSelect('')
-      }
-    }
-  }, [concentrates, pendingSelect])
 
   const totalCost = (Number(form.kg_used) || 0) * (Number(form.cost_per_kg) || 0)
   const editTotalCost = (Number(editForm.kg_used) || 0) * (Number(editForm.cost_per_kg) || 0)
@@ -134,6 +134,17 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
       cost_per_kg: c ? String(c.price_per_kg) : f.cost_per_kg,
     }))
   }
+
+  // Auto-select concentrate created inline after router.refresh() updates the props
+  useEffect(() => {
+    if (pendingSelect && concentrates.length > 0) {
+      const found = concentrates.find(c => c.name === pendingSelect)
+      if (found) {
+        handleConcentrateChange(found.id)
+        setPendingSelect('')
+      }
+    }
+  }, [concentrates, pendingSelect])
 
   const handleQuickCreate = () => {
     if (!quickForm.name.trim() || !quickForm.price_per_kg) {

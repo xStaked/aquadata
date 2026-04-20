@@ -19,7 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/db/*": ["./lib/db/*"],
+      "@/domain/*": ["./lib/domain/*"],
+      "@/alerts/*": ["./lib/alerts/*"]
     }
   },
   "include": [

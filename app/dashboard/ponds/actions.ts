@@ -54,7 +54,6 @@ export async function createPond(formData: FormData) {
     area_m2: Number(formData.get('area_m2')) || null,
     depth_m: Number(formData.get('depth_m')) || null,
     species: formData.get('species') as string || null,
-    status: 'active',
     sort_order: sortOrder,
   })
 

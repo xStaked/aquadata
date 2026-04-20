@@ -11,6 +11,7 @@ import type { ProductionRecordRepositoryPort } from '@/domain/ports/output/produ
 import type { BatchRepositoryPort } from '@/domain/ports/output/batch.repository.port'
 import type { OrganizationRepositoryPort } from '@/domain/ports/output/organization.repository.port'
 import type { AlertServicePort } from '@/domain/ports/output/alert.service.port'
+import type { AlertPayload } from '@/alerts/types'
 import { calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { generateAlerts, type WaterQualityReading } from '@/lib/alerts'
 
@@ -73,7 +74,7 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
 
       const reading: WaterQualityReading = {
         batch_id: input.batch_id,
-        pond_id,
+        pond_id: pondId,
         oxygen_mg_l: input.oxygen_mg_l,
         ammonia_mg_l: input.ammonia_mg_l,
         ph: input.ph,
@@ -104,7 +105,7 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
   private async generateAlertsInternal(
     reading: WaterQualityReading,
     orgId: string,
-  ): Promise<Result<Array<{ organization_id: string; pond_id: string | null; batch_id: string; alert_type: string; severity: string; message: string }>>> {
+  ): Promise<Result<AlertPayload[]>> {
     try {
       const alerts = generateAlerts(reading, orgId)
       return success(alerts)

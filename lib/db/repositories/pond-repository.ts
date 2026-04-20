@@ -23,13 +23,13 @@ export async function getPondsByOrg(orgId: string): Promise<Pond[]> {
 export async function getPond(pondId: string, orgId?: string): Promise<Pond | null> {
   const supabase = await createClient()
 
-  let query = supabase.from('ponds').select('*').eq('id', pondId).single()
+  let query = supabase.from('ponds').select('*').eq('id', pondId)
 
   if (orgId) {
     query = query.eq('organization_id', orgId)
   }
 
-  const { data, error } = await query
+  const { data, error } = await query.single()
 
   if (error) {
     // maybeSingle returns null on no-match; single throws. Handle gracefully.

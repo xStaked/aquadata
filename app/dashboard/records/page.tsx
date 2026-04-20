@@ -148,7 +148,7 @@ export default async function RecordsPage({
           const to = from + pageSize - 1
           const { data: recs, count } = await recordsQuery.range(from, to)
 
-          records = (recs as typeof records) ?? []
+          records = (recs as unknown as typeof records) ?? []
           totalRecords = count ?? 0
         }
       }

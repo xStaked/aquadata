@@ -8,13 +8,15 @@ import { success, failure } from '@/domain/types/result'
 import type { ProductionRecordRepositoryPort } from '@/domain/ports/output/production-record.repository.port'
 import type { ProductionRecordInput, ProductionRecordUpdateInput } from '@/domain/types/record.types'
 import type { ProductionRecord } from '@/db/types'
-import { createClient } from '@/lib/supabase/server'
 import { createRecord as dbCreateRecord, updateRecord as dbUpdateRecord, getRecordsByBatch, getRecordsByOrg, getLatestRecordByBatch } from '@/lib/db'
 
 export class SupabaseProductionRecordRepository implements ProductionRecordRepositoryPort {
   async create(input: ProductionRecordInput): Promise<Result<ProductionRecord>> {
     try {
-      await dbCreateRecord(input)
+      await dbCreateRecord({
+        ...input,
+        mortality_count: input.mortality_count ?? undefined,
+      })
       return success({} as ProductionRecord)
     } catch (err) {
       return failure(

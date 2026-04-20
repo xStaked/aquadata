@@ -52,7 +52,7 @@ export function FeedTab({ concentrates, batchesForForms, feedRecords }: FeedTabP
                 </p>
                 {!step2Done && step1Done && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Usa el botón "Registrar alimento" en la sección de abajo
+                    Usa el botón &quot;Registrar alimento&quot; en la sección de abajo
                   </p>
                 )}
               </div>

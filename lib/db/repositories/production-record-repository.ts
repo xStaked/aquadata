@@ -43,7 +43,7 @@ export async function getRecordsByBatch(batchId: string): Promise<ProductionReco
     .order('record_date', { ascending: true })
 
   if (error) throw new Error(`Error fetching records by batch: ${error.message}`)
-  return (data ?? []).map(normalizeRecord)
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map(normalizeRecord)
 }
 
 /**
@@ -63,8 +63,12 @@ export async function getRecordsByOrg(orgId: string): Promise<ProductionRecordWi
 
   if (error) throw new Error(`Error fetching records by org: ${error.message}`)
 
-  return (data ?? [])
-    .filter((r) => r.batches?.ponds)
+  return ((data ?? []) as unknown as Array<Record<string, unknown> & {
+    batches?: Record<string, unknown> & { ponds?: Record<string, unknown> }
+  }>)
+    .filter((r): r is Record<string, unknown> & {
+      batches: Record<string, unknown> & { ponds: Record<string, unknown> }
+    } => Boolean(r.batches?.ponds))
     .map((r) => ({
       ...normalizeRecord(r),
       batch: {
@@ -232,7 +236,7 @@ export async function getLatestRecordByBatch(batchId: string): Promise<Productio
 
   if (error) throw new Error(`Error fetching latest record: ${error.message}`)
   if (!data || data.length === 0) return null
-  return normalizeRecord(data[0])
+  return normalizeRecord(data[0] as unknown as Record<string, unknown>)
 }
 
 function normalizeRecord(raw: Record<string, unknown>): ProductionRecord {
@@ -303,7 +307,7 @@ function normalizePondFromRaw(raw: Record<string, unknown>): ProductionRecordWit
     area_m2: raw.area_m2 != null ? Number(raw.area_m2) : null,
     depth_m: raw.depth_m != null ? Number(raw.depth_m) : null,
     species: (raw.species as string) ?? null,
-    status: (raw.status as string) ?? 'active',
+    status: (raw.status as ProductionRecordWithBatch['batch']['pond']['status']) ?? 'active',
     sort_order: Number(raw.sort_order ?? 0),
     created_at: raw.created_at as string,
   }

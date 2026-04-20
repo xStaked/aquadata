@@ -74,9 +74,7 @@ export function getGoogleVisionModelCandidates(): GoogleVisionModelCandidate[] {
       label: 'gemini-2.5-flash',
       model: MODEL_CATALOG.google.vision,
     },
-    ...GOOGLE_VISION_FALLBACKS.filter(
-      (candidate) => candidate.label !== 'gemini-2.5-flash'
-    ),
+    ...GOOGLE_VISION_FALLBACKS,
   ]
 }
 

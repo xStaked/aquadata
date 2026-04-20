@@ -44,6 +44,16 @@ export interface Pond {
   created_at: string
 }
 
+export interface PondInput {
+  organization_id: string
+  name: string
+  area_m2?: number | null
+  depth_m?: number | null
+  species?: string | null
+  status: PondStatus
+  sort_order: number
+}
+
 // ── Batches ───────────────────────────────────────────────────
 
 export type BatchStatus = 'active' | 'closed'
@@ -66,6 +76,28 @@ export interface Batch {
 
 export interface BatchWithPond extends Batch {
   pond: Pond
+}
+
+export interface BatchInput {
+  pond_id: string
+  start_date: string
+  initial_population: number
+  current_population: number
+  status: BatchStatus
+  end_date?: string
+  sale_price_per_kg?: number | null
+  target_profitability_pct?: number
+  fingerling_cost_per_unit?: number
+  avg_weight_at_seeding_g?: number | null
+  labor_cost_per_month?: number
+}
+
+export interface BatchFinancialUpdate {
+  sale_price_per_kg?: number | null
+  target_profitability_pct?: number
+  fingerling_cost_per_unit?: number
+  avg_weight_at_seeding_g?: number | null
+  labor_cost_per_month?: number
 }
 
 // ── Production Records ────────────────────────────────────────
@@ -142,6 +174,7 @@ export interface Alert {
   severity: AlertSeverity
   message: string
   is_read: boolean
+  is_resolved?: boolean
   created_at: string
 }
 
