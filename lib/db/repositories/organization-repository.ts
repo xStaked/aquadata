@@ -94,6 +94,7 @@ function normalizeOrganization(raw: Record<string, unknown>): Organization {
           (value): value is string => typeof value === 'string'
         )
       : [],
+    sales_module_enabled: raw.sales_module_enabled !== false,
     created_at: raw.created_at as string,
   }
 }

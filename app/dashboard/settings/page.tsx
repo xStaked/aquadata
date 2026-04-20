@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import { OrganizationFcaSettings } from '@/components/organization-fca-settings'
 import { OrganizationFishPriceSettings } from '@/components/organization-fish-price-settings'
+import { OrganizationSalesModuleSettings } from '@/components/organization-sales-module-settings'
 import { OrganizationWhatsappSettings } from '@/components/organization-whatsapp-settings'
 import { getColombianMarketPrices } from '@/lib/market-data'
 import { createClient } from '@/lib/supabase/server'
@@ -25,7 +26,7 @@ export default async function SettingsPage() {
   const [{ data: organization }, { data: ponds }, marketPrices] = await Promise.all([
     supabase
       .from('organizations')
-      .select('name, default_fca, custom_fish_prices, authorized_whatsapp_phones')
+      .select('name, default_fca, custom_fish_prices, authorized_whatsapp_phones, sales_module_enabled')
       .eq('id', profile.organization_id)
       .single(),
     supabase
@@ -76,11 +77,17 @@ export default async function SettingsPage() {
         }
       />
 
-      <OrganizationFishPriceSettings
-        species={species}
-        initialPrices={initialPrices}
-        marketPrices={marketPriceMap}
+      <OrganizationSalesModuleSettings
+        initialEnabled={organization?.sales_module_enabled !== false}
       />
+
+      {organization?.sales_module_enabled !== false ? (
+        <OrganizationFishPriceSettings
+          species={species}
+          initialPrices={initialPrices}
+          marketPrices={marketPriceMap}
+        />
+      ) : null}
     </div>
   )
 }

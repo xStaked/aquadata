@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+
 import { createClient } from '@/lib/supabase/server'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DollarSign, FlaskConical, Fish, Scale, Target, Wheat } from 'lucide-react'
@@ -28,17 +30,28 @@ export default async function CostsPage() {
     .eq('id', user!.id)
     .single()
 
-  const marketPrices = await getColombianMarketPrices('BOGOTÁ')
-
   let treatments: Treatment[] = []
   let batches: BatchSummary[] = []
   let concentrates: Concentrate[] = []
   let feedRecords: FeedRecord[] = []
   let harvests: HarvestRecord[] = []
+  let marketPrices: Awaited<ReturnType<typeof getColombianMarketPrices>> = []
 
   let customFishPrices: Record<string, number> = {}
 
   if (profile?.organization_id) {
+    const { data: organization } = await supabase
+      .from('organizations')
+      .select('custom_fish_prices, sales_module_enabled')
+      .eq('id', profile.organization_id)
+      .single()
+
+    if (organization?.sales_module_enabled === false) {
+      redirect('/dashboard')
+    }
+
+    marketPrices = await getColombianMarketPrices('BOGOTÁ')
+
     const [
       { data: ponds },
       { data: rawTreatments },
@@ -92,7 +105,11 @@ export default async function CostsPage() {
         .single(),
     ])
 
-    customFishPrices = (orgData?.custom_fish_prices ?? {}) as Record<string, number>
+    customFishPrices = (
+      organization?.custom_fish_prices ??
+      orgData?.custom_fish_prices ??
+      {}
+    ) as Record<string, number>
 
     const pondMap: Record<string, { name: string; species: string }> = {}
     const pondOrderMap: Record<string, number> = {}

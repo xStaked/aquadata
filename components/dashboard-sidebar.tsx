@@ -21,7 +21,7 @@ import {
   X,
   ShieldCheck,
 } from 'lucide-react'
-import { useState, useEffect, type ComponentType } from 'react'
+import { useState, type ComponentType } from 'react'
 
 type NavItem = {
   href: string
@@ -43,31 +43,18 @@ const navItems: NavItem[] = [
   { href: '/admin', label: 'Admin', icon: ShieldCheck, adminOnly: true },
 ]
 
-export function DashboardSidebar() {
+export function DashboardSidebar({
+  initialFarmName,
+  initialUserRole,
+  initialSalesModuleEnabled,
+}: {
+  initialFarmName: string | null
+  initialUserRole: string | null
+  initialSalesModuleEnabled: boolean
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [farmName, setFarmName] = useState<string | null>(null)
-  const [userRole, setUserRole] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchFarmName = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data } = await supabase
-        .from('profiles')
-        .select('role, organizations(name)')
-        .eq('id', user.id)
-        .single()
-
-      const org = data?.organizations as unknown as { name: string } | null
-      if (org?.name) setFarmName(org.name)
-      if (data?.role) setUserRole(data.role)
-    }
-    fetchFarmName()
-  }, [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -90,9 +77,9 @@ export function DashboardSidebar() {
           <span className="text-lg font-bold tracking-tight text-sidebar-foreground">
             AquaData
           </span>
-          {farmName && (
+          {initialFarmName && (
             <span className="text-xs text-sidebar-foreground/60 truncate max-w-[140px]">
-              {farmName}
+              {initialFarmName}
             </span>
           )}
         </div>
@@ -101,7 +88,8 @@ export function DashboardSidebar() {
       <nav className="flex-1 px-3 py-2">
         <ul className="flex flex-col gap-1">
           {navItems
-            .filter((item) => !item.adminOnly || userRole === 'admin')
+            .filter((item) => initialSalesModuleEnabled || item.href !== '/dashboard/costs')
+            .filter((item) => !item.adminOnly || initialUserRole === 'admin')
             .map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)

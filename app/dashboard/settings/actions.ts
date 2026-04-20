@@ -95,3 +95,25 @@ export async function updateOrganizationAuthorizedWhatsappPhones(phoneInputs: st
     authorizedWhatsappPhones: updated.authorized_whatsapp_phones ?? [],
   }
 }
+
+export async function updateOrganizationSalesModuleEnabled(enabled: boolean) {
+  const ctx = await getOrgContext()
+  const { orgId } = ctx
+
+  const updated = await updateOrganization(orgId, {
+    sales_module_enabled: enabled,
+  })
+
+  if (!updated) {
+    throw new Error('No se pudo actualizar la visibilidad del módulo de ventas')
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/costs')
+  revalidatePath('/dashboard/settings')
+
+  return {
+    id: updated.id,
+    salesModuleEnabled: updated.sales_module_enabled,
+  }
+}

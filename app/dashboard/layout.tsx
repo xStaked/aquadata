@@ -17,7 +17,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, organizations(name, sales_module_enabled)')
     .eq('id', user.id)
     .single()
 
@@ -27,7 +27,16 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-svh bg-background">
-      <DashboardSidebar />
+      <DashboardSidebar
+        initialFarmName={
+          (profile?.organizations as { name?: string | null } | null)?.name ?? null
+        }
+        initialUserRole={profile?.role ?? null}
+        initialSalesModuleEnabled={
+          (profile?.organizations as { sales_module_enabled?: boolean | null } | null)
+            ?.sales_module_enabled !== false
+        }
+      />
       <main className="flex-1 overflow-auto">
         <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
           {children}

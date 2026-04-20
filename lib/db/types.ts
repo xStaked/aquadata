@@ -11,6 +11,7 @@ export interface Organization {
   default_fca: number | null
   custom_fish_prices: Record<string, number>
   authorized_whatsapp_phones: string[]
+  sales_module_enabled: boolean
   created_at: string
 }
 

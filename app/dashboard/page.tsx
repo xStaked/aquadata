@@ -27,9 +27,13 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, organization_id')
+    .select('full_name, role, organization_id, organizations(sales_module_enabled)')
     .eq('id', user!.id)
     .single()
+
+  const salesModuleEnabled =
+    (profile?.organizations as { sales_module_enabled?: boolean | null } | null)
+      ?.sales_module_enabled !== false
 
   let pondCount = 0
   let batchCount = 0
@@ -140,7 +144,7 @@ export default async function DashboardPage() {
     { label: 'Ver analitica', href: '/dashboard/analytics', Icon: BarChart3, desc: 'Tendencias y desempeno' },
     { label: 'Gestionar estanques', href: '/dashboard/ponds', Icon: Waves, desc: 'Estado y configuracion' },
     { label: 'Abrir registros', href: '/dashboard/records', Icon: ClipboardList, desc: 'Historial operativo' },
-  ]
+  ].filter(action => salesModuleEnabled || action.href !== '/dashboard/costs')
 
   const overviewItems = [
     {
