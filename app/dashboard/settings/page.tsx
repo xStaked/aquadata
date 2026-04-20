@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import { OrganizationFcaSettings } from '@/components/organization-fca-settings'
 import { OrganizationFishPriceSettings } from '@/components/organization-fish-price-settings'
+import { OrganizationWhatsappSettings } from '@/components/organization-whatsapp-settings'
 import { getColombianMarketPrices } from '@/lib/market-data'
 import { createClient } from '@/lib/supabase/server'
 
@@ -13,7 +14,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, whatsapp_phone')
     .eq('id', user!.id)
     .single()
 
@@ -24,7 +25,7 @@ export default async function SettingsPage() {
   const [{ data: organization }, { data: ponds }, marketPrices] = await Promise.all([
     supabase
       .from('organizations')
-      .select('name, default_fca, custom_fish_prices')
+      .select('name, default_fca, custom_fish_prices, authorized_whatsapp_phones')
       .eq('id', profile.organization_id)
       .single(),
     supabase
@@ -61,6 +62,18 @@ export default async function SettingsPage() {
       <OrganizationFcaSettings
         farmName={organization?.name ?? 'tu finca'}
         initialDefaultFca={organization?.default_fca != null ? Number(organization.default_fca) : null}
+      />
+
+      <OrganizationWhatsappSettings
+        farmName={organization?.name ?? 'tu finca'}
+        primaryPhone={profile?.whatsapp_phone ?? null}
+        initialAuthorizedPhones={
+          Array.isArray(organization?.authorized_whatsapp_phones)
+            ? organization.authorized_whatsapp_phones.filter(
+                (value): value is string => typeof value === 'string'
+              )
+            : []
+        }
       />
 
       <OrganizationFishPriceSettings

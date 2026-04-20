@@ -62,6 +62,8 @@ export async function getOrganizationWithProfile(
       id: profile.id,
       email: profile.email,
       full_name: profile.full_name,
+      whatsapp_phone: profile.whatsapp_phone,
+      phone: profile.phone,
       role: profile.role,
       organization_id: profile.organization_id,
       created_at: profile.created_at,
@@ -74,6 +76,8 @@ interface OrganizationProfile {
   id: string
   email: string | null
   full_name: string | null
+  whatsapp_phone?: string | null
+  phone?: string | null
   role: string
   organization_id: string | null
   created_at: string
@@ -85,6 +89,11 @@ function normalizeOrganization(raw: Record<string, unknown>): Organization {
     name: raw.name as string,
     default_fca: raw.default_fca != null ? Number(raw.default_fca) : null,
     custom_fish_prices: (raw.custom_fish_prices as Record<string, number>) ?? {},
+    authorized_whatsapp_phones: Array.isArray(raw.authorized_whatsapp_phones)
+      ? raw.authorized_whatsapp_phones.filter(
+          (value): value is string => typeof value === 'string'
+        )
+      : [],
     created_at: raw.created_at as string,
   }
 }

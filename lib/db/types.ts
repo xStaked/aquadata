@@ -10,6 +10,7 @@ export interface Organization {
   name: string
   default_fca: number | null
   custom_fish_prices: Record<string, number>
+  authorized_whatsapp_phones: string[]
   created_at: string
 }
 
@@ -19,6 +20,8 @@ export interface Profile {
   id: string
   email: string | null
   full_name: string | null
+  whatsapp_phone?: string | null
+  phone?: string | null
   role: string
   organization_id: string | null
   created_at: string

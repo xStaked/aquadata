@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getOrgContext } from '@/lib/db/context'
 import { updateOrganization } from '@/lib/db'
+import { normalizeColombianPhoneNumber } from '@/lib/phone'
 
 export async function updateOrganizationDefaultFca(defaultFca: number | null) {
   const ctx = await getOrgContext()
@@ -52,5 +53,45 @@ export async function updateOrganizationCustomFishPrices(
   return {
     id: updated.id,
     customFishPrices: (updated.custom_fish_prices ?? {}) as Record<string, number>,
+  }
+}
+
+export async function updateOrganizationAuthorizedWhatsappPhones(phoneInputs: string[]) {
+  const ctx = await getOrgContext()
+  const { orgId } = ctx
+
+  const normalizedPhones = Array.from(
+    new Set(
+      phoneInputs
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => {
+          const normalized = normalizeColombianPhoneNumber(value)
+
+          if (!normalized) {
+            throw new Error(
+              `Número inválido: ${value}. Usa formato Colombia de 10 dígitos, por ejemplo 3001234567.`
+            )
+          }
+
+          return normalized
+        })
+    )
+  )
+
+  const updated = await updateOrganization(orgId, {
+    authorized_whatsapp_phones: normalizedPhones,
+  })
+
+  if (!updated) {
+    throw new Error('No se pudieron actualizar los números autorizados')
+  }
+
+  revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard/upload')
+
+  return {
+    id: updated.id,
+    authorizedWhatsappPhones: updated.authorized_whatsapp_phones ?? [],
   }
 }

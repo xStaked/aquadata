@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { AuthorizedWhatsappNumbersCard } from '@/components/authorized-whatsapp-numbers-card'
 import { UploadForm } from '@/components/upload-form'
 import { ManualRecordForm } from '@/components/manual-record-form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,11 +10,12 @@ export default async function UploadPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, whatsapp_phone')
     .eq('id', user!.id)
     .single()
 
   let organizationDefaultFca: number | null = null
+  let authorizedWhatsappPhones: string[] = []
 
   let batches: Array<{
     id: string
@@ -26,11 +28,16 @@ export default async function UploadPage() {
   if (profile?.organization_id) {
     const { data: organization } = await supabase
       .from('organizations')
-      .select('default_fca')
+      .select('default_fca, authorized_whatsapp_phones')
       .eq('id', profile.organization_id)
       .single()
 
     organizationDefaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
+    authorizedWhatsappPhones = Array.isArray(organization?.authorized_whatsapp_phones)
+      ? organization.authorized_whatsapp_phones.filter(
+          (value): value is string => typeof value === 'string'
+        )
+      : []
 
     const { data: ponds } = await supabase
       .from('ponds')
@@ -84,6 +91,12 @@ export default async function UploadPage() {
           Registra datos de produccion manualmente o sube una foto para extraccion automatica con IA
         </p>
       </div>
+
+      <AuthorizedWhatsappNumbersCard
+        primaryPhone={profile?.whatsapp_phone ?? null}
+        authorizedPhones={authorizedWhatsappPhones}
+      />
+
       <Tabs defaultValue="manual" className="w-full">
         <TabsList>
           <TabsTrigger value="manual">Manual</TabsTrigger>
