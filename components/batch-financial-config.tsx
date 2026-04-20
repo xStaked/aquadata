@@ -40,9 +40,20 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
     labor_cost_per_month: current.labor_cost_per_month != null ? String(current.labor_cost_per_month) : '',
   })
 
-  // Preview del costo total de alevinos
-  const totalFingerlingCost =
-    (Number(form.fingerling_cost_per_unit) || 0) * initialPopulation
+  const fingerlingCostPerUnit = Number(form.fingerling_cost_per_unit) || 0
+  const avgWeightAtSeedingG = Number(form.avg_weight_at_seeding_g) || 0
+  const totalFingerlingWeightG = avgWeightAtSeedingG * initialPopulation
+  const totalFingerlingWeightKg = totalFingerlingWeightG / 1000
+  const totalFingerlingCost = fingerlingCostPerUnit * initialPopulation
+  const derivedFingerlingPricePerGram =
+    totalFingerlingWeightG > 0 ? totalFingerlingCost / totalFingerlingWeightG : 0
+
+  const formatCOP = (value: number) =>
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(value)
 
   const handleSave = () => {
     const targetPct = Number(form.target_profitability_pct)
@@ -50,6 +61,7 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
       setError('El % de utilidad objetivo debe estar entre 0 y 99')
       return
     }
+
     setError('')
     startTransition(async () => {
       try {
@@ -118,18 +130,44 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
           <div className="flex flex-col gap-3">
             <p className="text-xs font-semibold uppercase text-muted-foreground">Costos</p>
             <div className="grid grid-cols-2 gap-3">
-              {field('fingerling_cost_per_unit', 'Costo por alevino (COP)', 'Ej: 150')}
-              {field('avg_weight_at_seeding_g', 'Peso a la siembra (g)', 'Ej: 5')}
+              {field(
+                'fingerling_cost_per_unit',
+                'Costo por alevino (COP)',
+                'Ej: 150'
+              )}
+              {field(
+                'avg_weight_at_seeding_g',
+                'Peso a la siembra por pez (g)',
+                'Ej: 5'
+              )}
               {field('labor_cost_per_month', 'Mano de obra/mes (COP)', 'Ej: 1200000')}
             </div>
 
             {/* Preview alevinos */}
             {totalFingerlingCost > 0 && (
               <div className="rounded border bg-muted/40 px-3 py-2 text-xs">
-                <span className="text-muted-foreground">Costo total alevinos ({initialPopulation.toLocaleString()} unid.): </span>
-                <span className="font-semibold">
-                  {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalFingerlingCost)}
-                </span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Costo total del lote de alevino</span>
+                  <span className="font-semibold">{formatCOP(totalFingerlingCost)}</span>
+                </div>
+                <div className="mt-1 space-y-1 text-[11px] text-muted-foreground">
+                  <p>
+                    {initialPopulation.toLocaleString()} peces × {formatCOP(fingerlingCostPerUnit)} por alevino
+                  </p>
+                  {avgWeightAtSeedingG > 0 && (
+                    <>
+                      <p>
+                        Peso total a la siembra: {totalFingerlingWeightG.toLocaleString('es-CO')} g ({totalFingerlingWeightKg.toLocaleString('es-CO', {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2,
+                        })} kg)
+                      </p>
+                      <p>
+                        Equivale a {formatCOP(derivedFingerlingPricePerGram)}/g
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
