@@ -35,6 +35,7 @@ export default function SignUpPage() {
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
+    const normalizedInviteCode = inviteCode.trim().toUpperCase()
 
     if (password !== repeatPassword) {
       setError('Las contraseñas no coinciden')
@@ -55,7 +56,7 @@ export default function SignUpPage() {
     const { data: codeData, error: codeError } = await supabase
       .from('invitation_codes')
       .select('id, used')
-      .eq('code', inviteCode.trim().toUpperCase())
+      .eq('code', normalizedInviteCode)
       .single()
 
     if (codeError || !codeData) {
@@ -101,7 +102,7 @@ export default function SignUpPage() {
         .eq('id', codeData.id)
         .eq('used', false)
       if (updateError) {
-        console.error('Error marking invitation code as used:', updateError.message)
+        throw new Error('No fue posible marcar el código de invitación como usado')
       }
 
       router.push('/auth/sign-up-success')
