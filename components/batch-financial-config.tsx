@@ -19,20 +19,24 @@ import { updateBatchFinancialConfig } from '@/app/dashboard/ponds/actions'
 interface BatchFinancialConfigProps {
   batchId: string
   initialPopulation: number
+  salesModuleEnabled: boolean
   current: {
     sale_price_per_kg: number | null
     target_profitability_pct: number | null
     fingerling_cost_per_unit: number | null
     avg_weight_at_seeding_g: number | null
     labor_cost_per_month: number | null
-    operating_fixed_costs: number | null
-    target_profit_amount: number | null
     bioaqua_quantity: number | null
     bioterra_quantity: number | null
   }
 }
 
-export function BatchFinancialConfig({ batchId, initialPopulation, current }: BatchFinancialConfigProps) {
+export function BatchFinancialConfig({
+  batchId,
+  initialPopulation,
+  salesModuleEnabled,
+  current,
+}: BatchFinancialConfigProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -40,11 +44,9 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
   const [form, setForm] = useState({
     sale_price_per_kg: current.sale_price_per_kg != null ? String(current.sale_price_per_kg) : '',
     target_profitability_pct: current.target_profitability_pct != null ? String(current.target_profitability_pct) : '30',
-    target_profit_amount: current.target_profit_amount != null ? String(current.target_profit_amount) : '',
     fingerling_cost_per_unit: current.fingerling_cost_per_unit != null ? String(current.fingerling_cost_per_unit) : '',
     avg_weight_at_seeding_g: current.avg_weight_at_seeding_g != null ? String(current.avg_weight_at_seeding_g) : '',
     labor_cost_per_month: current.labor_cost_per_month != null ? String(current.labor_cost_per_month) : '',
-    operating_fixed_costs: current.operating_fixed_costs != null ? String(current.operating_fixed_costs) : '',
     bioaqua_quantity: current.bioaqua_quantity != null ? String(current.bioaqua_quantity) : '',
     bioterra_quantity: current.bioterra_quantity != null ? String(current.bioterra_quantity) : '',
   })
@@ -80,8 +82,6 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
           fingerling_cost_per_unit: Number(form.fingerling_cost_per_unit) || 0,
           avg_weight_at_seeding_g: form.avg_weight_at_seeding_g ? Number(form.avg_weight_at_seeding_g) : null,
           labor_cost_per_month: Number(form.labor_cost_per_month) || 0,
-          operating_fixed_costs: Number(form.operating_fixed_costs) || 0,
-          target_profit_amount: Number(form.target_profit_amount) || 0,
           bioaqua_quantity: Number(form.bioaqua_quantity) || 0,
           bioterra_quantity: Number(form.bioterra_quantity) || 0,
         })
@@ -108,6 +108,49 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
     </div>
   )
 
+  const fingerlingFields = (
+    <>
+      {field(
+        'fingerling_cost_per_unit',
+        'Costo por alevino (COP)',
+        'Ej: 150'
+      )}
+      {field(
+        'avg_weight_at_seeding_g',
+        'Peso a la siembra por pez (g)',
+        'Ej: 5'
+      )}
+      {salesModuleEnabled && field('labor_cost_per_month', 'Mano de obra/mes (COP)', 'Ej: 1200000')}
+    </>
+  )
+
+  const fingerlingPreview = totalFingerlingCost > 0 && (
+    <div className="rounded border bg-muted/40 px-3 py-2 text-xs">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-muted-foreground">Costo total del lote de alevino</span>
+        <span className="font-semibold">{formatCOP(totalFingerlingCost)}</span>
+      </div>
+      <div className="mt-1 space-y-1 text-[11px] text-muted-foreground">
+        <p>
+          {initialPopulation.toLocaleString()} peces × {formatCOP(fingerlingCostPerUnit)} por alevino
+        </p>
+        {avgWeightAtSeedingG > 0 && (
+          <>
+            <p>
+              Peso total a la siembra: {totalFingerlingWeightG.toLocaleString('es-CO')} g ({totalFingerlingWeightKg.toLocaleString('es-CO', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })} kg)
+            </p>
+            <p>
+              Equivale a {formatCOP(derivedFingerlingPricePerGram)}/g
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -125,89 +168,64 @@ export function BatchFinancialConfig({ batchId, initialPopulation, current }: Ba
           <DialogTitle>Configuración del lote</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="financial" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="financial">Financiero</TabsTrigger>
-            <TabsTrigger value="inputs">Insumos</TabsTrigger>
-          </TabsList>
+        {salesModuleEnabled ? (
+          <Tabs defaultValue="financial" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="financial">Financiero</TabsTrigger>
+              <TabsTrigger value="inputs">Insumos</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="financial" className="flex flex-col gap-5 mt-4">
-            {/* Ventas */}
-            <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Venta</p>
-              <div className="grid grid-cols-2 gap-3">
-                {field('sale_price_per_kg', 'Precio de venta/kg (COP)', 'Ej: 9500',
-                  'Si se deja vacío se usará el precio de referencia SIPSA')}
-                {field('target_profitability_pct', '% Utilidad objetivo *', '30',
-                  'Ej: 30 → quiere ganar el 30% del ingreso proyectado')}
-                {field('target_profit_amount', 'Utilidad objetivo (COP)', 'Ej: 5000000',
-                  'Monto fijo de utilidad esperada (opcional)')}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Costos */}
-            <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Costos</p>
-              <div className="grid grid-cols-2 gap-3">
-                {field(
-                  'fingerling_cost_per_unit',
-                  'Costo por alevino (COP)',
-                  'Ej: 150'
-                )}
-                {field(
-                  'avg_weight_at_seeding_g',
-                  'Peso a la siembra por pez (g)',
-                  'Ej: 5'
-                )}
-                {field('labor_cost_per_month', 'Mano de obra/mes (COP)', 'Ej: 1200000')}
-                {field('operating_fixed_costs', 'Costos fijos operativos/mes (COP)', 'Ej: 800000')}
-              </div>
-
-              {/* Preview alevinos */}
-              {totalFingerlingCost > 0 && (
-                <div className="rounded border bg-muted/40 px-3 py-2 text-xs">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Costo total del lote de alevino</span>
-                    <span className="font-semibold">{formatCOP(totalFingerlingCost)}</span>
-                  </div>
-                  <div className="mt-1 space-y-1 text-[11px] text-muted-foreground">
-                    <p>
-                      {initialPopulation.toLocaleString()} peces × {formatCOP(fingerlingCostPerUnit)} por alevino
-                    </p>
-                    {avgWeightAtSeedingG > 0 && (
-                      <>
-                        <p>
-                          Peso total a la siembra: {totalFingerlingWeightG.toLocaleString('es-CO')} g ({totalFingerlingWeightKg.toLocaleString('es-CO', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 2,
-                          })} kg)
-                        </p>
-                        <p>
-                          Equivale a {formatCOP(derivedFingerlingPricePerGram)}/g
-                        </p>
-                      </>
-                    )}
-                  </div>
+            <TabsContent value="financial" className="mt-4 flex flex-col gap-5">
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Venta</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {field('sale_price_per_kg', 'Precio de venta/kg (COP)', 'Ej: 9500',
+                    'Si se deja vacío se usará el precio de referencia SIPSA')}
+                  {field('target_profitability_pct', '% Utilidad objetivo *', '30',
+                    'Ej: 30 → quiere ganar el 30% del ingreso proyectado')}
                 </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="inputs" className="flex flex-col gap-5 mt-4">
-            <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Bioremediación</p>
-              <div className="grid grid-cols-2 gap-3">
-                {field('bioaqua_quantity', 'Cantidad BIOAQUAPRO (g)', 'Ej: 2500')}
-                {field('bioterra_quantity', 'Cantidad BIOTERRAPRO (g)', 'Ej: 1800')}
               </div>
+
+              <Separator />
+
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Costos</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {fingerlingFields}
+                </div>
+                {fingerlingPreview}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="inputs" className="mt-4 flex flex-col gap-5">
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Bioremediación</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {field('bioaqua_quantity', 'Cantidad BIOAQUAPRO (g)', 'Ej: 2500')}
+                  {field('bioterra_quantity', 'Cantidad BIOTERRAPRO (g)', 'Ej: 1800')}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Registra la cantidad total aplicada de cada producto en este lote. Estos valores se usan para el seguimiento de insumos.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 gap-3">
+              {field('fingerling_cost_per_unit', 'Costo por alevino (COP)', 'Ej: 150')}
+              {field('avg_weight_at_seeding_g', 'Peso a la siembra por pez (g)', 'Ej: 5')}
+              {field('bioaqua_quantity', 'Cantidad BIOAQUAPRO (g)', 'Ej: 2500')}
+              {field('bioterra_quantity', 'Cantidad BIOTERRAPRO (g)', 'Ej: 1800')}
+            </div>
+            {fingerlingPreview}
+            <div className="flex flex-col gap-3">
               <p className="text-[11px] text-muted-foreground">
                 Registra la cantidad total aplicada de cada producto en este lote. Estos valores se usan para el seguimiento de insumos.
               </p>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
 
         {error && <p className="text-xs text-destructive">{error}</p>}
 

@@ -14,11 +14,14 @@ export default async function PondsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, organizations(sales_module_enabled)')
     .eq('id', user!.id)
     .single()
 
   const hasOrganization = !!profile?.organization_id
+  const salesModuleEnabled =
+    (profile?.organizations as { sales_module_enabled?: boolean | null } | null)
+      ?.sales_module_enabled !== false
 
   let ponds: Array<{
     id: string
@@ -40,8 +43,6 @@ export default async function PondsPage() {
       fingerling_cost_per_unit: number | null
       avg_weight_at_seeding_g: number | null
       labor_cost_per_month: number | null
-      operating_fixed_costs: number | null
-      target_profit_amount: number | null
       bioaqua_quantity: number | null
       bioterra_quantity: number | null
     }>
@@ -62,7 +63,7 @@ export default async function PondsPage() {
           id, start_date, end_date, initial_population, current_population, status,
           sale_price_per_kg, target_profitability_pct,
           fingerling_cost_per_unit, avg_weight_at_seeding_g, labor_cost_per_month,
-          operating_fixed_costs, target_profit_amount, bioaqua_quantity, bioterra_quantity
+          bioaqua_quantity, bioterra_quantity
         )
       `)
       .eq('organization_id', profile.organization_id)
@@ -203,6 +204,7 @@ export default async function PondsPage() {
         <PondsSortableGrid
           ponds={ponds}
           waterQuality={waterQuality}
+          salesModuleEnabled={salesModuleEnabled}
         />
       )}
     </div>

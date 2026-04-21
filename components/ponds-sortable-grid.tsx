@@ -56,8 +56,6 @@ export type PondListItem = {
     fingerling_cost_per_unit: number | null
     avg_weight_at_seeding_g: number | null
     labor_cost_per_month: number | null
-    operating_fixed_costs: number | null
-    target_profit_amount: number | null
     bioaqua_quantity: number | null
     bioterra_quantity: number | null
   }>
@@ -74,6 +72,7 @@ type WaterStatus = 'critical' | 'warning' | 'normal' | null
 type PondsSortableGridProps = {
   ponds: PondListItem[]
   waterQuality: Record<string, WaterQuality>
+  salesModuleEnabled: boolean
 }
 
 function getAmmoniaStatus(val: number | null): { label: string; level: WaterStatus } | null {
@@ -124,9 +123,11 @@ const statusBadgeClass: Record<NonNullable<WaterStatus>, string> = {
 function SortablePondCard({
   pond,
   waterQuality,
+  salesModuleEnabled,
 }: {
   pond: PondListItem
   waterQuality: Record<string, WaterQuality>
+  salesModuleEnabled: boolean
 }) {
   const {
     attributes,
@@ -296,14 +297,13 @@ function SortablePondCard({
                       <BatchFinancialConfig
                         batchId={batch.id}
                         initialPopulation={batch.initial_population}
+                        salesModuleEnabled={salesModuleEnabled}
                         current={{
                           sale_price_per_kg: batch.sale_price_per_kg,
                           target_profitability_pct: batch.target_profitability_pct,
                           fingerling_cost_per_unit: batch.fingerling_cost_per_unit,
                           avg_weight_at_seeding_g: batch.avg_weight_at_seeding_g,
                           labor_cost_per_month: batch.labor_cost_per_month,
-                          operating_fixed_costs: batch.operating_fixed_costs,
-                          target_profit_amount: batch.target_profit_amount,
                           bioaqua_quantity: batch.bioaqua_quantity,
                           bioterra_quantity: batch.bioterra_quantity,
                         }}
@@ -325,7 +325,11 @@ function SortablePondCard({
   )
 }
 
-export function PondsSortableGrid({ ponds, waterQuality }: PondsSortableGridProps) {
+export function PondsSortableGrid({
+  ponds,
+  waterQuality,
+  salesModuleEnabled,
+}: PondsSortableGridProps) {
   const pondIds = useMemo(() => ponds.map((pond) => pond.id), [ponds])
   const pondsMap = useMemo(() => new Map(ponds.map((pond) => [pond.id, pond])), [ponds])
 
@@ -375,11 +379,16 @@ export function PondsSortableGrid({ ponds, waterQuality }: PondsSortableGridProp
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sortedPonds.map((pond) => pond.id)}>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {sortedPonds.map((pond) => (
-              <SortablePondCard key={pond.id} pond={pond} waterQuality={waterQuality} />
-            ))}
-          </div>
-        </SortableContext>
+          {sortedPonds.map((pond) => (
+            <SortablePondCard
+              key={pond.id}
+              pond={pond}
+              waterQuality={waterQuality}
+              salesModuleEnabled={salesModuleEnabled}
+            />
+          ))}
+        </div>
+      </SortableContext>
       </DndContext>
     </div>
   )
