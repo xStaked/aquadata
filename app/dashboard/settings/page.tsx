@@ -6,6 +6,7 @@ import { OrganizationSalesModuleSettings } from '@/components/organization-sales
 import { OrganizationWhatsappSettings } from '@/components/organization-whatsapp-settings'
 import { getColombianMarketPrices } from '@/lib/market-data'
 import { createClient } from '@/lib/supabase/server'
+import { parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -26,7 +27,7 @@ export default async function SettingsPage() {
   const [{ data: organization }, { data: ponds }, marketPrices] = await Promise.all([
     supabase
       .from('organizations')
-      .select('name, default_fca, custom_fish_prices, authorized_whatsapp_phones, sales_module_enabled')
+      .select('name, default_fca, custom_fish_prices, authorized_whatsapp_contacts, sales_module_enabled')
       .eq('id', profile.organization_id)
       .single(),
     supabase
@@ -68,13 +69,7 @@ export default async function SettingsPage() {
       <OrganizationWhatsappSettings
         farmName={organization?.name ?? 'tu finca'}
         primaryPhone={profile?.whatsapp_phone ?? null}
-        initialAuthorizedPhones={
-          Array.isArray(organization?.authorized_whatsapp_phones)
-            ? organization.authorized_whatsapp_phones.filter(
-                (value): value is string => typeof value === 'string'
-              )
-            : []
-        }
+        initialAuthorizedContacts={parseAuthorizedWhatsappContacts(organization?.authorized_whatsapp_contacts)}
       />
 
       <OrganizationSalesModuleSettings

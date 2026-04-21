@@ -7,6 +7,7 @@
 
 // ── Types ─────────────────────────────────────────────────────
 export type {
+  AuthorizedWhatsappContact,
   Organization,
   Profile,
   Pond,
@@ -23,6 +24,7 @@ export type {
   AlertSeverity,
   Upload,
   UploadStatus,
+  UploadSource,
   BioremediationCalc,
   OrgContext,
 } from './types'

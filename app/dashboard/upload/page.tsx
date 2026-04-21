@@ -3,6 +3,8 @@ import { AuthorizedWhatsappNumbersCard } from '@/components/authorized-whatsapp-
 import { UploadForm } from '@/components/upload-form'
 import { ManualRecordForm } from '@/components/manual-record-form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { AuthorizedWhatsappContact } from '@/db/types'
+import { parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
 
 export default async function UploadPage() {
   const supabase = await createClient()
@@ -15,7 +17,7 @@ export default async function UploadPage() {
     .single()
 
   let organizationDefaultFca: number | null = null
-  let authorizedWhatsappPhones: string[] = []
+  let authorizedWhatsappContacts: AuthorizedWhatsappContact[] = []
 
   let batches: Array<{
     id: string
@@ -28,16 +30,12 @@ export default async function UploadPage() {
   if (profile?.organization_id) {
     const { data: organization } = await supabase
       .from('organizations')
-      .select('default_fca, authorized_whatsapp_phones')
+      .select('default_fca, authorized_whatsapp_contacts')
       .eq('id', profile.organization_id)
       .single()
 
     organizationDefaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
-    authorizedWhatsappPhones = Array.isArray(organization?.authorized_whatsapp_phones)
-      ? organization.authorized_whatsapp_phones.filter(
-          (value): value is string => typeof value === 'string'
-        )
-      : []
+    authorizedWhatsappContacts = parseAuthorizedWhatsappContacts(organization?.authorized_whatsapp_contacts)
 
     const { data: ponds } = await supabase
       .from('ponds')
@@ -94,7 +92,7 @@ export default async function UploadPage() {
 
       <AuthorizedWhatsappNumbersCard
         primaryPhone={profile?.whatsapp_phone ?? null}
-        authorizedPhones={authorizedWhatsappPhones}
+        authorizedContacts={authorizedWhatsappContacts}
       />
 
       <Tabs defaultValue="manual" className="w-full">

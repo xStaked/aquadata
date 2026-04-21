@@ -4,56 +4,66 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Phone, Plus, Trash2, Users } from 'lucide-react'
 
-import { updateOrganizationAuthorizedWhatsappPhones } from '@/app/dashboard/settings/actions'
+import type { AuthorizedWhatsappContact } from '@/db/types'
+import { updateOrganizationAuthorizedWhatsappContacts } from '@/app/dashboard/settings/actions'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatColombianPhoneNumber, normalizeColombianPhoneNumber } from '@/lib/phone'
+import { normalizeWhatsappContactName } from '@/lib/whatsapp-contacts'
 
 export function OrganizationWhatsappSettings({
   farmName,
   primaryPhone,
-  initialAuthorizedPhones,
+  initialAuthorizedContacts,
 }: {
   farmName: string
   primaryPhone: string | null
-  initialAuthorizedPhones: string[]
+  initialAuthorizedContacts: AuthorizedWhatsappContact[]
 }) {
   const router = useRouter()
-  const [phones, setPhones] = useState<string[]>(initialAuthorizedPhones)
-  const [draft, setDraft] = useState('')
+  const [contacts, setContacts] = useState<AuthorizedWhatsappContact[]>(initialAuthorizedContacts)
+  const [draftName, setDraftName] = useState('')
+  const [draftPhone, setDraftPhone] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [isPending, startTransition] = useTransition()
 
-  const handleAddPhone = () => {
-    const normalized = normalizeColombianPhoneNumber(draft)
+  const handleAddContact = () => {
+    const normalizedPhone = normalizeColombianPhoneNumber(draftPhone)
+    const normalizedName = normalizeWhatsappContactName(draftName)
 
-    if (!normalized) {
+    if (!normalizedName) {
+      setError('Ingresa el nombre de la persona responsable')
+      return
+    }
+
+    if (!normalizedPhone) {
       setError('Ingresa un número válido de Colombia. Ejemplo: 3001234567')
       return
     }
 
-    if (normalized === primaryPhone) {
+    if (normalizedPhone === primaryPhone) {
       setError('Ese número ya es el principal de la cuenta')
       return
     }
 
-    if (phones.includes(normalized)) {
+    if (contacts.some((contact) => contact.phone === normalizedPhone)) {
       setError('Ese número ya está autorizado')
       return
     }
 
-    setPhones((current) => [...current, normalized])
-    setDraft('')
+    setContacts((current) => [...current, { name: normalizedName, phone: normalizedPhone }])
+    setDraftName('')
+    setDraftPhone('')
     setError('')
     setSuccess('')
   }
 
-  const handleRemovePhone = (phone: string) => {
-    setPhones((current) => current.filter((item) => item !== phone))
+  const handleRemoveContact = (phone: string) => {
+    setContacts((current) => current.filter((item) => item.phone !== phone))
     setError('')
     setSuccess('')
   }
@@ -64,16 +74,16 @@ export function OrganizationWhatsappSettings({
 
     startTransition(async () => {
       try {
-        const updated = await updateOrganizationAuthorizedWhatsappPhones(phones)
-        setPhones(updated.authorizedWhatsappPhones)
-        setSuccess('Números autorizados guardados')
+        const updated = await updateOrganizationAuthorizedWhatsappContacts(contacts)
+        setContacts(updated.authorizedWhatsappContacts)
+        setSuccess('Contactos autorizados guardados')
         router.refresh()
       } catch (saveError) {
         setSuccess('')
         setError(
           saveError instanceof Error
             ? saveError.message
-            : 'No se pudieron guardar los números autorizados'
+            : 'No se pudieron guardar los contactos autorizados'
         )
       }
     })
@@ -102,49 +112,57 @@ export function OrganizationWhatsappSettings({
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="authorized-whatsapp-phone">Agregar número del equipo</Label>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <Label htmlFor="authorized-whatsapp-name">Agregar contacto del equipo</Label>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <Input
+              id="authorized-whatsapp-name"
+              type="text"
+              placeholder="Nombre de la persona"
+              value={draftName}
+              onChange={(event) => setDraftName(event.target.value)}
+            />
             <Input
               id="authorized-whatsapp-phone"
               type="tel"
               placeholder="3001234567 o +573001234567"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              value={draftPhone}
+              onChange={(event) => setDraftPhone(event.target.value)}
             />
-            <Button type="button" variant="secondary" onClick={handleAddPhone} className="sm:w-auto">
+            <Button type="button" variant="secondary" onClick={handleAddContact} className="sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Agregar
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Se normalizan a formato Colombia `+57`. Guarda al final para aplicar cambios.
+            Guarda nombre y número en formato Colombia `+57` para identificar quién sube cada reporte.
           </p>
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-foreground" />
-            <p className="text-sm font-medium text-foreground">Números autorizados del equipo</p>
+            <p className="text-sm font-medium text-foreground">Contactos autorizados del equipo</p>
           </div>
 
-          {phones.length === 0 ? (
+          {contacts.length === 0 ? (
             <div className="rounded-lg border border-dashed px-4 py-6 text-sm text-muted-foreground">
-              No hay números adicionales autorizados todavía.
+              No hay contactos adicionales autorizados todavía.
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {phones.map((phone) => (
+              {contacts.map((contact) => (
                 <Badge
-                  key={phone}
+                  key={contact.phone}
                   variant="secondary"
                   className="flex items-center gap-2 rounded-full px-3 py-1"
                 >
-                  <span>{formatColombianPhoneNumber(phone)}</span>
+                  <span className="font-medium">{contact.name}</span>
+                  <span>{formatColombianPhoneNumber(contact.phone)}</span>
                   <button
                     type="button"
-                    onClick={() => handleRemovePhone(phone)}
+                    onClick={() => handleRemoveContact(contact.phone)}
                     className="rounded-full p-0.5 text-muted-foreground transition hover:bg-background hover:text-foreground"
-                    aria-label={`Eliminar ${phone}`}
+                    aria-label={`Eliminar ${contact.name}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -168,7 +186,7 @@ export function OrganizationWhatsappSettings({
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? 'Guardando...' : 'Guardar accesos'}
+            {isPending ? 'Guardando...' : 'Guardar contactos'}
           </Button>
         </div>
       </CardContent>

@@ -5,12 +5,17 @@
 
 // ── Organizations ─────────────────────────────────────────────
 
+export interface AuthorizedWhatsappContact {
+  name: string
+  phone: string
+}
+
 export interface Organization {
   id: string
   name: string
   default_fca: number | null
   custom_fish_prices: Record<string, number>
-  authorized_whatsapp_phones: string[]
+  authorized_whatsapp_contacts: AuthorizedWhatsappContact[]
   sales_module_enabled: boolean
   created_at: string
 }
@@ -193,15 +198,20 @@ export interface Alert {
 // ── Uploads ───────────────────────────────────────────────────
 
 export type UploadStatus = 'pending' | 'processing' | 'completed' | 'failed'
+export type UploadSource = 'web' | 'whatsapp'
 
 export interface Upload {
   id: string
   batch_id: string | null
-  user_id: string
+  user_id: string | null
   image_url: string
   raw_ocr_text: string | null
   processed_data: Record<string, unknown> | null
   status: UploadStatus
+  sender_phone: string | null
+  sender_name: string | null
+  source: UploadSource
+  whatsapp_message_id: string | null
   created_at: string
 }
 

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Organization } from '@/db/types'
+import { parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
 
 /**
  * Fetch a single organization by ID.
@@ -89,11 +90,7 @@ function normalizeOrganization(raw: Record<string, unknown>): Organization {
     name: raw.name as string,
     default_fca: raw.default_fca != null ? Number(raw.default_fca) : null,
     custom_fish_prices: (raw.custom_fish_prices as Record<string, number>) ?? {},
-    authorized_whatsapp_phones: Array.isArray(raw.authorized_whatsapp_phones)
-      ? raw.authorized_whatsapp_phones.filter(
-          (value): value is string => typeof value === 'string'
-        )
-      : [],
+    authorized_whatsapp_contacts: parseAuthorizedWhatsappContacts(raw.authorized_whatsapp_contacts),
     sales_module_enabled: raw.sales_module_enabled !== false,
     created_at: raw.created_at as string,
   }

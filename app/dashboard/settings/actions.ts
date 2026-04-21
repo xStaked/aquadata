@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { getOrgContext } from '@/lib/db/context'
 import { updateOrganization } from '@/lib/db'
+import { createClient } from '@/lib/supabase/server'
+import type { AuthorizedWhatsappContact } from '@/db/types'
 import { normalizeColombianPhoneNumber } from '@/lib/phone'
+import { normalizeWhatsappContact, parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
 
 export async function updateOrganizationDefaultFca(defaultFca: number | null) {
   const ctx = await getOrgContext()
@@ -56,35 +59,91 @@ export async function updateOrganizationCustomFishPrices(
   }
 }
 
-export async function updateOrganizationAuthorizedWhatsappPhones(phoneInputs: string[]) {
+export async function updateOrganizationAuthorizedWhatsappContacts(
+  contactInputs: AuthorizedWhatsappContact[]
+) {
   const ctx = await getOrgContext()
-  const { orgId } = ctx
+  const { orgId, userId } = ctx
 
-  const normalizedPhones = Array.from(
-    new Set(
-      phoneInputs
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .map((value) => {
-          const normalized = normalizeColombianPhoneNumber(value)
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('whatsapp_phone')
+    .eq('id', userId)
+    .single()
 
-          if (!normalized) {
-            throw new Error(
-              `Número inválido: ${value}. Usa formato Colombia de 10 dígitos, por ejemplo 3001234567.`
-            )
-          }
+  const contactsByPhone = new Map<string, AuthorizedWhatsappContact>()
 
-          return normalized
-        })
+  for (const contactInput of contactInputs) {
+    const normalized = normalizeWhatsappContact(contactInput)
+
+    if (!normalized) {
+      throw new Error(
+        `Contacto inválido: ${contactInput.name || contactInput.phone}. Verifica nombre y usa formato Colombia de 10 dígitos, por ejemplo 3001234567.`
+      )
+    }
+
+    if (normalized.phone === profile?.whatsapp_phone) {
+      throw new Error('Ese número ya es el principal de la cuenta')
+    }
+
+    if (contactsByPhone.has(normalized.phone)) {
+      throw new Error(`El número ${normalized.phone} ya está registrado`)
+    }
+
+    contactsByPhone.set(normalized.phone, normalized)
+  }
+
+  const normalizedContacts = Array.from(contactsByPhone.values())
+
+  const [{ data: existingProfiles }, { data: organizations }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, whatsapp_phone')
+      .not('whatsapp_phone', 'is', null),
+    supabase
+      .from('organizations')
+      .select('id, authorized_whatsapp_contacts'),
+  ])
+
+  const conflictingProfilePhone = (existingProfiles ?? [])
+    .map((profileRow) => normalizeColombianPhoneNumber(String(profileRow.whatsapp_phone)))
+    .find(
+      (phone): phone is string =>
+        Boolean(phone) && normalizedContacts.some((contact) => contact.phone === phone)
     )
-  )
+
+  if (conflictingProfilePhone) {
+    throw new Error(
+      `El número ${conflictingProfilePhone} ya está registrado como número principal de un usuario.`
+    )
+  }
+
+  for (const organizationRow of organizations ?? []) {
+    if (organizationRow.id === orgId) {
+      continue
+    }
+
+    const existingContacts = parseAuthorizedWhatsappContacts(
+      organizationRow.authorized_whatsapp_contacts
+    )
+    const conflict = existingContacts.find((existingContact) =>
+      normalizedContacts.some((contact) => contact.phone === existingContact.phone)
+    )
+
+    if (conflict) {
+      throw new Error(
+        `El número ${conflict.phone} ya está autorizado para otro equipo (${conflict.name}).`
+      )
+    }
+  }
 
   const updated = await updateOrganization(orgId, {
-    authorized_whatsapp_phones: normalizedPhones,
+    authorized_whatsapp_contacts: normalizedContacts,
   })
 
   if (!updated) {
-    throw new Error('No se pudieron actualizar los números autorizados')
+    throw new Error('No se pudieron actualizar los contactos autorizados')
   }
 
   revalidatePath('/dashboard/settings')
@@ -92,7 +151,7 @@ export async function updateOrganizationAuthorizedWhatsappPhones(phoneInputs: st
 
   return {
     id: updated.id,
-    authorizedWhatsappPhones: updated.authorized_whatsapp_phones ?? [],
+    authorizedWhatsappContacts: updated.authorized_whatsapp_contacts ?? [],
   }
 }
 

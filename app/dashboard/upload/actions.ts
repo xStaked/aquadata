@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache'
 
 interface ProductionData {
   batch_id: string
+  upload_id?: string | null
   record_date: string
   report_type: 'daily' | 'weekly'
   week_end_date: string | null
@@ -88,6 +89,7 @@ export async function confirmProductionRecord(data: ProductionData) {
     fca_source,
     calculated_biomass_kg,
     confirmed_by: userId,
+    upload_id: data.upload_id ?? null,
   })
 
   // Generate and store alerts using extracted service

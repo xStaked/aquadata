@@ -14,6 +14,7 @@ import { format } from 'date-fns'
 import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
 import { RecordEditModal } from '@/components/record-edit-modal'
+import { formatColombianPhoneNumber } from '@/lib/phone'
 
 const PRODUCTION_RECORD_FIELDS = `
   id,
@@ -39,7 +40,9 @@ const PRODUCTION_RECORD_FIELDS = `
   report_type,
   week_end_date,
   created_at,
-  batch_id
+  batch_id,
+  upload_id,
+  upload:uploads(sender_name, sender_phone, source)
 `.replace(/\s+/g, ' ').trim()
 
 export default async function RecordsPage({
@@ -84,6 +87,12 @@ export default async function RecordsPage({
     week_end_date: string | null
     created_at: string
     batch_id: string
+    upload_id: string | null
+    upload: {
+      sender_name: string | null
+      sender_phone: string | null
+      source: 'web' | 'whatsapp'
+    } | null
   }> = []
 
   let batchPondMap: Record<string, string> = {}
@@ -310,6 +319,7 @@ export default async function RecordsPage({
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Estanque</TableHead>
+                  <TableHead>Subido por</TableHead>
                   <TableHead className="text-right">Nº Peces</TableHead>
                   <TableHead className="text-right">Alimento (kg)</TableHead>
                   <TableHead className="text-right">Peso prom. (g)</TableHead>
@@ -380,6 +390,26 @@ export default async function RecordsPage({
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{batchPondMap[rec.batch_id] || '-'}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="min-w-[180px]">
+                        {rec.upload?.sender_name || rec.upload?.sender_phone ? (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-foreground">
+                              {rec.upload?.sender_name ?? 'Contacto WhatsApp'}
+                            </span>
+                            {rec.upload?.sender_phone ? (
+                              <span className="text-xs text-muted-foreground">
+                                {formatColombianPhoneNumber(rec.upload.sender_phone)}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : rec.upload?.source === 'web' || !rec.upload_id ? (
+                          <span className="text-sm text-muted-foreground">Panel web</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">WhatsApp</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">{rec.fish_count ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.feed_kg?.toFixed(1) ?? '-'}</TableCell>

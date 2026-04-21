@@ -1,16 +1,17 @@
 import Link from 'next/link'
 import { Phone, Settings, Users } from 'lucide-react'
 
+import type { AuthorizedWhatsappContact } from '@/db/types'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatColombianPhoneNumber } from '@/lib/phone'
 
 export function AuthorizedWhatsappNumbersCard({
   primaryPhone,
-  authorizedPhones,
+  authorizedContacts,
 }: {
   primaryPhone: string | null
-  authorizedPhones: string[]
+  authorizedContacts: AuthorizedWhatsappContact[]
 }) {
   return (
     <Card className="border-dashed">
@@ -35,16 +36,23 @@ export function AuthorizedWhatsappNumbersCard({
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Números adicionales autorizados</p>
-          {authorizedPhones.length === 0 ? (
+          <p className="text-sm font-medium text-foreground">Contactos autorizados del equipo</p>
+          {authorizedContacts.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Aún no has autorizado números del equipo.
+              Aún no has autorizado contactos del equipo.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {authorizedPhones.map((phone) => (
-                <Badge key={phone} variant="secondary" className="rounded-full px-3 py-1">
-                  {formatColombianPhoneNumber(phone)}
+              {authorizedContacts.map((contact) => (
+                <Badge
+                  key={contact.phone}
+                  variant="secondary"
+                  className="flex items-center gap-2 rounded-full px-3 py-1"
+                >
+                  <span className="font-medium">{contact.name}</span>
+                  <span className="text-muted-foreground">
+                    {formatColombianPhoneNumber(contact.phone)}
+                  </span>
                 </Badge>
               ))}
             </div>
