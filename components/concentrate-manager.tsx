@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Plus, Pencil, Trash2, FlaskConical } from 'lucide-react'
-import { createConcentrate, updateConcentrate, deleteConcentrate } from '@/app/dashboard/costs/actions'
+import { createConcentrate, updateConcentrate, deleteConcentrate } from '@/app/dashboard/feed/actions'
 import { formatCOP } from '@/lib/format'
 
 interface Concentrate {

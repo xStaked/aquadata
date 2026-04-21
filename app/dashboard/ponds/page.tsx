@@ -40,6 +40,10 @@ export default async function PondsPage() {
       fingerling_cost_per_unit: number | null
       avg_weight_at_seeding_g: number | null
       labor_cost_per_month: number | null
+      operating_fixed_costs: number | null
+      target_profit_amount: number | null
+      bioaqua_quantity: number | null
+      bioterra_quantity: number | null
     }>
   }> = []
 
@@ -57,7 +61,8 @@ export default async function PondsPage() {
         batches (
           id, start_date, end_date, initial_population, current_population, status,
           sale_price_per_kg, target_profitability_pct,
-          fingerling_cost_per_unit, avg_weight_at_seeding_g, labor_cost_per_month
+          fingerling_cost_per_unit, avg_weight_at_seeding_g, labor_cost_per_month,
+          operating_fixed_costs, target_profit_amount, bioaqua_quantity, bioterra_quantity
         )
       `)
       .eq('organization_id', profile.organization_id)

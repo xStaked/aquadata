@@ -56,6 +56,10 @@ export type PondListItem = {
     fingerling_cost_per_unit: number | null
     avg_weight_at_seeding_g: number | null
     labor_cost_per_month: number | null
+    operating_fixed_costs: number | null
+    target_profit_amount: number | null
+    bioaqua_quantity: number | null
+    bioterra_quantity: number | null
   }>
 }
 
@@ -298,6 +302,10 @@ function SortablePondCard({
                           fingerling_cost_per_unit: batch.fingerling_cost_per_unit,
                           avg_weight_at_seeding_g: batch.avg_weight_at_seeding_g,
                           labor_cost_per_month: batch.labor_cost_per_month,
+                          operating_fixed_costs: batch.operating_fixed_costs,
+                          target_profit_amount: batch.target_profit_amount,
+                          bioaqua_quantity: batch.bioaqua_quantity,
+                          bioterra_quantity: batch.bioterra_quantity,
                         }}
                       />
                       <CloseBatchButton batchId={batch.id} />

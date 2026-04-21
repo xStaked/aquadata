@@ -18,6 +18,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  Wheat,
   X,
   ShieldCheck,
 } from 'lucide-react'
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/records', label: 'Registros', icon: ClipboardList },
   { href: '/dashboard/analytics', label: 'Analitica', icon: BarChart3 },
   { href: '/dashboard/costs', label: 'Ventas', icon: DollarSign },
+  { href: '/dashboard/feed', label: 'Alimentación', icon: Wheat },
   { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
   { href: '/dashboard/bioremediation', label: 'Bioremediacion', icon: Calculator },
   { href: '/dashboard/settings', label: 'Configuracion', icon: Settings },

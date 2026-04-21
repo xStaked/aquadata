@@ -33,7 +33,7 @@ import {
   updateMonthlyFeedRecord,
   deleteMonthlyFeedRecord,
   createConcentrate,
-} from '@/app/dashboard/costs/actions'
+} from '@/app/dashboard/feed/actions'
 import { formatCOP } from '@/lib/format'
 
 interface Batch {

@@ -2,12 +2,11 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DollarSign, FlaskConical, Fish, Scale, Target, Wheat } from 'lucide-react'
+import { DollarSign, FlaskConical, Fish, Scale, Target } from 'lucide-react'
 import { getColombianMarketPrices } from '@/lib/market-data'
 import { SyncMarketPricesButton } from '@/components/sync-market-prices-button'
 import { InvestmentTab } from './_tabs/investment-tab'
 import { HarvestTab } from './_tabs/harvest-tab'
-import { FeedTab } from './_tabs/feed-tab'
 import { FishTab } from './_tabs/fish-tab'
 import { BioTab } from './_tabs/bio-tab'
 import {
@@ -15,8 +14,6 @@ import {
   WHOLE_TO_EVISCERATED_FACTOR,
   type Treatment,
   type BatchSummary,
-  type Concentrate,
-  type FeedRecord,
   type HarvestRecord,
 } from './types'
 
@@ -32,8 +29,6 @@ export default async function CostsPage() {
 
   let treatments: Treatment[] = []
   let batches: BatchSummary[] = []
-  let concentrates: Concentrate[] = []
-  let feedRecords: FeedRecord[] = []
   let harvests: HarvestRecord[] = []
   let marketPrices: Awaited<ReturnType<typeof getColombianMarketPrices>> = []
 
@@ -56,8 +51,6 @@ export default async function CostsPage() {
       { data: ponds },
       { data: rawTreatments },
       { data: rawBatches },
-      { data: rawConcentrates },
-      { data: rawFeedRecords },
       { data: rawHarvests },
       { data: orgData },
     ] = await Promise.all([
@@ -84,16 +77,6 @@ export default async function CostsPage() {
           monthly_feed_records (kg_used, cost_per_kg)
         `)
         .eq('status', 'active'),
-      supabase
-        .from('feed_concentrates')
-        .select('id, name, brand, price_per_kg, protein_pct, is_active')
-        .eq('organization_id', profile.organization_id)
-        .order('name'),
-      supabase
-        .from('monthly_feed_records')
-        .select('id, batch_id, concentrate_id, concentrate_name, production_stage, year, month, kg_used, cost_per_kg')
-        .order('year', { ascending: false })
-        .order('month', { ascending: false }),
       supabase
         .from('harvest_records')
         .select('id, batch_id, harvest_date, total_animals, avg_weight_whole_g, avg_weight_eviscerated_g, labor_cost, notes')
@@ -220,36 +203,10 @@ export default async function CostsPage() {
       }
     })
 
-    // ── concentrates ────────────────────────────────────────────
-    concentrates = (rawConcentrates ?? []).map(c => ({
-      id: c.id,
-      name: c.name,
-      brand: c.brand,
-      price_per_kg: Number(c.price_per_kg),
-      protein_pct: c.protein_pct != null ? Number(c.protein_pct) : null,
-      is_active: c.is_active,
-    }))
-
-    // ── feed records with pond name ─────────────────────────────
+    // ── harvests with pond name ─────────────────────────────────
     const batchPondMap: Record<string, string> = {}
     for (const b of orgRawBatches) batchPondMap[b.id] = pondMap[b.pond_id]?.name ?? 'S/E'
 
-    feedRecords = (rawFeedRecords ?? [])
-      .filter(r => orgBatchIds.has(r.batch_id))
-      .map(r => ({
-      id: r.id,
-      batch_id: r.batch_id,
-      concentrate_id: r.concentrate_id,
-      pond_name: batchPondMap[r.batch_id] ?? 'S/E',
-      concentrate_name: r.concentrate_name,
-      production_stage: r.production_stage === 'levante' ? 'levante' : 'engorde',
-      year: r.year,
-      month: r.month,
-      kg_used: Number(r.kg_used),
-      cost_per_kg: Number(r.cost_per_kg),
-    }))
-
-    // ── harvests with pond name ─────────────────────────────────
     harvests = (rawHarvests ?? [])
       .filter(h => orgBatchIds.has(h.batch_id))
       .map(h => ({
@@ -299,7 +256,7 @@ export default async function CostsPage() {
       </div>
 
       <Tabs defaultValue="investment" className="w-full">
-        <TabsList className="flex w-full flex-wrap gap-1 h-auto sm:grid sm:grid-cols-5 sm:max-w-3xl">
+        <TabsList className="flex w-full flex-wrap gap-1 h-auto sm:grid sm:grid-cols-4 sm:max-w-3xl">
           <TabsTrigger value="investment" className="gap-1.5 text-xs sm:text-sm">
             <Target className="h-3.5 w-3.5" />
             Resumen
@@ -307,10 +264,6 @@ export default async function CostsPage() {
           <TabsTrigger value="fish" className="gap-1.5 text-xs sm:text-sm">
             <Fish className="h-3.5 w-3.5" />
             Ventas
-          </TabsTrigger>
-          <TabsTrigger value="feed" className="gap-1.5 text-xs sm:text-sm">
-            <Wheat className="h-3.5 w-3.5" />
-            Alimentación
           </TabsTrigger>
           <TabsTrigger value="harvest" className="gap-1.5 text-xs sm:text-sm">
             <Scale className="h-3.5 w-3.5" />
@@ -342,14 +295,6 @@ export default async function CostsPage() {
             totalFishRevenue={totalFishRevenue}
             totalFishCosts={totalFishCosts}
             totalFishUtility={totalFishUtility}
-          />
-        </TabsContent>
-
-        <TabsContent value="feed" className="mt-6">
-          <FeedTab
-            concentrates={concentrates}
-            batchesForForms={batchesForForms}
-            feedRecords={feedRecords}
           />
         </TabsContent>
 

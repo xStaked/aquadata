@@ -146,6 +146,10 @@ export async function updateBatchFinancial(
     fingerling_cost_per_unit?: number
     avg_weight_at_seeding_g?: number | null
     labor_cost_per_month?: number
+    operating_fixed_costs?: number
+    target_profit_amount?: number
+    bioaqua_quantity?: number
+    bioterra_quantity?: number
   }
 ): Promise<void> {
   const supabase = await createClient()
@@ -158,6 +162,10 @@ export async function updateBatchFinancial(
       fingerling_cost_per_unit: data.fingerling_cost_per_unit,
       avg_weight_at_seeding_g: data.avg_weight_at_seeding_g ?? null,
       labor_cost_per_month: data.labor_cost_per_month,
+      operating_fixed_costs: data.operating_fixed_costs,
+      target_profit_amount: data.target_profit_amount,
+      bioaqua_quantity: data.bioaqua_quantity,
+      bioterra_quantity: data.bioterra_quantity,
     })
     .eq('id', batchId)
 
@@ -182,6 +190,14 @@ function normalizeBatch(raw: Record<string, unknown>): Batch {
       raw.avg_weight_at_seeding_g != null ? Number(raw.avg_weight_at_seeding_g) : null,
     labor_cost_per_month:
       raw.labor_cost_per_month != null ? Number(raw.labor_cost_per_month) : null,
+    operating_fixed_costs:
+      raw.operating_fixed_costs != null ? Number(raw.operating_fixed_costs) : null,
+    target_profit_amount:
+      raw.target_profit_amount != null ? Number(raw.target_profit_amount) : null,
+    bioaqua_quantity:
+      raw.bioaqua_quantity != null ? Number(raw.bioaqua_quantity) : null,
+    bioterra_quantity:
+      raw.bioterra_quantity != null ? Number(raw.bioterra_quantity) : null,
     created_at: raw.created_at as string,
   }
 }

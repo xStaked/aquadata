@@ -95,6 +95,10 @@ export async function updateBatchFinancialConfig(batchId: string, data: {
   fingerling_cost_per_unit: number
   avg_weight_at_seeding_g: number | null
   labor_cost_per_month: number
+  operating_fixed_costs: number
+  target_profit_amount: number
+  bioaqua_quantity: number
+  bioterra_quantity: number
 }) {
   await dbUpdateBatchFinancial(batchId, data)
   revalidatePath('/dashboard/costs')

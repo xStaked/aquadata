@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle2, Circle } from 'lucide-react'
 import { ConcentrateManager } from '@/components/concentrate-manager'
 import { MonthlyFeedForm } from '@/components/monthly-feed-form'
-import { type Concentrate, type FeedRecord, type BatchForForms } from '../types'
+import { type Concentrate, type FeedRecord, type BatchForForms } from '../costs/types'
 
 interface FeedTabProps {
   concentrates: Concentrate[]

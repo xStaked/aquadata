@@ -71,6 +71,10 @@ export interface Batch {
   fingerling_cost_per_unit: number | null
   avg_weight_at_seeding_g: number | null
   labor_cost_per_month: number | null
+  operating_fixed_costs: number | null
+  target_profit_amount: number | null
+  bioaqua_quantity: number | null
+  bioterra_quantity: number | null
   created_at: string
 }
 
@@ -90,6 +94,10 @@ export interface BatchInput {
   fingerling_cost_per_unit?: number
   avg_weight_at_seeding_g?: number | null
   labor_cost_per_month?: number
+  operating_fixed_costs?: number
+  target_profit_amount?: number
+  bioaqua_quantity?: number
+  bioterra_quantity?: number
 }
 
 export interface BatchFinancialUpdate {
@@ -98,6 +106,10 @@ export interface BatchFinancialUpdate {
   fingerling_cost_per_unit?: number
   avg_weight_at_seeding_g?: number | null
   labor_cost_per_month?: number
+  operating_fixed_costs?: number
+  target_profit_amount?: number
+  bioaqua_quantity?: number
+  bioterra_quantity?: number
 }
 
 // ── Production Records ────────────────────────────────────────
