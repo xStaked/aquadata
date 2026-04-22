@@ -8,9 +8,10 @@ interface FeedTabProps {
   concentrates: Concentrate[]
   batchesForForms: BatchForForms[]
   feedRecords: FeedRecord[]
+  canEdit: boolean
 }
 
-export function FeedTab({ concentrates, batchesForForms, feedRecords }: FeedTabProps) {
+export function FeedTab({ concentrates, batchesForForms, feedRecords, canEdit }: FeedTabProps) {
   const step1Done = concentrates.length > 0
   const step2Done = feedRecords.length > 0
 
@@ -66,11 +67,13 @@ export function FeedTab({ concentrates, batchesForForms, feedRecords }: FeedTabP
           <CardTitle>Concentrados registrados</CardTitle>
           <CardDescription>
             Alimentos que usa en su granja: nombre, marca, precio y % de proteína.
-            Puedes agregar uno nuevo directamente desde el formulario de consumo.
+            {canEdit
+              ? ' Puedes agregar uno nuevo directamente desde el formulario de consumo.'
+              : ' Vista histórica en modo solo lectura.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ConcentrateManager concentrates={concentrates} />
+          <ConcentrateManager concentrates={concentrates} canEdit={canEdit} />
         </CardContent>
       </Card>
 
@@ -92,6 +95,7 @@ export function FeedTab({ concentrates, batchesForForms, feedRecords }: FeedTabP
             batches={batchesForForms}
             concentrates={concentrates.filter(c => c.is_active)}
             feedRecords={feedRecords}
+            canEdit={canEdit}
           />
         </CardContent>
       </Card>

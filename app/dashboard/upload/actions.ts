@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { getOrgContext } from '@/lib/db/context'
+import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
 import { getBatch, updateBatchPopulation, createRecord, createAlerts } from '@/lib/db'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
@@ -35,7 +35,7 @@ interface ProductionData {
 }
 
 export async function confirmProductionRecord(data: ProductionData) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   const { userId, orgId } = ctx
 
   // Get batch info

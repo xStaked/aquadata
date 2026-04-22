@@ -35,6 +35,7 @@ interface Concentrate {
 
 interface ConcentrateManagerProps {
   concentrates: Concentrate[]
+  canEdit: boolean
 }
 
 const emptyForm = { name: '', brand: '', price_per_kg: '', protein_pct: '' }
@@ -100,7 +101,7 @@ function FormFields({ form, setForm, error }: FormFieldsProps) {
   )
 }
 
-export function ConcentrateManager({ concentrates }: ConcentrateManagerProps) {
+export function ConcentrateManager({ concentrates, canEdit }: ConcentrateManagerProps) {
   const [isPending, startTransition] = useTransition()
   const [openAdd, setOpenAdd] = useState(false)
   const [editTarget, setEditTarget] = useState<Concentrate | null>(null)
@@ -181,6 +182,7 @@ export function ConcentrateManager({ concentrates }: ConcentrateManagerProps) {
           <FlaskConical className="h-4 w-4" />
           <span>{concentrates.length} concentrado{concentrates.length !== 1 ? 's' : ''} registrado{concentrates.length !== 1 ? 's' : ''}</span>
         </div>
+        {canEdit ? (
         <Dialog open={openAdd} onOpenChange={setOpenAdd}>
           <DialogTrigger asChild>
             <Button size="sm" onClick={handleOpenAdd} className="gap-2">
@@ -201,6 +203,7 @@ export function ConcentrateManager({ concentrates }: ConcentrateManagerProps) {
             </div>
           </DialogContent>
         </Dialog>
+        ) : null}
       </div>
 
       <Table>
@@ -211,13 +214,13 @@ export function ConcentrateManager({ concentrates }: ConcentrateManagerProps) {
             <TableHead>Proteína</TableHead>
             <TableHead>Precio/kg</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            {canEdit ? <TableHead className="text-right">Acciones</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {concentrates.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+              <TableCell colSpan={canEdit ? 6 : 5} className="h-20 text-center text-muted-foreground">
                 No hay concentrados registrados. Agrega uno para comenzar.
               </TableCell>
             </TableRow>
@@ -244,6 +247,7 @@ export function ConcentrateManager({ concentrates }: ConcentrateManagerProps) {
                     {c.is_active ? 'Activo' : 'Inactivo'}
                   </Badge>
                 </TableCell>
+                {canEdit ? (
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Dialog open={editTarget?.id === c.id} onOpenChange={open => !open && setEditTarget(null)}>
@@ -281,6 +285,7 @@ export function ConcentrateManager({ concentrates }: ConcentrateManagerProps) {
                     </Button>
                   </div>
                 </TableCell>
+                ) : null}
               </TableRow>
             ))
           )}

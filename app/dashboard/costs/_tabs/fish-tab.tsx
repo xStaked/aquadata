@@ -24,6 +24,7 @@ interface FishTabProps {
   totalFishRevenue: number
   totalFishCosts: number
   totalFishUtility: number
+  canEdit: boolean
 }
 
 export function FishTab({
@@ -32,6 +33,7 @@ export function FishTab({
   totalFishRevenue,
   totalFishCosts,
   totalFishUtility,
+  canEdit,
 }: FishTabProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -140,13 +142,13 @@ export function FishTab({
                 <TableHead>Ingreso Proy.</TableHead>
                 <TableHead>Inversión</TableHead>
                 <TableHead>Utilidad</TableHead>
-                <TableHead className="text-right">Precio</TableHead>
+                {canEdit ? <TableHead className="text-right">Precio</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {batches.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={canEdit ? 7 : 6} className="h-24 text-center text-muted-foreground">
                     No hay lotes activos para proyectar ventas.
                   </TableCell>
                 </TableRow>
@@ -173,9 +175,11 @@ export function FishTab({
                     <TableCell className={b.utility >= 0 ? 'text-green-600 font-bold' : 'text-destructive font-bold'}>
                       {formatCOP(b.utility)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <FishPriceModal batchId={b.id} currentPrice={b.sale_price} species={`${b.pond_name} - ${b.species}`} />
-                    </TableCell>
+                    {canEdit ? (
+                      <TableCell className="text-right">
+                        <FishPriceModal batchId={b.id} currentPrice={b.sale_price} species={`${b.pond_name} - ${b.species}`} />
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))
               )}

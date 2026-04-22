@@ -30,7 +30,7 @@ export type {
 } from './types'
 
 // ── Context ───────────────────────────────────────────────────
-export { getOrgContext } from './context'
+export { getOrgContext, requireOrgWriteContext } from './context'
 
 // ── Organization Repository ───────────────────────────────────
 export {

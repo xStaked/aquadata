@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { getOrgContext } from '@/lib/db/context'
+import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
 import {
   createPond as dbCreatePond,
   deletePond as dbDeletePond,
@@ -28,7 +28,7 @@ export async function getOrCreateOrganization(orgName: string) {
 }
 
 export async function createPond(formData: FormData) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
 
   let orgId = ctx.orgId
 
@@ -62,12 +62,14 @@ export async function createPond(formData: FormData) {
 }
 
 export async function deletePond(pondId: string) {
-  const { orgId } = await getOrgContext()
+  const { orgId } = await requireOrgWriteContext()
   await dbDeletePond(pondId, orgId)
   revalidatePath('/dashboard/ponds')
 }
 
 export async function createBatch(formData: FormData) {
+  await requireOrgWriteContext()
+
   await dbCreateBatch({
     pond_id: formData.get('pond_id') as string,
     start_date: formData.get('start_date') as string,
@@ -82,11 +84,14 @@ export async function createBatch(formData: FormData) {
 }
 
 export async function closeBatch(batchId: string) {
+  await requireOrgWriteContext()
   await dbCloseBatch(batchId)
   revalidatePath('/dashboard/ponds')
 }
 
 export async function updateBatchDetails(formData: FormData) {
+  await requireOrgWriteContext()
+
   const batchId = formData.get('batch_id') as string
   const startDate = formData.get('start_date') as string
   const pondEntryDate = (formData.get('pond_entry_date') as string) || null
@@ -107,6 +112,7 @@ export async function updateBatchDetails(formData: FormData) {
 }
 
 export async function updateBatchPrice(batchId: string, price: number) {
+  await requireOrgWriteContext()
   await dbUpdateBatchFinancial(batchId, { sale_price_per_kg: price })
   revalidatePath('/dashboard/costs')
   revalidatePath('/dashboard/ponds')
@@ -121,13 +127,14 @@ export async function updateBatchFinancialConfig(batchId: string, data: {
   bioaqua_quantity: number
   bioterra_quantity: number
 }) {
+  await requireOrgWriteContext()
   await dbUpdateBatchFinancial(batchId, data)
   revalidatePath('/dashboard/costs')
   revalidatePath('/dashboard/ponds')
 }
 
 export async function updatePondOrder(pondIds: string[]) {
-  const { orgId } = await getOrgContext()
+  const { orgId } = await requireOrgWriteContext()
   if (!Array.isArray(pondIds) || pondIds.length === 0) return
 
   await dbUpdatePondOrder(pondIds, orgId)

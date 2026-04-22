@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { isWriterRole } from '@/lib/auth/roles'
 
 export async function markAllAlertsRead() {
   const supabase = await createClient()
@@ -10,9 +11,13 @@ export async function markAllAlertsRead() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user.id)
     .single()
+
+  if (!isWriterRole(profile?.role)) {
+    throw new Error('Tu usuario tiene permisos de solo lectura')
+  }
 
   if (!profile?.organization_id) return
 

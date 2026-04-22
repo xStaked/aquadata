@@ -16,6 +16,8 @@ import {
   type BatchSummary,
   type HarvestRecord,
 } from './types'
+import { isWriterRole } from '@/lib/auth/roles'
+import { ReadOnlyBanner } from '@/components/read-only-banner'
 
 export default async function CostsPage() {
   const supabase = await createClient()
@@ -23,9 +25,11 @@ export default async function CostsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user!.id)
     .single()
+
+  const canEdit = isWriterRole(profile?.role)
 
   let treatments: Treatment[] = []
   let batches: BatchSummary[] = []
@@ -248,12 +252,14 @@ export default async function CostsPage() {
           <p className="mt-1 text-muted-foreground">Control de inversión, costos y rentabilidad por lote</p>
         </div>
         <div className="flex items-center gap-2">
-          <SyncMarketPricesButton />
+          {canEdit ? <SyncMarketPricesButton /> : null}
           <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 border border-primary/20">
             <span className="text-xs font-semibold uppercase text-primary">Moneda: COP</span>
           </div>
         </div>
       </div>
+
+      {!canEdit ? <ReadOnlyBanner description="Puedes consultar costos, ventas y cosechas históricas, pero no modificar precios ni registrar nuevas operaciones." /> : null}
 
       <Tabs defaultValue="investment" className="w-full">
         <TabsList className="flex w-full flex-wrap gap-1 h-auto sm:grid sm:grid-cols-4 sm:max-w-3xl">
@@ -285,6 +291,7 @@ export default async function CostsPage() {
             totalFeedCostAll={totalFeedCostAll}
             totalLaborCostAll={totalLaborCostAll}
             totalFingerlingCostAll={totalFingerlingCostAll}
+            canEdit={canEdit}
           />
         </TabsContent>
 
@@ -295,11 +302,12 @@ export default async function CostsPage() {
             totalFishRevenue={totalFishRevenue}
             totalFishCosts={totalFishCosts}
             totalFishUtility={totalFishUtility}
+            canEdit={canEdit}
           />
         </TabsContent>
 
         <TabsContent value="harvest" className="mt-6">
-          <HarvestTab harvests={harvests} batchesForForms={batchesForForms} />
+          <HarvestTab harvests={harvests} batchesForForms={batchesForForms} canEdit={canEdit} />
         </TabsContent>
 
         <TabsContent value="bio" className="mt-6">

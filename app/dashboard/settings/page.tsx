@@ -7,6 +7,9 @@ import { OrganizationWhatsappSettings } from '@/components/organization-whatsapp
 import { getColombianMarketPrices } from '@/lib/market-data'
 import { createClient } from '@/lib/supabase/server'
 import { parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
+import { isWriterRole } from '@/lib/auth/roles'
+import { ReadOnlyBanner } from '@/components/read-only-banner'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -16,7 +19,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, whatsapp_phone')
+    .select('organization_id, whatsapp_phone, role')
     .eq('id', user!.id)
     .single()
 
@@ -51,6 +54,7 @@ export default async function SettingsPage() {
   }
 
   const initialPrices = (organization?.custom_fish_prices ?? {}) as Record<string, number>
+  const canEdit = isWriterRole(profile?.role)
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,28 +65,47 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <OrganizationFcaSettings
-        farmName={organization?.name ?? 'tu finca'}
-        initialDefaultFca={organization?.default_fca != null ? Number(organization.default_fca) : null}
-      />
+      {!canEdit ? <ReadOnlyBanner description="Puedes consultar la configuración compartida de la finca, pero solo un operario o admin puede modificarla." /> : null}
 
-      <OrganizationWhatsappSettings
-        farmName={organization?.name ?? 'tu finca'}
-        primaryPhone={profile?.whatsapp_phone ?? null}
-        initialAuthorizedContacts={parseAuthorizedWhatsappContacts(organization?.authorized_whatsapp_contacts)}
-      />
+      {canEdit ? (
+        <>
+          <OrganizationFcaSettings
+            farmName={organization?.name ?? 'tu finca'}
+            initialDefaultFca={organization?.default_fca != null ? Number(organization.default_fca) : null}
+          />
 
-      <OrganizationSalesModuleSettings
-        initialEnabled={organization?.sales_module_enabled !== false}
-      />
+          <OrganizationWhatsappSettings
+            farmName={organization?.name ?? 'tu finca'}
+            primaryPhone={profile?.whatsapp_phone ?? null}
+            initialAuthorizedContacts={parseAuthorizedWhatsappContacts(organization?.authorized_whatsapp_contacts)}
+          />
 
-      {organization?.sales_module_enabled !== false ? (
-        <OrganizationFishPriceSettings
-          species={species}
-          initialPrices={initialPrices}
-          marketPrices={marketPriceMap}
-        />
-      ) : null}
+          <OrganizationSalesModuleSettings
+            initialEnabled={organization?.sales_module_enabled !== false}
+          />
+
+          {organization?.sales_module_enabled !== false ? (
+            <OrganizationFishPriceSettings
+              species={species}
+              initialPrices={initialPrices}
+              marketPrices={marketPriceMap}
+            />
+          ) : null}
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Resumen de la configuración</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>Finca: <span className="font-medium text-foreground">{organization?.name ?? 'tu finca'}</span></p>
+            <p>FCA por defecto: <span className="font-medium text-foreground">{organization?.default_fca != null ? Number(organization.default_fca).toFixed(2) : 'No configurado'}</span></p>
+            <p>Módulo de ventas: <span className="font-medium text-foreground">{organization?.sales_module_enabled !== false ? 'Activo' : 'Oculto'}</span></p>
+            <p>Contactos WhatsApp autorizados: <span className="font-medium text-foreground">{parseAuthorizedWhatsappContacts(organization?.authorized_whatsapp_contacts).length}</span></p>
+            <p>Especies configuradas: <span className="font-medium text-foreground">{species.length}</span></p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

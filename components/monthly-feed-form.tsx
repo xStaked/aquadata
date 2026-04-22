@@ -66,6 +66,7 @@ interface MonthlyFeedFormProps {
   batches: Batch[]
   concentrates: Concentrate[]
   feedRecords: FeedRecord[]
+  canEdit: boolean
 }
 
 interface FeedFormState {
@@ -98,7 +99,7 @@ const emptyForm: FeedFormState = {
 
 const emptyQuick = { name: '', brand: '', price_per_kg: '' }
 
-export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyFeedFormProps) {
+export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }: MonthlyFeedFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
@@ -140,7 +141,11 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
     if (pendingSelect && concentrates.length > 0) {
       const found = concentrates.find(c => c.name === pendingSelect)
       if (found) {
-        handleConcentrateChange(found.id)
+        setForm(f => ({
+          ...f,
+          concentrate_id: found.id,
+          cost_per_kg: String(found.price_per_kg),
+        }))
         setPendingSelect('')
       }
     }
@@ -287,6 +292,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
           <Wheat className="h-4 w-4" />
           <span>{feedRecords.length} registro{feedRecords.length !== 1 ? 's' : ''} de alimentación</span>
         </div>
+        {canEdit ? (
         <Dialog open={open} onOpenChange={handleDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
@@ -504,6 +510,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
             </div>
           </DialogContent>
         </Dialog>
+        ) : null}
       </div>
 
       <Table>
@@ -516,13 +523,13 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
             <TableHead>Kg usados</TableHead>
             <TableHead>Precio/kg</TableHead>
             <TableHead>Costo total</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            {canEdit ? <TableHead className="text-right">Acciones</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {feedRecords.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+              <TableCell colSpan={canEdit ? 8 : 7} className="h-20 text-center text-muted-foreground">
                 No hay registros de alimentación. Agrega el consumo mensual de cada lote.
               </TableCell>
             </TableRow>
@@ -548,6 +555,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
                 <TableCell className="font-semibold text-primary">
                   {formatCOP(r.kg_used * r.cost_per_kg)}
                 </TableCell>
+                {canEdit ? (
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     <Dialog open={editTarget?.id === r.id} onOpenChange={o => !o && setEditTarget(null)}>
@@ -686,6 +694,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords }: MonthlyF
                     </Button>
                   </div>
                 </TableCell>
+                ) : null}
               </TableRow>
             ))
           )}

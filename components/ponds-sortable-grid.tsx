@@ -78,6 +78,7 @@ type PondsSortableGridProps = {
   ponds: PondListItem[]
   waterQuality: Record<string, WaterQuality>
   salesModuleEnabled: boolean
+  canEdit: boolean
 }
 
 function getAmmoniaStatus(val: number | null): { label: string; level: WaterStatus } | null {
@@ -129,10 +130,12 @@ function SortablePondCard({
   pond,
   waterQuality,
   salesModuleEnabled,
+  canEdit,
 }: {
   pond: PondListItem
   waterQuality: Record<string, WaterQuality>
   salesModuleEnabled: boolean
+  canEdit: boolean
 }) {
   const {
     attributes,
@@ -167,17 +170,19 @@ function SortablePondCard({
     >
       <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <button
-            ref={setActivatorNodeRef}
-            type="button"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            aria-label={`Reordenar ${pond.name}`}
-            title="Arrastrar para reordenar"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
+          {canEdit ? (
+            <button
+              ref={setActivatorNodeRef}
+              type="button"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-label={`Reordenar ${pond.name}`}
+              title="Arrastrar para reordenar"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+          ) : null}
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <Waves className="h-4 w-4 text-primary" />
           </div>
@@ -203,7 +208,7 @@ function SortablePondCard({
             )}
           </div>
         </div>
-        <DeletePondButton pondId={pond.id} />
+        {canEdit ? <DeletePondButton pondId={pond.id} /> : null}
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-4">
@@ -275,7 +280,7 @@ function SortablePondCard({
                 </Badge>
               )}
             </div>
-            <BatchForm pondId={pond.id} />
+            {canEdit ? <BatchForm pondId={pond.id} /> : null}
           </div>
 
           {pond.batches && pond.batches.length > 0 ? (
@@ -312,7 +317,7 @@ function SortablePondCard({
                       </div>
                     ) : null}
                   </div>
-                  {batch.status === 'active' && (
+                  {batch.status === 'active' && canEdit && (
                     <div className="flex shrink-0 items-center gap-1">
                       <BatchEditModal
                         batchId={batch.id}
@@ -355,6 +360,7 @@ export function PondsSortableGrid({
   ponds,
   waterQuality,
   salesModuleEnabled,
+  canEdit,
 }: PondsSortableGridProps) {
   const pondIds = useMemo(() => ponds.map((pond) => pond.id), [ponds])
   const pondsMap = useMemo(() => new Map(ponds.map((pond) => [pond.id, pond])), [ponds])
@@ -391,6 +397,8 @@ export function PondsSortableGrid({
 
     if (!updatedOrder) return
 
+    if (!canEdit) return
+
     try {
       await updatePondOrder(updatedOrder)
     } catch (error) {
@@ -401,7 +409,9 @@ export function PondsSortableGrid({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-muted-foreground">Arrastra desde el ícono lateral para reordenar los estanques. El orden se mantiene en toda la plataforma.</p>
+      {canEdit ? (
+        <p className="text-xs text-muted-foreground">Arrastra desde el ícono lateral para reordenar los estanques. El orden se mantiene en toda la plataforma.</p>
+      ) : null}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sortedPonds.map((pond) => pond.id)}>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -411,6 +421,7 @@ export function PondsSortableGrid({
               pond={pond}
               waterQuality={waterQuality}
               salesModuleEnabled={salesModuleEnabled}
+              canEdit={canEdit}
             />
           ))}
         </div>

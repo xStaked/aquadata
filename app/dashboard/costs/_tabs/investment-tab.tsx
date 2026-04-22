@@ -17,6 +17,7 @@ interface InvestmentTabProps {
   totalFeedCostAll: number
   totalLaborCostAll: number
   totalFingerlingCostAll: number
+  canEdit: boolean
 }
 
 export function InvestmentTab({
@@ -28,6 +29,7 @@ export function InvestmentTab({
   totalFeedCostAll,
   totalLaborCostAll,
   totalFingerlingCostAll,
+  canEdit,
 }: InvestmentTabProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -206,9 +208,11 @@ export function InvestmentTab({
                       <div className="flex justify-between"><span className="text-muted-foreground">Bioremediación</span><span>{formatCOP(b.total_bio_cost)}</span></div>
                     </div>
 
-                    <div className="flex justify-end">
-                      <FishPriceModal batchId={b.id} currentPrice={b.sale_price} species={`${b.pond_name} - ${b.species}`} />
-                    </div>
+                    {canEdit ? (
+                      <div className="flex justify-end">
+                        <FishPriceModal batchId={b.id} currentPrice={b.sale_price} species={`${b.pond_name} - ${b.species}`} />
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
               )

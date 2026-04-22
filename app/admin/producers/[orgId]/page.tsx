@@ -13,6 +13,7 @@ import {
 } from '@/components/analytics-charts'
 import { requireAdminUser } from '@/lib/auth/roles'
 import { ArrowLeft, Bell, Fish, Users, Waves } from 'lucide-react'
+import { CreateOrganizationUserForm } from '@/components/admin/create-organization-user-form'
 
 export default async function AdminProducerDetailPage({
   params,
@@ -130,6 +131,7 @@ export default async function AdminProducerDetailPage({
   }
 
   const producerCount = (profiles ?? []).filter((profile) => profile.role === 'operario').length
+  const viewerCount = (profiles ?? []).filter((profile) => profile.role === 'viewer').length
   const activeBatches = batches.filter((batch) => batch.status === 'active').length
   const unreadAlerts = alerts.filter((alert) => !alert.is_read).length
 
@@ -176,6 +178,15 @@ export default async function AdminProducerDetailPage({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Solo lectura</CardTitle>
+            <Users className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">{viewerCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Alertas no leidas</CardTitle>
             <Bell className="h-4 w-4 text-primary" />
           </CardHeader>
@@ -198,6 +209,15 @@ export default async function AdminProducerDetailPage({
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Crear usuario para esta finca</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CreateOrganizationUserForm organizationId={orgId} />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Usuarios de la granja</CardTitle>

@@ -1,11 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { getOrgContext } from '@/lib/db/context'
+import { requireOrgWriteContext } from '@/lib/db/context'
 import { createClient } from '@/lib/supabase/server'
 
 async function getContext() {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   return { ...ctx, supabase: await createClient() }
 }
 

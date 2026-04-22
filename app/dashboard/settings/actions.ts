@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { getOrgContext } from '@/lib/db/context'
+import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
 import { updateOrganization } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 import type { AuthorizedWhatsappContact } from '@/db/types'
@@ -9,7 +9,7 @@ import { normalizeColombianPhoneNumber } from '@/lib/phone'
 import { normalizeWhatsappContact, parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
 
 export async function updateOrganizationDefaultFca(defaultFca: number | null) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   const { orgId } = ctx
 
   const updated = await updateOrganization(orgId, { default_fca: defaultFca })
@@ -33,7 +33,7 @@ export async function updateOrganizationDefaultFca(defaultFca: number | null) {
 export async function updateOrganizationCustomFishPrices(
   customFishPrices: Record<string, number | null>
 ) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   const { orgId } = ctx
 
   // Filter out entries with null, undefined, or zero values — only store species with actual prices
@@ -62,7 +62,7 @@ export async function updateOrganizationCustomFishPrices(
 export async function updateOrganizationAuthorizedWhatsappContacts(
   contactInputs: AuthorizedWhatsappContact[]
 ) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   const { orgId, userId } = ctx
 
   const supabase = await createClient()
@@ -156,7 +156,7 @@ export async function updateOrganizationAuthorizedWhatsappContacts(
 }
 
 export async function updateOrganizationSalesModuleEnabled(enabled: boolean) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   const { orgId } = ctx
 
   const updated = await updateOrganization(orgId, {

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Bell, AlertTriangle, AlertOctagon, CheckCircle, FlaskConical, Calculator } from 'lucide-react'
 import { AlertActions } from '@/components/alert-actions'
+import { isWriterRole } from '@/lib/auth/roles'
 
 const OPPORTUNITY_TYPES = [
   'high_ammonia',
@@ -20,9 +21,11 @@ export default async function AlertsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user!.id)
     .single()
+
+  const canEdit = isWriterRole(profile?.role)
 
   let alerts: Array<{
     id: string
@@ -102,7 +105,7 @@ export default async function AlertsPage() {
             {opportunityCount > 0 && ` · ${opportunityCount} oportunidad${opportunityCount > 1 ? 'es' : ''} de tratamiento`}
           </p>
         </div>
-        {unreadCount > 0 && <AlertActions />}
+        {unreadCount > 0 && canEdit ? <AlertActions /> : null}
       </div>
 
       {alerts.length === 0 ? (

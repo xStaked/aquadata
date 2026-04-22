@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { differenceInDays, subDays } from 'date-fns'
-import { getOrgContext } from '@/lib/db/context'
+import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
 import { updateBatchPopulation, updateRecord } from '@/lib/db'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
@@ -92,7 +92,7 @@ export interface ProductionRecordDetail {
 }
 
 export async function updateProductionRecord(data: UpdateProductionRecordInput) {
-  const ctx = await getOrgContext()
+  const ctx = await requireOrgWriteContext()
   const { userId, orgId } = ctx
 
   // Verify record belongs to user's org via batch -> pond -> organization chain

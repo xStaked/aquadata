@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { isWriterRole } from '@/lib/auth/roles'
 
 /**
  * Precios reales de referencia para especies acuícolas en Colombia.
@@ -119,6 +120,16 @@ export async function POST() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (!isWriterRole(profile?.role)) {
+            return NextResponse.json({ error: 'Tu usuario tiene permisos de solo lectura' }, { status: 403 })
         }
 
         const today = new Date().toISOString().split('T')[0]

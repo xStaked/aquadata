@@ -1,8 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { createBioremediationCalc } from '@/lib/db'
+import { createBioremediationCalc, getOrgContext } from '@/lib/db'
+import { isWriterRole } from '@/lib/auth/roles'
 
 export async function saveBioremediationCalc(data: {
   pond_length: number
@@ -11,12 +11,14 @@ export async function saveBioremediationCalc(data: {
   volume_m3: number
   bioremediation_dose: number
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('No autenticado')
+  const ctx = await getOrgContext()
+
+  if (!isWriterRole(ctx.role)) {
+    throw new Error('Tu usuario tiene permisos de solo lectura')
+  }
 
   await createBioremediationCalc({
-    user_id: user.id,
+    user_id: ctx.userId,
     pond_length: data.pond_length,
     pond_width: data.pond_width,
     pond_depth: data.pond_depth,

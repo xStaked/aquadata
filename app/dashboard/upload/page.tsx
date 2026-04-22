@@ -5,6 +5,8 @@ import { ManualRecordForm } from '@/components/manual-record-form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AuthorizedWhatsappContact } from '@/db/types'
 import { parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
+import { isWriterRole } from '@/lib/auth/roles'
+import { ReadOnlyBanner } from '@/components/read-only-banner'
 
 export default async function UploadPage() {
   const supabase = await createClient()
@@ -12,9 +14,11 @@ export default async function UploadPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, whatsapp_phone')
+    .select('organization_id, whatsapp_phone, role')
     .eq('id', user!.id)
     .single()
+
+  const canEdit = isWriterRole(profile?.role)
 
   let organizationDefaultFca: number | null = null
   let authorizedWhatsappContacts: AuthorizedWhatsappContact[] = []
@@ -95,18 +99,22 @@ export default async function UploadPage() {
         authorizedContacts={authorizedWhatsappContacts}
       />
 
-      <Tabs defaultValue="manual" className="w-full">
-        <TabsList>
-          <TabsTrigger value="manual">Manual</TabsTrigger>
-          <TabsTrigger value="ocr">Captura OCR</TabsTrigger>
-        </TabsList>
-        <TabsContent value="manual" className="mt-4">
-          <ManualRecordForm batches={batches} defaultFca={organizationDefaultFca} />
-        </TabsContent>
-        <TabsContent value="ocr" className="mt-4">
-          <UploadForm batches={batches} defaultFca={organizationDefaultFca} />
-        </TabsContent>
-      </Tabs>
+      {!canEdit ? (
+        <ReadOnlyBanner description="Los usuarios de solo lectura no pueden cargar reportes ni confirmar capturas OCR." />
+      ) : (
+        <Tabs defaultValue="manual" className="w-full">
+          <TabsList>
+            <TabsTrigger value="manual">Manual</TabsTrigger>
+            <TabsTrigger value="ocr">Captura OCR</TabsTrigger>
+          </TabsList>
+          <TabsContent value="manual" className="mt-4">
+            <ManualRecordForm batches={batches} defaultFca={organizationDefaultFca} />
+          </TabsContent>
+          <TabsContent value="ocr" className="mt-4">
+            <UploadForm batches={batches} defaultFca={organizationDefaultFca} />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   )
 }

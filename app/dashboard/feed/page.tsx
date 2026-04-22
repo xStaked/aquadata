@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { Wheat } from 'lucide-react'
 import { FeedTab } from './feed-tab'
 import { type Concentrate, type FeedRecord, type BatchForForms } from '../costs/types'
+import { isWriterRole } from '@/lib/auth/roles'
+import { ReadOnlyBanner } from '@/components/read-only-banner'
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -11,9 +13,11 @@ export default async function FeedPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user!.id)
     .single()
+
+  const canEdit = isWriterRole(profile?.role)
 
   let concentrates: Concentrate[] = []
   let feedRecords: FeedRecord[] = []
@@ -125,10 +129,13 @@ export default async function FeedPage() {
         </div>
       </div>
 
+      {!canEdit ? <ReadOnlyBanner description="Puedes consultar concentrados y consumo histórico, pero no registrar ni editar alimentación." /> : null}
+
       <FeedTab
         concentrates={concentrates}
         batchesForForms={batchesForForms}
         feedRecords={feedRecords}
+        canEdit={canEdit}
       />
     </div>
   )

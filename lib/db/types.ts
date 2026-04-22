@@ -239,5 +239,6 @@ export interface BioremediationCalc {
 export interface OrgContext {
   userId: string
   orgId: string
+  role: string
   user: { id: string; email?: string }
 }

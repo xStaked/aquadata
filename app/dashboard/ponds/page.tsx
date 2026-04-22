@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import { PondForm } from '@/components/pond-form'
 import { PondsSortableGrid } from '@/components/ponds-sortable-grid'
+import { isWriterRole } from '@/lib/auth/roles'
+import { ReadOnlyBanner } from '@/components/read-only-banner'
 
 export default async function PondsPage() {
   const supabase = await createClient()
@@ -14,11 +16,12 @@ export default async function PondsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, organizations(sales_module_enabled)')
+    .select('organization_id, role, organizations(sales_module_enabled)')
     .eq('id', user!.id)
     .single()
 
   const hasOrganization = !!profile?.organization_id
+  const canEdit = isWriterRole(profile?.role)
   const salesModuleEnabled =
     (profile?.organizations as { sales_module_enabled?: boolean | null } | null)
       ?.sales_module_enabled !== false
@@ -140,8 +143,10 @@ export default async function PondsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Estanques</h1>
           <p className="mt-1 text-sm text-muted-foreground">Gestiona tus estanques y lotes productivos</p>
         </div>
-        <PondForm hasOrganization={hasOrganization} />
+        {canEdit ? <PondForm hasOrganization={hasOrganization} /> : null}
       </div>
+
+      {!canEdit ? <ReadOnlyBanner description="Puedes ver estanques, lotes y estado de agua, pero no modificar la estructura operativa de la finca." /> : null}
 
       {/* Summary KPIs */}
       {ponds.length > 0 && (
@@ -199,7 +204,7 @@ export default async function PondsPage() {
                 Crea tu primer estanque para empezar a registrar lotes y datos de producción.
               </p>
             </div>
-            <PondForm hasOrganization={hasOrganization} />
+            {canEdit ? <PondForm hasOrganization={hasOrganization} /> : null}
           </CardContent>
         </Card>
       ) : (
@@ -207,6 +212,7 @@ export default async function PondsPage() {
           ponds={ponds}
           waterQuality={waterQuality}
           salesModuleEnabled={salesModuleEnabled}
+          canEdit={canEdit}
         />
       )}
     </div>

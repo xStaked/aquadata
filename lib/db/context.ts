@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { OrgContext } from './types'
+import { isWriterRole } from '@/lib/auth/roles'
 
 /**
  * Centralized helper that resolves the authenticated user's org context.
@@ -22,7 +23,7 @@ export async function getOrgContext(): Promise<OrgContext> {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user.id)
     .single()
 
@@ -33,6 +34,17 @@ export async function getOrgContext(): Promise<OrgContext> {
   return {
     userId: user.id,
     orgId: profile.organization_id,
+    role: profile.role ?? 'operario',
     user: { id: user.id, email: user.email },
   }
+}
+
+export async function requireOrgWriteContext(): Promise<OrgContext> {
+  const ctx = await getOrgContext()
+
+  if (!isWriterRole(ctx.role)) {
+    throw new Error('Tu usuario tiene permisos de solo lectura')
+  }
+
+  return ctx
 }

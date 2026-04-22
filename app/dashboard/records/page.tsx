@@ -16,6 +16,8 @@ import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
 import { RecordEditModal } from '@/components/record-edit-modal'
 import { formatColombianPhoneNumber } from '@/lib/phone'
+import { isWriterRole } from '@/lib/auth/roles'
+import { ReadOnlyBanner } from '@/components/read-only-banner'
 
 const PRODUCTION_RECORD_FIELDS = `
   id,
@@ -60,9 +62,11 @@ export default async function RecordsPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user!.id)
     .single()
+
+  const canEdit = isWriterRole(profile?.role)
 
   let records: Array<{
     id: string
@@ -241,6 +245,8 @@ export default async function RecordsPage({
           }))}
         />
       </div>
+
+      {!canEdit ? <ReadOnlyBanner description="Puedes consultar y exportar registros, pero no editar reportes existentes." /> : null}
       <Card>
         <CardContent className="pt-6">
           <form method="GET" className="flex flex-wrap items-end gap-3">
@@ -340,7 +346,7 @@ export default async function RecordsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-center">Editar</TableHead>
+                  {canEdit ? <TableHead className="text-center">Editar</TableHead> : null}
                   <TableHead className="text-center">Detalle</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
@@ -371,34 +377,36 @@ export default async function RecordsPage({
               <TableBody>
                 {records.map((rec) => (
                   <TableRow id={`record-${rec.id}`} key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
-                    <TableCell className="text-center">
-                      <RecordEditModal
-                        record={{
-                          id: rec.id,
-                          record_date: rec.record_date,
-                          pond_name: batchPondMap[rec.batch_id] || '-',
-                          fish_count: rec.fish_count,
-                          feed_kg: rec.feed_kg,
-                          avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
-                          biomass_kg: rec.biomass_kg,
-                          sampling_weight_g: rec.sampling_weight_g,
-                          mortality_count: rec.mortality_count,
-                          temperature_c: rec.temperature_c,
-                          oxygen_mg_l: rec.oxygen_mg_l,
-                          ammonia_mg_l: rec.ammonia_mg_l,
-                          nitrite_mg_l: rec.nitrite_mg_l,
-                          nitrate_mg_l: rec.nitrate_mg_l,
-                          ph: rec.ph,
-                          phosphate_mg_l: rec.phosphate_mg_l,
-                          hardness_mg_l: rec.hardness_mg_l,
-                          alkalinity_mg_l: rec.alkalinity_mg_l,
-                          effective_fca: rec.effective_fca,
-                          fca_source: rec.fca_source,
-                          notes: rec.notes,
-                        }}
-                        defaultFca={organizationDefaultFca}
-                      />
-                    </TableCell>
+                    {canEdit ? (
+                      <TableCell className="text-center">
+                        <RecordEditModal
+                          record={{
+                            id: rec.id,
+                            record_date: rec.record_date,
+                            pond_name: batchPondMap[rec.batch_id] || '-',
+                            fish_count: rec.fish_count,
+                            feed_kg: rec.feed_kg,
+                            avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                            biomass_kg: rec.biomass_kg,
+                            sampling_weight_g: rec.sampling_weight_g,
+                            mortality_count: rec.mortality_count,
+                            temperature_c: rec.temperature_c,
+                            oxygen_mg_l: rec.oxygen_mg_l,
+                            ammonia_mg_l: rec.ammonia_mg_l,
+                            nitrite_mg_l: rec.nitrite_mg_l,
+                            nitrate_mg_l: rec.nitrate_mg_l,
+                            ph: rec.ph,
+                            phosphate_mg_l: rec.phosphate_mg_l,
+                            hardness_mg_l: rec.hardness_mg_l,
+                            alkalinity_mg_l: rec.alkalinity_mg_l,
+                            effective_fca: rec.effective_fca,
+                            fca_source: rec.fca_source,
+                            notes: rec.notes,
+                          }}
+                          defaultFca={organizationDefaultFca}
+                        />
+                      </TableCell>
+                    ) : null}
                     <TableCell className="text-center">
                       <Link
                         href={`/dashboard/records/${rec.id}`}

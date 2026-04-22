@@ -55,6 +55,7 @@ interface HarvestRecord {
 interface HarvestFormProps {
   batches: Batch[]
   harvests: HarvestRecord[]
+  canEdit: boolean
 }
 
 function calcMetrics(animals: number, wholeG: number, eviscG: number | null) {
@@ -76,7 +77,7 @@ const emptyForm = {
   notes: '',
 }
 
-export function HarvestForm({ batches, harvests }: HarvestFormProps) {
+export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -123,6 +124,7 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
           <Scale className="h-4 w-4" />
           <span>{harvests.length} cosecha{harvests.length !== 1 ? 's' : ''} registrada{harvests.length !== 1 ? 's' : ''}</span>
         </div>
+        {canEdit ? (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2" onClick={() => { setForm(emptyForm); setError('') }}>
@@ -270,6 +272,7 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
             </div>
           </DialogContent>
         </Dialog>
+        ) : null}
       </div>
 
       <Table>
@@ -283,13 +286,13 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
             <TableHead>% Merma</TableHead>
             <TableHead>Viscera total</TableHead>
             <TableHead>Mano de obra</TableHead>
-            <TableHead />
+            {canEdit ? <TableHead /> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {harvests.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
+              <TableCell colSpan={canEdit ? 9 : 8} className="h-20 text-center text-muted-foreground">
                 No hay cosechas registradas.
               </TableCell>
             </TableRow>
@@ -331,17 +334,19 @@ export function HarvestForm({ batches, harvests }: HarvestFormProps) {
                     ) : '—'}
                   </TableCell>
                   <TableCell>{formatCOP(h.labor_cost)}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(h.id)}
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {canEdit ? (
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(h.id)}
+                        disabled={isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               )
             })

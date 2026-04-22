@@ -6,9 +6,10 @@ import { type HarvestRecord, type BatchForForms } from '../types'
 interface HarvestTabProps {
   harvests: HarvestRecord[]
   batchesForForms: BatchForForms[]
+  canEdit: boolean
 }
 
-export function HarvestTab({ harvests, batchesForForms }: HarvestTabProps) {
+export function HarvestTab({ harvests, batchesForForms, canEdit }: HarvestTabProps) {
   const withEvisceration = harvests.filter(h => h.avg_weight_eviscerated_g != null)
   const avgShrinkage = withEvisceration.length > 0
     ? withEvisceration.reduce((s, h) => {
@@ -70,7 +71,7 @@ export function HarvestTab({ harvests, batchesForForms }: HarvestTabProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <HarvestForm batches={batchesForForms} harvests={harvests} />
+          <HarvestForm batches={batchesForForms} harvests={harvests} canEdit={canEdit} />
         </CardContent>
       </Card>
     </div>
