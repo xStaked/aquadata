@@ -22,6 +22,7 @@ export function BatchForm({ pondId }: { pondId: string }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [pondEntryDate, setPondEntryDate] = useState(new Date().toISOString().split('T')[0])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -35,9 +36,11 @@ export function BatchForm({ pondId }: { pondId: string }) {
       const formData = new FormData(e.currentTarget)
       formData.set('pond_id', pondId)
       formData.set('start_date', startDate)
+      formData.set('pond_entry_date', pondEntryDate)
       await createBatch(formData)
       setOpen(false)
       setStartDate(new Date().toISOString().split('T')[0])
+      setPondEntryDate(new Date().toISOString().split('T')[0])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear lote')
     } finally {
@@ -70,6 +73,17 @@ export function BatchForm({ pondId }: { pondId: string }) {
             />
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="pond_entry_date">Fecha ingreso al lago</Label>
+            <DatePicker
+              id="pond_entry_date"
+              name="pond_entry_date"
+              value={pondEntryDate}
+              onChange={setPondEntryDate}
+              required
+              placeholder="Selecciona la fecha de ingreso al estanque"
+            />
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="initial_population">Poblacion inicial</Label>
             <Input
               id="initial_population"
@@ -77,6 +91,15 @@ export function BatchForm({ pondId }: { pondId: string }) {
               type="number"
               placeholder="10000"
               required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="seed_source">Origen de semilla</Label>
+            <Input
+              id="seed_source"
+              name="seed_source"
+              type="text"
+              placeholder="Proveedor o hatchery"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

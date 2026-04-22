@@ -24,7 +24,8 @@ const PRODUCTION_RECORD_SELECT = `
   calculated_fca,
   effective_fca,
   fca_source,
-  calculated_biomass_kg,
+  biomass_kg,
+  sampling_weight_g,
   notes,
   confirmed_by,
   created_at
@@ -104,7 +105,8 @@ export async function createRecord(data: {
   calculated_fca?: number | null
   effective_fca?: number | null
   fca_source?: FcaSource | null
-  calculated_biomass_kg?: number | null
+  biomass_kg?: number | null
+  sampling_weight_g?: number | null
   confirmed_by?: string | null
   upload_id?: string | null
 }): Promise<void> {
@@ -134,7 +136,8 @@ export async function createRecord(data: {
     calculated_fca: data.calculated_fca ?? null,
     effective_fca: data.effective_fca ?? null,
     fca_source: data.fca_source ?? null,
-    calculated_biomass_kg: data.calculated_biomass_kg ?? null,
+    biomass_kg: data.biomass_kg ?? null,
+    sampling_weight_g: data.sampling_weight_g ?? null,
     confirmed_by: data.confirmed_by ?? null,
     upload_id: data.upload_id ?? null,
   })
@@ -167,7 +170,8 @@ export async function updateRecord(
     calculated_fca: number | null
     effective_fca: number | null
     fca_source: FcaSource | null
-    calculated_biomass_kg: number | null
+    biomass_kg: number | null
+    sampling_weight_g: number | null
     confirmed_by: string | null
   }>,
   orgId: string
@@ -269,8 +273,10 @@ function normalizeRecord(raw: Record<string, unknown>): ProductionRecord {
     calculated_fca: raw.calculated_fca != null ? Number(raw.calculated_fca) : null,
     effective_fca: raw.effective_fca != null ? Number(raw.effective_fca) : null,
     fca_source: (raw.fca_source as FcaSource) ?? null,
-    calculated_biomass_kg:
-      raw.calculated_biomass_kg != null ? Number(raw.calculated_biomass_kg) : null,
+    biomass_kg:
+      raw.biomass_kg != null ? Number(raw.biomass_kg) : null,
+    sampling_weight_g:
+      raw.sampling_weight_g != null ? Number(raw.sampling_weight_g) : null,
     notes: (raw.notes as string) ?? null,
     confirmed_by: (raw.confirmed_by as string) ?? null,
     created_at: raw.created_at as string,

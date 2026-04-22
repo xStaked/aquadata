@@ -35,11 +35,12 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
       // 2. Resolve fish count
       const resolvedFishCount = input.fish_count ?? batch.current_population ?? batch.initial_population ?? null
 
-      // 3. Calculate FCA and biomass
-      const { calculated_fca, calculated_biomass_kg } = calculateCalculatedFca({
+      // 3. Calculate FCA (uses manual biomass if provided)
+      const { calculated_fca, biomass_kg } = calculateCalculatedFca({
         fish_count: resolvedFishCount,
         feed_kg: input.feed_kg,
         avg_weight_g: input.avg_weight_g,
+        biomass_kg: input.biomass_kg,
         mortality_count: input.mortality_count,
       })
 
@@ -66,6 +67,7 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
       await this.recordRepo.create({
         ...input,
         fish_count: resolvedFishCount,
+        biomass_kg,
       })
 
       // 7. Generate alerts

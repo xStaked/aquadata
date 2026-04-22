@@ -13,6 +13,8 @@ interface UpdateProductionRecordInput {
   fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
+  biomass_kg: number | null
+  sampling_weight_g: number | null
   mortality_count: number | null
   temperature_c: number | null
   oxygen_mg_l: number | null
@@ -79,7 +81,7 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
 
   // Calculate FCA
   const resolvedFishCount = data.fish_count ?? existingRecord.fish_count ?? currentPopulation ?? null
-  const { calculated_fca, calculated_biomass_kg } = calculateDerivedValues({
+  const { calculated_fca, biomass_kg } = calculateDerivedValues({
     ...data,
     fish_count: resolvedFishCount,
   })
@@ -100,6 +102,8 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     fish_count: resolvedFishCount,
     feed_kg: data.feed_kg,
     avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
+    biomass_kg,
+    sampling_weight_g: data.sampling_weight_g,
     mortality_count: data.mortality_count ?? 0,
     temperature_c: data.temperature_c,
     oxygen_mg_l: data.oxygen_mg_l,
@@ -114,7 +118,6 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     calculated_fca,
     effective_fca,
     fca_source,
-    calculated_biomass_kg,
     confirmed_by: userId,
   }, orgId)
 

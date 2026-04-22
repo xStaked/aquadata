@@ -7,6 +7,7 @@ import { getOrganization } from '@/lib/db/repositories/organization-repository'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { generateAlerts, type WaterQualityReading } from '@/lib/alerts'
 import { revalidatePath } from 'next/cache'
+import { differenceInDays } from 'date-fns'
 
 interface ProductionData {
   batch_id: string
@@ -17,6 +18,8 @@ interface ProductionData {
   fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
+  biomass_kg: number | null
+  sampling_weight_g: number | null
   mortality_count: number | null
   temperature_c: number | null
   oxygen_mg_l: number | null
@@ -42,8 +45,8 @@ export async function confirmProductionRecord(data: ProductionData) {
   const resolvedFishCount =
     data.fish_count ?? batch.current_population ?? batch.initial_population ?? null
 
-  // Calculate FCA
-  const { calculated_fca, calculated_biomass_kg } = calculateCalculatedFca({
+  // Calculate FCA (uses manual biomass if provided, otherwise calculates it)
+  const { calculated_fca, biomass_kg } = calculateCalculatedFca({
     ...data,
     fish_count: resolvedFishCount,
   })
@@ -73,6 +76,8 @@ export async function confirmProductionRecord(data: ProductionData) {
     fish_count: resolvedFishCount,
     feed_kg: data.feed_kg,
     avg_weight_kg: data.avg_weight_g != null ? data.avg_weight_g / 1000 : null,
+    biomass_kg,
+    sampling_weight_g: data.sampling_weight_g,
     mortality_count: data.mortality_count ?? 0,
     temperature_c: data.temperature_c,
     oxygen_mg_l: data.oxygen_mg_l,
@@ -87,7 +92,6 @@ export async function confirmProductionRecord(data: ProductionData) {
     calculated_fca,
     effective_fca,
     fca_source,
-    calculated_biomass_kg,
     confirmed_by: userId,
     upload_id: data.upload_id ?? null,
   })
@@ -117,4 +121,90 @@ export async function confirmProductionRecord(data: ProductionData) {
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/records')
   revalidatePath('/dashboard/analytics')
+}
+
+export interface BatchSummary {
+  batch_id: string
+  start_date: string
+  pond_entry_date: string | null
+  seed_source: string | null
+  initial_population: number
+  current_population: number | null
+  days_culture: number
+  days_pond: number
+  animal_actual: number | null
+  survival_pct: number | null
+  accumulated_feed_kg: number | null
+  fortnightly_feed_kg: number | null
+  accumulated_mortality: number | null
+  latest_avg_weight_g: number | null
+  latest_biomass_kg: number | null
+}
+
+export async function getBatchSummary(batchId: string): Promise<BatchSummary | null> {
+  const supabase = await createClient()
+
+  // Verify ownership via org context
+  const { orgId } = await getOrgContext()
+
+  const { data: batch, error: batchError } = await supabase
+    .from('batches')
+    .select('id, start_date, pond_entry_date, seed_source, initial_population, current_population, pond_id')
+    .eq('id', batchId)
+    .single()
+
+  if (batchError || !batch) return null
+
+  // Verify batch belongs to user's org
+  const { data: pond } = await supabase
+    .from('ponds')
+    .select('organization_id')
+    .eq('id', batch.pond_id)
+    .single()
+
+  if (pond?.organization_id !== orgId) return null
+
+  // Get all records for this batch
+  const { data: records } = await supabase
+    .from('production_records')
+    .select('record_date, feed_kg, mortality_count, avg_weight_kg, biomass_kg')
+    .eq('batch_id', batchId)
+    .order('record_date', { ascending: true })
+
+  const today = new Date().toISOString().split('T')[0]
+  const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const accumulated_feed_kg = records?.reduce((sum, r) => sum + (r.feed_kg ?? 0), 0) ?? 0
+  const fortnightly_feed_kg = records?.reduce((sum, r) => {
+    if (r.record_date >= fifteenDaysAgo) return sum + (r.feed_kg ?? 0)
+    return sum
+  }, 0) ?? 0
+  const accumulated_mortality = records?.reduce((sum, r) => sum + (r.mortality_count ?? 0), 0) ?? 0
+
+  const latestRecord = records && records.length > 0
+    ? records.reduce((latest, r) => r.record_date > latest.record_date ? r : latest, records[0])
+    : null
+
+  const animal_actual = batch.current_population ?? Math.max(0, batch.initial_population - accumulated_mortality)
+  const survival_pct = batch.initial_population > 0
+    ? (animal_actual / batch.initial_population) * 100
+    : null
+
+  return {
+    batch_id: batch.id,
+    start_date: batch.start_date,
+    pond_entry_date: batch.pond_entry_date,
+    seed_source: batch.seed_source,
+    initial_population: batch.initial_population,
+    current_population: batch.current_population,
+    days_culture: differenceInDays(new Date(today), new Date(batch.start_date)),
+    days_pond: differenceInDays(new Date(today), new Date(batch.pond_entry_date ?? batch.start_date)),
+    animal_actual,
+    survival_pct,
+    accumulated_feed_kg: accumulated_feed_kg > 0 ? accumulated_feed_kg : null,
+    fortnightly_feed_kg: fortnightly_feed_kg > 0 ? fortnightly_feed_kg : null,
+    accumulated_mortality: accumulated_mortality > 0 ? accumulated_mortality : null,
+    latest_avg_weight_g: latestRecord?.avg_weight_kg != null ? latestRecord.avg_weight_kg * 1000 : null,
+    latest_biomass_kg: latestRecord?.biomass_kg ?? null,
+  }
 }

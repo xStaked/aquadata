@@ -23,6 +23,7 @@ import {
   CalendarRange,
 } from 'lucide-react'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
+import { BatchSummaryCard } from '@/components/batch-summary-card'
 
 interface Batch {
   id: string
@@ -124,6 +125,8 @@ export function ManualRecordForm({
     fish_count: '',
     feed_kg: '',
     avg_weight_g: '',
+    biomass_kg: '',
+    sampling_weight_g: '',
     mortality_count: '',
     temperature_c: '',
     oxygen_mg_l: '',
@@ -186,6 +189,10 @@ export function ManualRecordForm({
       setError('La fecha es obligatoria')
       return
     }
+    if (formData.biomass_kg === '' || Number(formData.biomass_kg) <= 0) {
+      setError('La biomasa es obligatoria y debe ser mayor a 0')
+      return
+    }
     setIsSubmitting(true)
     setError(null)
     try {
@@ -197,6 +204,8 @@ export function ManualRecordForm({
         fish_count: toNum(formData.fish_count) ?? selectedBatchPopulation,
         feed_kg: toNum(formData.feed_kg),
         avg_weight_g: toNum(formData.avg_weight_g),
+        biomass_kg: toNum(formData.biomass_kg),
+        sampling_weight_g: toNum(formData.sampling_weight_g),
         mortality_count: toNum(formData.mortality_count),
         temperature_c: toNum(formData.temperature_c),
         oxygen_mg_l: toNum(formData.oxygen_mg_l),
@@ -240,6 +249,8 @@ export function ManualRecordForm({
       fish_count: '',
       feed_kg: '',
       avg_weight_g: '',
+      biomass_kg: '',
+      sampling_weight_g: '',
       mortality_count: '',
       temperature_c: '',
       oxygen_mg_l: '',
@@ -305,6 +316,9 @@ export function ManualRecordForm({
       </div>
 
       <div className="space-y-8 p-6">
+        {/* ── Resumen del Lote ── */}
+        {selectedBatch && <BatchSummaryCard batchId={selectedBatch} />}
+
         {/* ── Tipo de Reporte ── */}
         <div className="flex gap-2">
           <button
@@ -432,6 +446,32 @@ export function ManualRecordForm({
               />
             </div>
             <div className="flex flex-col gap-2">
+              <FieldLabel htmlFor="m_biomass_kg" unit="kg">
+                Biomasa <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input
+                id="m_biomass_kg"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                className="h-9"
+                value={formData.biomass_kg}
+                onChange={(e) => updateField('biomass_kg', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <FieldLabel htmlFor="m_sampling_weight_g" unit="g">Peso de muestreo</FieldLabel>
+              <Input
+                id="m_sampling_weight_g"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                className="h-9"
+                value={formData.sampling_weight_g}
+                onChange={(e) => updateField('sampling_weight_g', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
               <FieldLabel htmlFor="m_mortality_count" unit="ind">
                 {reportType === 'weekly' ? 'Mortalidad total' : 'Mortalidad'}
               </FieldLabel>
@@ -451,12 +491,15 @@ export function ManualRecordForm({
         {(() => {
           const resolvedFishCount =
             formData.fish_count !== '' ? Number(formData.fish_count) : selectedBatchPopulation
-          const { calculated_biomass_kg: biomasa, calculated_fca: fcaCalculado } = calculateCalculatedFca({
+          const manualBiomass = formData.biomass_kg !== '' ? Number(formData.biomass_kg) : null
+          const { biomass_kg: biomasaCalculada, calculated_fca: fcaCalculado } = calculateCalculatedFca({
             fish_count: resolvedFishCount,
             avg_weight_g: formData.avg_weight_g !== '' ? Number(formData.avg_weight_g) : null,
+            biomass_kg: manualBiomass,
             feed_kg: formData.feed_kg !== '' ? Number(formData.feed_kg) : null,
             mortality_count: formData.mortality_count !== '' ? Number(formData.mortality_count) : 0,
           })
+          const biomasa = manualBiomass ?? biomasaCalculada
           const fcaEfectivo = fcaMode === 'default' ? resolvedDefaultFca : fcaCalculado
           return (
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

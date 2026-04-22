@@ -30,7 +30,7 @@ interface ProductionRecord {
   nitrate_mg_l: number | null
   ph: number | null
   effective_fca: number | null
-  calculated_biomass_kg: number | null
+  biomass_kg: number | null
   pond_name: string
 }
 

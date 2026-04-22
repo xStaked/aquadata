@@ -87,6 +87,8 @@ export async function createBatch(data: {
   initial_population: number
   current_population?: number
   status?: string
+  seed_source?: string | null
+  pond_entry_date?: string | null
 }): Promise<void> {
   const supabase = await createClient()
 
@@ -96,6 +98,8 @@ export async function createBatch(data: {
     initial_population: data.initial_population,
     current_population: data.current_population ?? data.initial_population,
     status: data.status ?? 'active',
+    seed_source: data.seed_source ?? null,
+    pond_entry_date: data.pond_entry_date ?? data.start_date,
   })
 
   if (error) throw new Error(`Error creating batch: ${error.message}`)
@@ -180,6 +184,8 @@ function normalizeBatch(raw: Record<string, unknown>): Batch {
     end_date: (raw.end_date as string) ?? null,
     initial_population: Number(raw.initial_population ?? 0),
     current_population: raw.current_population != null ? Number(raw.current_population) : null,
+    seed_source: (raw.seed_source as string) ?? null,
+    pond_entry_date: (raw.pond_entry_date as string) ?? null,
     status: (raw.status as Batch['status']) ?? 'active',
     sale_price_per_kg: raw.sale_price_per_kg != null ? Number(raw.sale_price_per_kg) : null,
     target_profitability_pct:

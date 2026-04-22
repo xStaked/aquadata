@@ -22,7 +22,8 @@ interface RecordRow {
   alkalinity_mg_l: number | null
   effective_fca: number | null
   fca_source?: string | null
-  calculated_biomass_kg: number | null
+  biomass_kg: number | null
+  sampling_weight_g: number | null
 }
 
 interface RecordsExportProps {
@@ -46,6 +47,7 @@ const HEADERS = [
   'Alcalinidad (mg/L)',
   'FCA',
   'Biomasa (kg)',
+  'Peso muestreo (g)',
 ]
 
 function formatRow(rec: RecordRow) {
@@ -67,7 +69,8 @@ function formatRow(rec: RecordRow) {
     rec.hardness_mg_l?.toFixed(1) ?? '-',
     rec.alkalinity_mg_l?.toFixed(1) ?? '-',
     rec.effective_fca?.toFixed(2) ?? '-',
-    rec.calculated_biomass_kg?.toFixed(1) ?? '-',
+    rec.biomass_kg?.toFixed(1) ?? '-',
+    rec.sampling_weight_g?.toFixed(1) ?? '-',
   ]
 }
 
@@ -114,7 +117,8 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
       ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
       ['FCA', record.effective_fca?.toFixed(2) ?? '-'],
-      ['Biomasa (kg)', record.calculated_biomass_kg?.toFixed(1) ?? '-'],
+      ['Biomasa (kg)', record.biomass_kg?.toFixed(1) ?? '-'],
+      ['Peso de muestreo (g)', record.sampling_weight_g?.toFixed(1) ?? '-'],
     ]
 
     autoTable(doc, {
@@ -153,7 +157,8 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
       ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
       ['FCA', record.effective_fca?.toFixed(2) ?? '-'],
-      ['Biomasa (kg)', record.calculated_biomass_kg?.toFixed(1) ?? '-'],
+      ['Biomasa (kg)', record.biomass_kg?.toFixed(1) ?? '-'],
+      ['Peso de muestreo (g)', record.sampling_weight_g?.toFixed(1) ?? '-'],
     ]
 
     const ws = XLSX.utils.aoa_to_sheet(data)

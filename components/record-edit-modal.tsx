@@ -36,6 +36,8 @@ interface RecordEditModalProps {
     fish_count: number | null
     feed_kg: number | null
     avg_weight_g: number | null
+    biomass_kg: number | null
+    sampling_weight_g: number | null
     mortality_count: number
     temperature_c: number | null
     oxygen_mg_l: number | null
@@ -57,6 +59,8 @@ type FormState = {
   fish_count: string
   feed_kg: string
   avg_weight_g: string
+  biomass_kg: string
+  sampling_weight_g: string
   mortality_count: string
   temperature_c: string
   oxygen_mg_l: string
@@ -81,6 +85,8 @@ function buildFormState(record: RecordEditModalProps['record']): FormState {
     fish_count: toInputValue(record.fish_count),
     feed_kg: toInputValue(record.feed_kg),
     avg_weight_g: toInputValue(record.avg_weight_g),
+    biomass_kg: toInputValue(record.biomass_kg),
+    sampling_weight_g: toInputValue(record.sampling_weight_g),
     mortality_count: toInputValue(record.mortality_count),
     temperature_c: toInputValue(record.temperature_c),
     oxygen_mg_l: toInputValue(record.oxygen_mg_l),
@@ -167,6 +173,8 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
         fish_count: toNullableNumber(form.fish_count),
         feed_kg: toNullableNumber(form.feed_kg),
         avg_weight_g: toNullableNumber(form.avg_weight_g),
+        biomass_kg: toNullableNumber(form.biomass_kg),
+        sampling_weight_g: toNullableNumber(form.sampling_weight_g),
         mortality_count: toNullableNumber(form.mortality_count),
         temperature_c: toNullableNumber(form.temperature_c),
         oxygen_mg_l: toNullableNumber(form.oxygen_mg_l),
@@ -218,6 +226,7 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
               fish_count: toNullableNumber(form.fish_count),
               feed_kg: toNullableNumber(form.feed_kg),
               avg_weight_g: toNullableNumber(form.avg_weight_g),
+              biomass_kg: toNullableNumber(form.biomass_kg),
               mortality_count: toNullableNumber(form.mortality_count),
             })
             const effectiveFca = form.fca_source === 'default' ? defaultFca : calculatedFca
@@ -280,6 +289,8 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
             <Field id={`fish-count-${record.id}`} label="Nº de peces" unit="ind" value={form.fish_count} onChange={(value) => setField('fish_count', value)} />
             <Field id={`feed-kg-${record.id}`} label="Alimento" unit="kg" step="0.1" value={form.feed_kg} onChange={(value) => setField('feed_kg', value)} />
             <Field id={`avg-weight-${record.id}`} label="Peso promedio" unit="g" step="0.1" value={form.avg_weight_g} onChange={(value) => setField('avg_weight_g', value)} />
+            <Field id={`biomass-${record.id}`} label="Biomasa" unit="kg" step="0.1" value={form.biomass_kg} onChange={(value) => setField('biomass_kg', value)} />
+            <Field id={`sampling-weight-${record.id}`} label="Peso de muestreo" unit="g" step="0.1" value={form.sampling_weight_g} onChange={(value) => setField('sampling_weight_g', value)} />
             <Field id={`mortality-${record.id}`} label="Mortalidad" unit="ind" value={form.mortality_count} onChange={(value) => setField('mortality_count', value)} />
             <Field id={`temperature-${record.id}`} label="Temperatura" unit="C" step="0.1" value={form.temperature_c} onChange={(value) => setField('temperature_c', value)} />
             <Field id={`oxygen-${record.id}`} label="Oxígeno" unit="mg/L" step="0.1" value={form.oxygen_mg_l} onChange={(value) => setField('oxygen_mg_l', value)} />

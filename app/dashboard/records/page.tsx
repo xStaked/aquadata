@@ -9,8 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ClipboardList, CalendarDays, CalendarRange } from 'lucide-react'
-import { format } from 'date-fns'
+import { ClipboardList, CalendarDays, CalendarRange, CalendarRangeIcon } from 'lucide-react'
+import { format, differenceInDays } from 'date-fns'
 import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
 import { RecordEditModal } from '@/components/record-edit-modal'
@@ -35,7 +35,8 @@ const PRODUCTION_RECORD_FIELDS = `
   calculated_fca,
   effective_fca,
   fca_source,
-  calculated_biomass_kg,
+  biomass_kg,
+  sampling_weight_g,
   notes,
   report_type,
   week_end_date,
@@ -81,7 +82,8 @@ export default async function RecordsPage({
     calculated_fca: number | null
     effective_fca: number | null
     fca_source: 'calculated' | 'default' | null
-    calculated_biomass_kg: number | null
+    biomass_kg: number | null
+    sampling_weight_g: number | null
     notes: string | null
     report_type: 'daily' | 'weekly' | null
     week_end_date: string | null
@@ -96,6 +98,13 @@ export default async function RecordsPage({
   }> = []
 
   let batchPondMap: Record<string, string> = {}
+  let batchDataMap: Record<string, {
+    start_date: string
+    initial_population: number
+    current_population: number | null
+    pond_entry_date: string | null
+    seed_source: string | null
+  }> = {}
   let ponds: Array<{ id: string; name: string }> = []
   let totalRecords = 0
   let organizationDefaultFca: number | null = null
@@ -123,13 +132,20 @@ export default async function RecordsPage({
       const pondIds = selectedPondId ? [selectedPondId] : ponds.map((p) => p.id)
       const { data: allBatches } = await supabase
         .from('batches')
-        .select('id, pond_id')
+        .select('id, pond_id, start_date, initial_population, current_population, pond_entry_date, seed_source')
         .in('pond_id', pondIds)
 
       if (allBatches) {
         for (const b of allBatches) {
           const pondName = ponds.find(p => p.id === b.pond_id)?.name ?? ''
           batchPondMap[b.id] = pondName
+          batchDataMap[b.id] = {
+            start_date: b.start_date,
+            initial_population: b.initial_population,
+            current_population: b.current_population,
+            pond_entry_date: b.pond_entry_date,
+            seed_source: b.seed_source,
+          }
         }
 
         const batchIds = allBatches.map(b => b.id)
@@ -192,6 +208,13 @@ export default async function RecordsPage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Registros Productivos</h1>
           <p className="mt-1 text-muted-foreground">Historial completo de datos capturados</p>
+          <a
+            href="/dashboard/records/periods"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+          >
+            <CalendarRangeIcon className="h-3.5 w-3.5" />
+            Ver valores por periodo
+          </a>
         </div>
         <RecordsExport
           records={records.map((rec) => ({
@@ -212,7 +235,8 @@ export default async function RecordsPage({
             alkalinity_mg_l: rec.alkalinity_mg_l,
             effective_fca: rec.effective_fca,
             fca_source: rec.fca_source,
-            calculated_biomass_kg: rec.calculated_biomass_kg,
+            biomass_kg: rec.biomass_kg,
+            sampling_weight_g: rec.sampling_weight_g,
           }))}
         />
       </div>
@@ -320,9 +344,14 @@ export default async function RecordsPage({
                   <TableHead>Tipo</TableHead>
                   <TableHead>Estanque</TableHead>
                   <TableHead>Subido por</TableHead>
+                  <TableHead className="text-right">Días cultivo</TableHead>
+                  <TableHead className="text-right">Días lago</TableHead>
                   <TableHead className="text-right">Nº Peces</TableHead>
+                  <TableHead className="text-right">Animal actual</TableHead>
+                  <TableHead className="text-right">% Sob.</TableHead>
                   <TableHead className="text-right">Alimento (kg)</TableHead>
                   <TableHead className="text-right">Peso prom. (g)</TableHead>
+                  <TableHead className="text-right">Peso muestreo (g)</TableHead>
                   <TableHead className="text-right">Mortalidad</TableHead>
                   <TableHead className="text-right">Temp. (C)</TableHead>
                   <TableHead className="text-right">O2 (mg/L)</TableHead>
@@ -349,6 +378,8 @@ export default async function RecordsPage({
                           fish_count: rec.fish_count,
                           feed_kg: rec.feed_kg,
                           avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                          biomass_kg: rec.biomass_kg,
+                          sampling_weight_g: rec.sampling_weight_g,
                           mortality_count: rec.mortality_count,
                           temperature_c: rec.temperature_c,
                           oxygen_mg_l: rec.oxygen_mg_l,
@@ -411,11 +442,33 @@ export default async function RecordsPage({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{rec.fish_count ?? '-'}</TableCell>
+                    {(() => {
+                      const batchInfo = batchDataMap[rec.batch_id]
+                      const diasCultivo = batchInfo
+                        ? differenceInDays(new Date(rec.record_date), new Date(batchInfo.start_date))
+                        : null
+                      const diasLago = batchInfo
+                        ? differenceInDays(new Date(rec.record_date), new Date(batchInfo.pond_entry_date ?? batchInfo.start_date))
+                        : null
+                      const animalActual = batchInfo?.current_population ?? batchInfo?.initial_population ?? null
+                      const pctSob = batchInfo && batchInfo.initial_population > 0 && animalActual != null
+                        ? (animalActual / batchInfo.initial_population) * 100
+                        : null
+                      return (
+                        <>
+                          <TableCell className="text-right">{diasCultivo != null ? diasCultivo : '-'}</TableCell>
+                          <TableCell className="text-right">{diasLago != null ? diasLago : '-'}</TableCell>
+                          <TableCell className="text-right">{rec.fish_count ?? '-'}</TableCell>
+                          <TableCell className="text-right">{animalActual ?? '-'}</TableCell>
+                          <TableCell className="text-right">{pctSob != null ? pctSob.toFixed(1) + '%' : '-'}</TableCell>
+                        </>
+                      )
+                    })()}
                     <TableCell className="text-right">{rec.feed_kg?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">
                       {rec.avg_weight_kg != null ? (rec.avg_weight_kg * 1000).toFixed(1) : '-'}
                     </TableCell>
+                    <TableCell className="text-right">{rec.sampling_weight_g?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">
                       {rec.mortality_count > 0 ? (
                         <span className="text-destructive">{rec.mortality_count}</span>
@@ -442,7 +495,7 @@ export default async function RecordsPage({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {rec.calculated_biomass_kg != null ? rec.calculated_biomass_kg.toFixed(1) : '-'}
+                      {rec.biomass_kg != null ? rec.biomass_kg.toFixed(1) : '-'}
                     </TableCell>
 
                     <TableCell className="text-center">
@@ -454,6 +507,8 @@ export default async function RecordsPage({
                           fish_count: rec.fish_count,
                           feed_kg: rec.feed_kg,
                           avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                          biomass_kg: rec.biomass_kg,
+                          sampling_weight_g: rec.sampling_weight_g,
                           mortality_count: rec.mortality_count,
                           temperature_c: rec.temperature_c,
                           oxygen_mg_l: rec.oxygen_mg_l,
@@ -465,7 +520,6 @@ export default async function RecordsPage({
                           alkalinity_mg_l: rec.alkalinity_mg_l,
                           effective_fca: rec.effective_fca,
                           fca_source: rec.fca_source,
-                          calculated_biomass_kg: rec.calculated_biomass_kg,
                         }}
                       />
                     </TableCell>

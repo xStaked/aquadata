@@ -73,6 +73,8 @@ export async function createBatch(formData: FormData) {
     initial_population: Number(formData.get('initial_population')),
     current_population: Number(formData.get('initial_population')),
     status: 'active',
+    seed_source: (formData.get('seed_source') as string) || null,
+    pond_entry_date: (formData.get('pond_entry_date') as string) || null,
   })
 
   revalidatePath('/dashboard/ponds')

@@ -7,6 +7,8 @@ const productionDataSchema = z.object({
   fish_count: z.number().nullable().describe('Numero total de peces en el estanque'),
   feed_kg: z.number().nullable().describe('Alimento suministrado en kg'),
   avg_weight_g: z.number().nullable().describe('Peso promedio del animal en gramos'),
+  biomass_kg: z.number().nullable().describe('Biomasa total del estanque en kg'),
+  sampling_weight_g: z.number().nullable().describe('Peso de muestreo del animal en gramos'),
   mortality_count: z.number().nullable().describe('Cantidad de mortalidad del dia'),
   temperature_c: z.number().nullable().describe('Temperatura del agua en grados Celsius'),
   oxygen_mg_l: z.number().nullable().describe('Oxigeno disuelto en mg/L'),
@@ -23,6 +25,8 @@ const productionDataSchema = z.object({
     fish_count: z.number().describe('Confianza de 0 a 100 para numero de peces'),
     feed_kg: z.number().describe('Confianza de 0 a 100 para alimento'),
     avg_weight_g: z.number().describe('Confianza de 0 a 100 para peso promedio en gramos'),
+    biomass_kg: z.number().describe('Confianza de 0 a 100 para biomasa en kg'),
+    sampling_weight_g: z.number().describe('Confianza de 0 a 100 para peso de muestreo en gramos'),
     mortality_count: z.number().describe('Confianza de 0 a 100 para mortalidad'),
     temperature_c: z.number().describe('Confianza de 0 a 100 para temperatura'),
     oxygen_mg_l: z.number().describe('Confianza de 0 a 100 para oxigeno'),
@@ -50,6 +54,8 @@ export async function POST(req: Request) {
 - Numero de peces (cantidad total en el estanque)
 - Alimento suministrado (kg)
 - Peso promedio del animal (gramos)
+- Biomasa total del estanque (kg)
+- Peso de muestreo del animal (gramos) — campo opcional
 - Mortalidad (cantidad de animales muertos)
 - Temperatura del agua (grados Celsius)
 - Oxigeno disuelto (mg/L)

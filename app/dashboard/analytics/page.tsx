@@ -57,7 +57,7 @@ export default async function AnalyticsPage({
     nitrate_mg_l: number | null
     ph: number | null
     effective_fca: number | null
-    calculated_biomass_kg: number | null
+    biomass_kg: number | null
     pond_name: string
   }> = []
 
@@ -93,7 +93,7 @@ export default async function AnalyticsPage({
       const { data: recs } = await supabase
         .from('production_records')
         .select(
-          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, effective_fca, calculated_biomass_kg'
+          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, effective_fca, biomass_kg'
         )
         .in('batch_id', batchIds)
         .order('record_date', { ascending: true })

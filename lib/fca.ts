@@ -4,10 +4,17 @@ export interface ProductionFcaInput {
   fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
+  biomass_kg: number | null
   mortality_count: number | null
 }
 
 export function calculateBiomassKg(input: ProductionFcaInput) {
+  // If manual biomass is provided, use it directly
+  if (input.biomass_kg != null) {
+    return input.biomass_kg
+  }
+
+  // Fallback to automatic calculation
   if (input.fish_count == null || input.avg_weight_g == null) {
     return null
   }
@@ -22,13 +29,13 @@ export function calculateCalculatedFca(input: ProductionFcaInput) {
   if (input.feed_kg == null || biomassKg == null || biomassKg <= 0) {
     return {
       calculated_fca: null,
-      calculated_biomass_kg: biomassKg,
+      biomass_kg: biomassKg,
     }
   }
 
   return {
     calculated_fca: input.feed_kg / biomassKg,
-    calculated_biomass_kg: biomassKg,
+    biomass_kg: biomassKg,
   }
 }
 

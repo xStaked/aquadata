@@ -138,7 +138,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by, notes)
     VALUES
       (v_batch1, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -185,7 +185,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch2, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -229,7 +229,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch3, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -276,7 +276,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch4, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -325,7 +325,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch5, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -368,7 +368,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch6, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -412,7 +412,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch7, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,
@@ -457,7 +457,7 @@ BEGIN
 
     INSERT INTO public.production_records
       (batch_id, record_date, feed_kg, avg_weight_g, mortality_count, temperature_c, oxygen_mg_l,
-       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, calculated_biomass_kg,
+       ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, calculated_fca, biomass_kg,
        feed_cost, other_cost, confirmed_by)
     VALUES
       (v_batch8, v_date, v_feed, v_weight, v_mortality, v_temp, v_oxygen,

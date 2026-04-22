@@ -70,6 +70,8 @@ export interface Batch {
   end_date: string | null
   initial_population: number
   current_population: number | null
+  seed_source: string | null
+  pond_entry_date: string | null
   status: BatchStatus
   sale_price_per_kg: number | null
   target_profitability_pct: number | null
@@ -94,6 +96,8 @@ export interface BatchInput {
   current_population: number
   status: BatchStatus
   end_date?: string
+  seed_source?: string | null
+  pond_entry_date?: string | null
   sale_price_per_kg?: number | null
   target_profitability_pct?: number
   fingerling_cost_per_unit?: number
@@ -146,7 +150,8 @@ export interface ProductionRecord {
   calculated_fca: number | null
   effective_fca: number | null
   fca_source: FcaSource | null
-  calculated_biomass_kg: number | null
+  biomass_kg: number | null
+  sampling_weight_g: number | null
   notes: string | null
   confirmed_by: string | null
   created_at: string

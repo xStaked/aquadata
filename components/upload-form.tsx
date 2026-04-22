@@ -19,6 +19,7 @@ import {
 import { Camera, Upload, Loader2, CheckCircle, AlertCircle, CalendarDays, CalendarRange } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
+import { BatchSummaryCard } from '@/components/batch-summary-card'
 
 interface Batch {
   id: string
@@ -42,6 +43,8 @@ interface OcrResult {
   fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
+  biomass_kg: number | null
+  sampling_weight_g: number | null
   mortality_count: number | null
   temperature_c: number | null
   oxygen_mg_l: number | null
@@ -58,6 +61,8 @@ interface OcrResult {
     fish_count: number
     feed_kg: number
     avg_weight_g: number
+    biomass_kg: number
+    sampling_weight_g: number
     mortality_count: number
     temperature_c: number
     oxygen_mg_l: number
@@ -212,6 +217,8 @@ export function UploadForm({
         fish_count: editedData.fish_count ?? selectedBatchPopulation,
         feed_kg: editedData.feed_kg ?? null,
         avg_weight_g: editedData.avg_weight_g ?? null,
+        biomass_kg: editedData.biomass_kg ?? null,
+        sampling_weight_g: editedData.sampling_weight_g ?? null,
         mortality_count: editedData.mortality_count ?? null,
         temperature_c: editedData.temperature_c ?? null,
         oxygen_mg_l: editedData.oxygen_mg_l ?? null,
@@ -339,6 +346,7 @@ export function UploadForm({
                 {!selectedBatch && (
                   <p className="text-xs text-amber-600">Selecciona un lote antes de subir la imagen</p>
                 )}
+                {selectedBatch && <BatchSummaryCard batchId={selectedBatch} />}
               </div>
             )}
 
@@ -380,6 +388,7 @@ export function UploadForm({
                   fish_count: resolvedFishCount,
                   feed_kg: editedData.feed_kg ?? null,
                   avg_weight_g: editedData.avg_weight_g ?? null,
+                  biomass_kg: editedData.biomass_kg ?? null,
                   mortality_count: editedData.mortality_count ?? null,
                 })
                 const effectiveFca = fcaMode === 'default' ? resolvedDefaultFca : calculatedFca
@@ -529,6 +538,39 @@ export function UploadForm({
                       step="0.1"
                       value={editedData.avg_weight_g ?? ''}
                       onChange={(e) => setEditedData({ ...editedData, avg_weight_g: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="biomass_kg">Biomasa (kg) <span className="text-destructive">*</span></Label>
+                      {ocrData.confidence.biomass_kg > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.biomass_kg} />
+                      )}
+                    </div>
+                    <Input
+                      id="biomass_kg"
+                      type="number"
+                      step="0.1"
+                      value={editedData.biomass_kg ?? ''}
+                      onChange={(e) => setEditedData({ ...editedData, biomass_kg: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="sampling_weight_g">Peso de muestreo (g)</Label>
+                      {ocrData.confidence.sampling_weight_g > 0 && (
+                        <ConfidenceBadge value={ocrData.confidence.sampling_weight_g} />
+                      )}
+                    </div>
+                    <Input
+                      id="sampling_weight_g"
+                      type="number"
+                      step="0.1"
+                      value={editedData.sampling_weight_g ?? ''}
+                      onChange={(e) => setEditedData({ ...editedData, sampling_weight_g: e.target.value ? Number(e.target.value) : null })}
                     />
                   </div>
                 </div>

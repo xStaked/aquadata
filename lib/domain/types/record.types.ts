@@ -8,6 +8,8 @@ export interface ProductionRecordInput {
   fish_count: number | null
   feed_kg: number | null
   avg_weight_g: number | null
+  biomass_kg: number | null
+  sampling_weight_g: number | null
   mortality_count: number | null
   temperature_c: number | null
   oxygen_mg_l: number | null
