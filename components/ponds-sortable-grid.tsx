@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import {
   DndContext,
@@ -24,6 +25,7 @@ import {
   Fish,
   FlaskConical,
   GripVertical,
+  Eye,
   Waves,
   Wind,
 } from 'lucide-react'
@@ -31,6 +33,7 @@ import { format } from 'date-fns'
 import { updatePondOrder } from '@/app/dashboard/ponds/actions'
 
 import { BatchFinancialConfig } from '@/components/batch-financial-config'
+import { BatchEditModal } from '@/components/batch-edit-modal'
 import { BatchForm } from '@/components/batch-form'
 import { CloseBatchButton, DeletePondButton } from '@/components/pond-actions'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +53,8 @@ export type PondListItem = {
     end_date: string | null
     initial_population: number
     current_population: number | null
+    seed_source: string | null
+    pond_entry_date: string | null
     status: string
     sale_price_per_kg: number | null
     target_profitability_pct: number | null
@@ -177,7 +182,17 @@ function SortablePondCard({
             <Waves className="h-4 w-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <CardTitle className="truncate text-base font-semibold text-foreground">{pond.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="truncate text-base font-semibold text-foreground">{pond.name}</CardTitle>
+              <Link
+                href={`/dashboard/ponds/${pond.id}`}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                title="Ver detalle del estanque"
+                aria-label="Ver detalle del estanque"
+              >
+                <Eye className="h-4 w-4" />
+              </Link>
+            </div>
             {alertLevel && (
               <div className="mt-0.5 flex items-center gap-1.5">
                 <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotClass[alertLevel]}`} />
@@ -291,9 +306,20 @@ function SortablePondCard({
                       Inicio: {format(new Date(batch.start_date), 'dd/MM/yyyy')}
                       {batch.end_date && <span className="ml-1">· Fin: {format(new Date(batch.end_date), 'dd/MM/yyyy')}</span>}
                     </div>
+                    {batch.seed_source ? (
+                      <div className="text-[10px] text-muted-foreground">
+                        Origen de semilla: {batch.seed_source}
+                      </div>
+                    ) : null}
                   </div>
                   {batch.status === 'active' && (
                     <div className="flex shrink-0 items-center gap-1">
+                      <BatchEditModal
+                        batchId={batch.id}
+                        startDate={batch.start_date}
+                        pondEntryDate={batch.pond_entry_date}
+                        seedSource={batch.seed_source}
+                      />
                       <BatchFinancialConfig
                         batchId={batch.id}
                         initialPopulation={batch.initial_population}

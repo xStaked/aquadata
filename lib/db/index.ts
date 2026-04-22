@@ -56,6 +56,7 @@ export {
   getBatchesByPond,
   getActiveBatchesByOrg,
   createBatch,
+  updateBatchDetails,
   updateBatchPopulation,
   closeBatch,
   updateBatchFinancial,

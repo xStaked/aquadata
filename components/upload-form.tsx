@@ -20,6 +20,7 @@ import { Camera, Upload, Loader2, CheckCircle, AlertCircle, CalendarDays, Calend
 import { cn } from '@/lib/utils'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
 import { BatchSummaryCard } from '@/components/batch-summary-card'
+import { BatchContextFields } from '@/components/batch-context-fields'
 
 interface Batch {
   id: string
@@ -346,7 +347,20 @@ export function UploadForm({
                 {!selectedBatch && (
                   <p className="text-xs text-amber-600">Selecciona un lote antes de subir la imagen</p>
                 )}
-                {selectedBatch && <BatchSummaryCard batchId={selectedBatch} />}
+                <div className="space-y-4">
+                  {selectedBatch ? (
+                    <>
+                      <BatchContextFields batchId={selectedBatch} />
+                      <BatchSummaryCard batchId={selectedBatch} />
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+                      <p className="text-sm text-muted-foreground">
+                        Selecciona un lote para ver días de cultivo, días en lago, consumo, sobrevivencia, biomasa y origen de semilla.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -382,6 +396,13 @@ export function UploadForm({
               </p>
             </CardHeader>
             <CardContent>
+              {selectedBatch ? (
+                <div className="mb-4 space-y-4">
+                  <BatchContextFields batchId={selectedBatch} />
+                  <BatchSummaryCard batchId={selectedBatch} />
+                </div>
+              ) : null}
+
               {(() => {
                 const resolvedFishCount = editedData.fish_count ?? selectedBatchPopulation
                 const { calculated_fca: calculatedFca } = calculateCalculatedFca({

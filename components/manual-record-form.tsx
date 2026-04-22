@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
 import { BatchSummaryCard } from '@/components/batch-summary-card'
+import { BatchContextFields } from '@/components/batch-context-fields'
 
 interface Batch {
   id: string
@@ -316,9 +317,6 @@ export function ManualRecordForm({
       </div>
 
       <div className="space-y-8 p-6">
-        {/* ── Resumen del Lote ── */}
-        {selectedBatch && <BatchSummaryCard batchId={selectedBatch} />}
-
         {/* ── Tipo de Reporte ── */}
         <div className="flex gap-2">
           <button
@@ -395,6 +393,21 @@ export function ManualRecordForm({
                   buttonClassName="h-9 flex-1"
                 />
               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {selectedBatch ? (
+            <>
+              <BatchContextFields batchId={selectedBatch} />
+              <BatchSummaryCard batchId={selectedBatch} />
+            </>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+              <p className="text-sm text-muted-foreground">
+                Selecciona un lote para ver días de cultivo, días en lago, consumo, sobrevivencia, biomasa y origen de semilla.
+              </p>
             </div>
           )}
         </div>

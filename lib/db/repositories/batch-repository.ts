@@ -123,6 +123,31 @@ export async function updateBatchPopulation(
 }
 
 /**
+ * Update editable batch details.
+ */
+export async function updateBatchDetails(
+  batchId: string,
+  data: {
+    start_date?: string
+    pond_entry_date?: string | null
+    seed_source?: string | null
+  }
+): Promise<void> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('batches')
+    .update({
+      start_date: data.start_date,
+      pond_entry_date: data.pond_entry_date ?? null,
+      seed_source: data.seed_source ?? null,
+    })
+    .eq('id', batchId)
+
+  if (error) throw new Error(`Error updating batch details: ${error.message}`)
+}
+
+/**
  * Close a batch (set status to 'closed' and end_date to today).
  */
 export async function closeBatch(batchId: string): Promise<void> {

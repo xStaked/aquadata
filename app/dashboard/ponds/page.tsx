@@ -37,6 +37,8 @@ export default async function PondsPage() {
       end_date: string | null
       initial_population: number
       current_population: number | null
+      seed_source: string | null
+      pond_entry_date: string | null
       status: string
       sale_price_per_kg: number | null
       target_profitability_pct: number | null
@@ -60,7 +62,7 @@ export default async function PondsPage() {
       .select(`
         id, name, area_m2, depth_m, species, status, created_at, sort_order,
         batches (
-          id, start_date, end_date, initial_population, current_population, status,
+          id, start_date, end_date, initial_population, current_population, seed_source, pond_entry_date, status,
           sale_price_per_kg, target_profitability_pct,
           fingerling_cost_per_unit, avg_weight_at_seeding_g, labor_cost_per_month,
           bioaqua_quantity, bioterra_quantity

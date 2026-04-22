@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -9,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ClipboardList, CalendarDays, CalendarRange, CalendarRangeIcon } from 'lucide-react'
+import { ClipboardList, CalendarDays, CalendarRange, CalendarRangeIcon, Eye } from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
 import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -208,13 +209,13 @@ export default async function RecordsPage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Registros Productivos</h1>
           <p className="mt-1 text-muted-foreground">Historial completo de datos capturados</p>
-          <a
+          <Link
             href="/dashboard/records/periods"
             className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
           >
             <CalendarRangeIcon className="h-3.5 w-3.5" />
             Ver valores por periodo
-          </a>
+          </Link>
         </div>
         <RecordsExport
           records={records.map((rec) => ({
@@ -306,12 +307,12 @@ export default async function RecordsPage({
             >
               Filtrar
             </button>
-            <a
+            <Link
               href="/dashboard/records"
               className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
             >
               Limpiar
-            </a>
+            </Link>
           </form>
         </CardContent>
       </Card>
@@ -340,6 +341,7 @@ export default async function RecordsPage({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Editar</TableHead>
+                  <TableHead className="text-center">Detalle</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Estanque</TableHead>
@@ -368,7 +370,7 @@ export default async function RecordsPage({
               </TableHeader>
               <TableBody>
                 {records.map((rec) => (
-                  <TableRow key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
+                  <TableRow id={`record-${rec.id}`} key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
                     <TableCell className="text-center">
                       <RecordEditModal
                         record={{
@@ -396,6 +398,16 @@ export default async function RecordsPage({
                         }}
                         defaultFca={organizationDefaultFca}
                       />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Link
+                        href={`/dashboard/records/${rec.id}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                        aria-label="Ver detalle del reporte"
+                        title="Ver detalle del reporte"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
                     </TableCell>
                     <TableCell className="font-medium">
                       {rec.report_type === 'weekly' && rec.week_end_date ? (

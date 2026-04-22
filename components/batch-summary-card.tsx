@@ -88,6 +88,12 @@ export function BatchSummaryCard({ batchId }: { batchId: string }) {
       accent: 'text-amber-600',
     },
     {
+      icon: Package,
+      label: 'Origen de semilla',
+      value: summary.seed_source ?? '-',
+      accent: 'text-violet-600',
+    },
+    {
       icon: TrendingDown,
       label: 'Mortalidad acumulada',
       value: summary.accumulated_mortality != null ? `${summary.accumulated_mortality}` : '-',
@@ -101,7 +107,7 @@ export function BatchSummaryCard({ batchId }: { batchId: string }) {
     },
     {
       icon: Package,
-      label: 'Última biomasa',
+      label: 'Biomasa',
       value: summary.latest_biomass_kg != null ? `${summary.latest_biomass_kg.toFixed(1)} kg` : '-',
       accent: 'text-sky-600',
     },
@@ -113,12 +119,10 @@ export function BatchSummaryCard({ batchId }: { batchId: string }) {
         <CardTitle className="flex items-center gap-2 text-sm font-semibold text-primary">
           <Package className="h-4 w-4" />
           Resumen del Lote
-          {summary.seed_source ? (
-            <span className="ml-2 text-[10px] font-normal text-muted-foreground">
-              Origen: {summary.seed_source}
-            </span>
-          ) : null}
         </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Referencia para completar el registro con valores actuales, acumulados y quincenales del lote.
+        </p>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

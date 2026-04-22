@@ -9,6 +9,7 @@ import {
   getNextSortOrder,
   createBatch as dbCreateBatch,
   closeBatch as dbCloseBatch,
+  updateBatchDetails as dbUpdateBatchDetails,
   updateBatchFinancial as dbUpdateBatchFinancial,
 } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
@@ -83,6 +84,26 @@ export async function createBatch(formData: FormData) {
 export async function closeBatch(batchId: string) {
   await dbCloseBatch(batchId)
   revalidatePath('/dashboard/ponds')
+}
+
+export async function updateBatchDetails(formData: FormData) {
+  const batchId = formData.get('batch_id') as string
+  const startDate = formData.get('start_date') as string
+  const pondEntryDate = (formData.get('pond_entry_date') as string) || null
+  const seedSource = (formData.get('seed_source') as string) || null
+
+  if (!batchId) throw new Error('Lote no encontrado')
+  if (!startDate) throw new Error('La fecha de inicio es requerida')
+
+  await dbUpdateBatchDetails(batchId, {
+    start_date: startDate,
+    pond_entry_date: pondEntryDate,
+    seed_source: seedSource,
+  })
+
+  revalidatePath('/dashboard/ponds')
+  revalidatePath('/dashboard/upload')
+  revalidatePath('/dashboard/records')
 }
 
 export async function updateBatchPrice(batchId: string, price: number) {
