@@ -21,6 +21,8 @@ const PRODUCTION_RECORD_SELECT = `
   phosphate_mg_l,
   hardness_mg_l,
   alkalinity_mg_l,
+  turbidity_ntu,
+  daily_gain_g,
   calculated_fca,
   effective_fca,
   fca_source,
@@ -101,6 +103,8 @@ export async function createRecord(data: {
   phosphate_mg_l?: number | null
   hardness_mg_l?: number | null
   alkalinity_mg_l?: number | null
+  turbidity_ntu?: number | null
+  daily_gain_g?: number | null
   notes?: string | null
   calculated_fca?: number | null
   effective_fca?: number | null
@@ -132,6 +136,8 @@ export async function createRecord(data: {
     phosphate_mg_l: data.phosphate_mg_l ?? null,
     hardness_mg_l: data.hardness_mg_l ?? null,
     alkalinity_mg_l: data.alkalinity_mg_l ?? null,
+    turbidity_ntu: data.turbidity_ntu ?? null,
+    daily_gain_g: data.daily_gain_g ?? null,
     notes: data.notes ?? null,
     calculated_fca: data.calculated_fca ?? null,
     effective_fca: data.effective_fca ?? null,
@@ -166,6 +172,8 @@ export async function updateRecord(
     phosphate_mg_l: number | null
     hardness_mg_l: number | null
     alkalinity_mg_l: number | null
+    turbidity_ntu: number | null
+    daily_gain_g: number | null
     notes: string | null
     calculated_fca: number | null
     effective_fca: number | null
@@ -226,6 +234,28 @@ export async function updateRecord(
 }
 
 /**
+ * Fetch the record immediately before a given date for a batch.
+ */
+export async function getPreviousRecordByBatch(
+  batchId: string,
+  beforeDate: string
+): Promise<ProductionRecord | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('production_records')
+    .select(PRODUCTION_RECORD_SELECT)
+    .eq('batch_id', batchId)
+    .lt('record_date', beforeDate)
+    .order('record_date', { ascending: false })
+    .limit(1)
+
+  if (error) throw new Error(`Error fetching previous record: ${error.message}`)
+  if (!data || data.length === 0) return null
+  return normalizeRecord(data[0] as unknown as Record<string, unknown>)
+}
+
+/**
  * Fetch the latest (most recent) production record for a batch.
  */
 export async function getLatestRecordByBatch(batchId: string): Promise<ProductionRecord | null> {
@@ -270,6 +300,8 @@ function normalizeRecord(raw: Record<string, unknown>): ProductionRecord {
     phosphate_mg_l: raw.phosphate_mg_l != null ? Number(raw.phosphate_mg_l) : null,
     hardness_mg_l: raw.hardness_mg_l != null ? Number(raw.hardness_mg_l) : null,
     alkalinity_mg_l: raw.alkalinity_mg_l != null ? Number(raw.alkalinity_mg_l) : null,
+    turbidity_ntu: raw.turbidity_ntu != null ? Number(raw.turbidity_ntu) : null,
+    daily_gain_g: raw.daily_gain_g != null ? Number(raw.daily_gain_g) : null,
     calculated_fca: raw.calculated_fca != null ? Number(raw.calculated_fca) : null,
     effective_fca: raw.effective_fca != null ? Number(raw.effective_fca) : null,
     fca_source: (raw.fca_source as FcaSource) ?? null,

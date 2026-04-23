@@ -20,6 +20,8 @@ interface RecordRow {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
+  turbidity_ntu: number | null
+  daily_gain_g: number | null
   effective_fca: number | null
   fca_source?: string | null
   biomass_kg: number | null
@@ -45,6 +47,8 @@ const HEADERS = [
   'Fosfato (mg/L)',
   'Dureza (mg/L)',
   'Alcalinidad (mg/L)',
+  'Turbidez (NTU)',
+  'Ganancia diaria (g/día)',
   'FCA',
   'Biomasa (kg)',
   'Peso muestreo (g)',
@@ -68,6 +72,8 @@ function formatRow(rec: RecordRow) {
     rec.phosphate_mg_l?.toFixed(2) ?? '-',
     rec.hardness_mg_l?.toFixed(1) ?? '-',
     rec.alkalinity_mg_l?.toFixed(1) ?? '-',
+    rec.turbidity_ntu?.toFixed(1) ?? '-',
+    rec.daily_gain_g?.toFixed(2) ?? '-',
     rec.effective_fca?.toFixed(2) ?? '-',
     rec.biomass_kg?.toFixed(1) ?? '-',
     rec.sampling_weight_g?.toFixed(1) ?? '-',
@@ -116,6 +122,8 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Fosfato (mg/L)', record.phosphate_mg_l?.toFixed(2) ?? '-'],
       ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
       ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
+      ['Turbidez (NTU)', record.turbidity_ntu?.toFixed(1) ?? '-'],
+      ['Ganancia diaria (g/día)', record.daily_gain_g?.toFixed(2) ?? '-'],
       ['FCA', record.effective_fca?.toFixed(2) ?? '-'],
       ['Biomasa (kg)', record.biomass_kg?.toFixed(1) ?? '-'],
       ['Peso de muestreo (g)', record.sampling_weight_g?.toFixed(1) ?? '-'],
@@ -156,6 +164,8 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
       ['Fosfato (mg/L)', record.phosphate_mg_l?.toFixed(2) ?? '-'],
       ['Dureza (mg/L)', record.hardness_mg_l?.toFixed(1) ?? '-'],
       ['Alcalinidad (mg/L)', record.alkalinity_mg_l?.toFixed(1) ?? '-'],
+      ['Turbidez (NTU)', record.turbidity_ntu?.toFixed(1) ?? '-'],
+      ['Ganancia diaria (g/día)', record.daily_gain_g?.toFixed(2) ?? '-'],
       ['FCA', record.effective_fca?.toFixed(2) ?? '-'],
       ['Biomasa (kg)', record.biomass_kg?.toFixed(1) ?? '-'],
       ['Peso de muestreo (g)', record.sampling_weight_g?.toFixed(1) ?? '-'],

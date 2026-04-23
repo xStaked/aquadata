@@ -35,6 +35,8 @@ const PRODUCTION_RECORD_FIELDS = `
   phosphate_mg_l,
   hardness_mg_l,
   alkalinity_mg_l,
+  turbidity_ntu,
+  daily_gain_g,
   calculated_fca,
   effective_fca,
   fca_source,
@@ -84,6 +86,8 @@ export default async function RecordsPage({
     phosphate_mg_l: number | null
     hardness_mg_l: number | null
     alkalinity_mg_l: number | null
+    turbidity_ntu: number | null
+    daily_gain_g: number | null
     calculated_fca: number | null
     effective_fca: number | null
     fca_source: 'calculated' | 'default' | null
@@ -238,6 +242,8 @@ export default async function RecordsPage({
             phosphate_mg_l: rec.phosphate_mg_l,
             hardness_mg_l: rec.hardness_mg_l,
             alkalinity_mg_l: rec.alkalinity_mg_l,
+            turbidity_ntu: rec.turbidity_ntu,
+            daily_gain_g: rec.daily_gain_g,
             effective_fca: rec.effective_fca,
             fca_source: rec.fca_source,
             biomass_kg: rec.biomass_kg,
@@ -369,6 +375,8 @@ export default async function RecordsPage({
                   <TableHead className="text-right">Fosfato (mg/L)</TableHead>
                   <TableHead className="text-right">Dureza (mg/L)</TableHead>
                   <TableHead className="text-right">Alcalinidad (mg/L)</TableHead>
+                  <TableHead className="text-right">Turbidez (NTU)</TableHead>
+                  <TableHead className="text-right">Ganancia diaria (g/día)</TableHead>
                   <TableHead className="text-right">FCA</TableHead>
                   <TableHead className="text-right">Biomasa (kg)</TableHead>
                   <TableHead className="text-center">Descargar</TableHead>
@@ -399,6 +407,7 @@ export default async function RecordsPage({
                             phosphate_mg_l: rec.phosphate_mg_l,
                             hardness_mg_l: rec.hardness_mg_l,
                             alkalinity_mg_l: rec.alkalinity_mg_l,
+                            turbidity_ntu: rec.turbidity_ntu,
                             effective_fca: rec.effective_fca,
                             fca_source: rec.fca_source,
                             notes: rec.notes,
@@ -504,6 +513,8 @@ export default async function RecordsPage({
                     <TableCell className="text-right">{rec.phosphate_mg_l?.toFixed(2) ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.hardness_mg_l?.toFixed(1) ?? '-'}</TableCell>
                     <TableCell className="text-right">{rec.alkalinity_mg_l?.toFixed(1) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.turbidity_ntu?.toFixed(1) ?? '-'}</TableCell>
+                    <TableCell className="text-right">{rec.daily_gain_g?.toFixed(2) ?? '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end gap-1">
                         <span>{rec.effective_fca != null ? rec.effective_fca.toFixed(2) : '-'}</span>
@@ -538,6 +549,8 @@ export default async function RecordsPage({
                           phosphate_mg_l: rec.phosphate_mg_l,
                           hardness_mg_l: rec.hardness_mg_l,
                           alkalinity_mg_l: rec.alkalinity_mg_l,
+                          turbidity_ntu: rec.turbidity_ntu,
+                          daily_gain_g: rec.daily_gain_g,
                           effective_fca: rec.effective_fca,
                           fca_source: rec.fca_source,
                         }}

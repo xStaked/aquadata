@@ -20,6 +20,7 @@ export interface ProductionRecordInput {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
+  turbidity_ntu: number | null
   notes: string | null
   fca_source: FcaSource
   confirmed_by?: string

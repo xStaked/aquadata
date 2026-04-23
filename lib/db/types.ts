@@ -147,6 +147,8 @@ export interface ProductionRecord {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
+  turbidity_ntu: number | null
+  daily_gain_g: number | null
   calculated_fca: number | null
   effective_fca: number | null
   fca_source: FcaSource | null

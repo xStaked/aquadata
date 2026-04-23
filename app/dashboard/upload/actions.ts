@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
 import { getBatch, updateBatchPopulation, createRecord, createAlerts } from '@/lib/db'
+import { getPreviousRecordByBatch } from '@/lib/db/repositories/production-record-repository'
+import { calculateDailyGainG } from '@/lib/growth'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { generateAlerts, type WaterQualityReading } from '@/lib/alerts'
@@ -30,6 +32,7 @@ interface ProductionData {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
+  turbidity_ntu: number | null
   notes: string | null
   fca_source: FcaSource
 }
@@ -67,6 +70,14 @@ export async function confirmProductionRecord(data: ProductionData) {
     source: data.fca_source,
   })
 
+  // Calculate daily weight gain (ADG) by comparing with previous record
+  const previousRecord = await getPreviousRecordByBatch(data.batch_id, data.record_date)
+  const daily_gain_g = calculateDailyGainG(
+    data.avg_weight_g,
+    data.record_date,
+    previousRecord
+  )
+
   // Create production record
   await createRecord({
     batch_id: data.batch_id,
@@ -88,6 +99,8 @@ export async function confirmProductionRecord(data: ProductionData) {
     phosphate_mg_l: data.phosphate_mg_l,
     hardness_mg_l: data.hardness_mg_l,
     alkalinity_mg_l: data.alkalinity_mg_l,
+    turbidity_ntu: data.turbidity_ntu,
+    daily_gain_g,
     notes: data.notes,
     calculated_fca,
     effective_fca,

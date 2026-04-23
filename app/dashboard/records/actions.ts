@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { differenceInDays, subDays } from 'date-fns'
 import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
 import { updateBatchPopulation, updateRecord } from '@/lib/db'
+import { getPreviousRecordByBatch } from '@/lib/db/repositories/production-record-repository'
+import { calculateDailyGainG } from '@/lib/growth'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
 import { createClient } from '@/lib/supabase/server'
@@ -26,6 +28,7 @@ interface UpdateProductionRecordInput {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
+  turbidity_ntu: number | null
   notes: string | null
   fca_source: FcaSource
 }
@@ -54,6 +57,8 @@ export interface ProductionRecordDetail {
     phosphate_mg_l: number | null
     hardness_mg_l: number | null
     alkalinity_mg_l: number | null
+    turbidity_ntu: number | null
+    daily_gain_g: number | null
     calculated_fca: number | null
     effective_fca: number | null
     fca_source: 'calculated' | 'default' | null
@@ -154,6 +159,14 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     source: data.fca_source,
   })
 
+  // Recalculate daily weight gain if avg_weight changed
+  const previousRecord = await getPreviousRecordByBatch(existingRecord.batch_id, data.record_date)
+  const daily_gain_g = calculateDailyGainG(
+    data.avg_weight_g,
+    data.record_date,
+    previousRecord
+  )
+
   // Update record via repository
   await updateRecord(data.id, {
     record_date: data.record_date,
@@ -172,6 +185,8 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     phosphate_mg_l: data.phosphate_mg_l,
     hardness_mg_l: data.hardness_mg_l,
     alkalinity_mg_l: data.alkalinity_mg_l,
+    turbidity_ntu: data.turbidity_ntu,
+    daily_gain_g,
     notes: data.notes,
     calculated_fca,
     effective_fca,
@@ -209,6 +224,8 @@ export async function getProductionRecordDetail(recordId: string): Promise<Produ
       phosphate_mg_l,
       hardness_mg_l,
       alkalinity_mg_l,
+      turbidity_ntu,
+      daily_gain_g,
       calculated_fca,
       effective_fca,
       fca_source,
@@ -304,6 +321,8 @@ export async function getProductionRecordDetail(recordId: string): Promise<Produ
       phosphate_mg_l: record.phosphate_mg_l != null ? Number(record.phosphate_mg_l) : null,
       hardness_mg_l: record.hardness_mg_l != null ? Number(record.hardness_mg_l) : null,
       alkalinity_mg_l: record.alkalinity_mg_l != null ? Number(record.alkalinity_mg_l) : null,
+      turbidity_ntu: record.turbidity_ntu != null ? Number(record.turbidity_ntu) : null,
+      daily_gain_g: record.daily_gain_g != null ? Number(record.daily_gain_g) : null,
       calculated_fca: record.calculated_fca != null ? Number(record.calculated_fca) : null,
       effective_fca: record.effective_fca != null ? Number(record.effective_fca) : null,
       fca_source: record.fca_source,

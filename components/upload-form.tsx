@@ -56,6 +56,7 @@ interface OcrResult {
   phosphate_mg_l: number | null
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
+  turbidity_ntu: number | null
   notes: string | null
   confidence: {
     record_date: number
@@ -74,6 +75,7 @@ interface OcrResult {
     phosphate_mg_l: number
     hardness_mg_l: number
     alkalinity_mg_l: number
+    turbidity_ntu: number
   }
 }
 
@@ -230,6 +232,7 @@ export function UploadForm({
         phosphate_mg_l: editedData.phosphate_mg_l ?? null,
         hardness_mg_l: editedData.hardness_mg_l ?? null,
         alkalinity_mg_l: editedData.alkalinity_mg_l ?? null,
+        turbidity_ntu: editedData.turbidity_ntu ?? null,
         notes: editedData.notes ?? null,
         fca_source: fcaMode,
       })
@@ -775,6 +778,23 @@ export function UploadForm({
                       placeholder="Opcional"
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="turbidity_ntu">Turbidez (NTU)</Label>
+                    {ocrData.confidence.turbidity_ntu > 0 && (
+                      <ConfidenceBadge value={ocrData.confidence.turbidity_ntu} />
+                    )}
+                  </div>
+                  <Input
+                    id="turbidity_ntu"
+                    type="number"
+                    step="0.1"
+                    value={editedData.turbidity_ntu ?? ''}
+                    onChange={(e) => setEditedData({ ...editedData, turbidity_ntu: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="Opcional"
+                  />
                 </div>
 
                 <div className="grid gap-2">

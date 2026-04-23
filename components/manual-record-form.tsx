@@ -138,6 +138,7 @@ export function ManualRecordForm({
     phosphate_mg_l: '',
     hardness_mg_l: '',
     alkalinity_mg_l: '',
+    turbidity_ntu: '',
     notes: '',
   })
 
@@ -217,6 +218,7 @@ export function ManualRecordForm({
         phosphate_mg_l: toNum(formData.phosphate_mg_l),
         hardness_mg_l: toNum(formData.hardness_mg_l),
         alkalinity_mg_l: toNum(formData.alkalinity_mg_l),
+        turbidity_ntu: toNum(formData.turbidity_ntu),
         notes: formData.notes || null,
         fca_source: fcaMode,
       })
@@ -262,6 +264,7 @@ export function ManualRecordForm({
       phosphate_mg_l: '',
       hardness_mg_l: '',
       alkalinity_mg_l: '',
+      turbidity_ntu: '',
       notes: '',
     })
   }
@@ -694,6 +697,18 @@ export function ManualRecordForm({
                 className="h-9"
                 value={formData.alkalinity_mg_l}
                 onChange={(e) => updateField('alkalinity_mg_l', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <FieldLabel htmlFor="m_turbidity_ntu" unit="NTU">Turbidez</FieldLabel>
+              <Input
+                id="m_turbidity_ntu"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                className="h-9"
+                value={formData.turbidity_ntu}
+                onChange={(e) => updateField('turbidity_ntu', e.target.value)}
               />
             </div>
           </div>

@@ -48,6 +48,7 @@ interface RecordEditModalProps {
     phosphate_mg_l: number | null
     hardness_mg_l: number | null
     alkalinity_mg_l: number | null
+    turbidity_ntu: number | null
     effective_fca: number | null
     fca_source: 'calculated' | 'default' | null
     notes: string | null
@@ -71,6 +72,7 @@ type FormState = {
   phosphate_mg_l: string
   hardness_mg_l: string
   alkalinity_mg_l: string
+  turbidity_ntu: string
   fca_source: 'calculated' | 'default'
   notes: string
 }
@@ -97,6 +99,7 @@ function buildFormState(record: RecordEditModalProps['record']): FormState {
     phosphate_mg_l: toInputValue(record.phosphate_mg_l),
     hardness_mg_l: toInputValue(record.hardness_mg_l),
     alkalinity_mg_l: toInputValue(record.alkalinity_mg_l),
+    turbidity_ntu: toInputValue(record.turbidity_ntu),
     fca_source: record.fca_source === 'default' ? 'default' : 'calculated',
     notes: record.notes ?? '',
   }
@@ -185,6 +188,7 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
         phosphate_mg_l: toNullableNumber(form.phosphate_mg_l),
         hardness_mg_l: toNullableNumber(form.hardness_mg_l),
         alkalinity_mg_l: toNullableNumber(form.alkalinity_mg_l),
+        turbidity_ntu: toNullableNumber(form.turbidity_ntu),
         fca_source: form.fca_source,
         notes: form.notes.trim() || null,
       })
@@ -301,6 +305,7 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
             <Field id={`phosphate-${record.id}`} label="Fosfato" unit="mg/L" step="0.01" value={form.phosphate_mg_l} onChange={(value) => setField('phosphate_mg_l', value)} />
             <Field id={`hardness-${record.id}`} label="Dureza" unit="mg/L" step="1" value={form.hardness_mg_l} onChange={(value) => setField('hardness_mg_l', value)} />
             <Field id={`alkalinity-${record.id}`} label="Alcalinidad" unit="mg/L" step="1" value={form.alkalinity_mg_l} onChange={(value) => setField('alkalinity_mg_l', value)} />
+            <Field id={`turbidity-${record.id}`} label="Turbidez" unit="NTU" step="0.1" value={form.turbidity_ntu} onChange={(value) => setField('turbidity_ntu', value)} />
           </div>
 
           <div className="flex flex-col gap-2">

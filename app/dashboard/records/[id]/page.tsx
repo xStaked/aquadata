@@ -140,6 +140,8 @@ export default async function RecordDetailPage({
               <ValueItem label="Fosfato" value={record.phosphate_mg_l != null ? `${formatNumber(record.phosphate_mg_l, 2)} mg/L` : '-'} />
               <ValueItem label="Dureza" value={record.hardness_mg_l != null ? `${formatNumber(record.hardness_mg_l, 1)} mg/L` : '-'} />
               <ValueItem label="Alcalinidad" value={record.alkalinity_mg_l != null ? `${formatNumber(record.alkalinity_mg_l, 1)} mg/L` : '-'} />
+              <ValueItem label="Turbidez" value={record.turbidity_ntu != null ? `${formatNumber(record.turbidity_ntu, 1)} NTU` : '-'} />
+              <ValueItem label="Ganancia diaria" value={record.daily_gain_g != null ? `${formatNumber(record.daily_gain_g, 2)} g/día` : '-'} />
             </CardContent>
           </Card>
 

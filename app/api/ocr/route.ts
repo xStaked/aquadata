@@ -19,6 +19,7 @@ const productionDataSchema = z.object({
   phosphate_mg_l: z.number().nullable().describe('Fosfatos (PO4) en mg/L'),
   hardness_mg_l: z.number().nullable().describe('Dureza total del agua en mg/L como CaCO3 (opcional)'),
   alkalinity_mg_l: z.number().nullable().describe('Alcalinidad total del agua en mg/L como CaCO3 (opcional)'),
+  turbidity_ntu: z.number().nullable().describe('Turbidez del agua en NTU (opcional)'),
   notes: z.string().nullable().describe('Notas o observaciones adicionales del reporte'),
   confidence: z.object({
     record_date: z.number().describe('Confianza de 0 a 100 para la fecha'),
@@ -37,6 +38,7 @@ const productionDataSchema = z.object({
     phosphate_mg_l: z.number().describe('Confianza de 0 a 100 para fosfatos'),
     hardness_mg_l: z.number().describe('Confianza de 0 a 100 para dureza'),
     alkalinity_mg_l: z.number().describe('Confianza de 0 a 100 para alcalinidad'),
+    turbidity_ntu: z.number().describe('Confianza de 0 a 100 para turbidez'),
   }).describe('Nivel de confianza para cada campo extraido, de 0 a 100'),
 })
 
@@ -66,12 +68,13 @@ export async function POST(req: Request) {
 - Fosfatos PO4 (mg/L)
 - Dureza total (mg/L como CaCO3) — campo opcional
 - Alcalinidad total (mg/L como CaCO3) — campo opcional
+- Turbidez (NTU) — campo opcional
 - Notas u observaciones
 
 La imagen puede ser un formulario manuscrito, una tabla impresa, o una hoja de registro.
 Si un campo no es visible o no puedes leerlo con certeza, devuelve null para ese campo.
 Para cada campo, asigna un nivel de confianza de 0 a 100 indicando que tan seguro estas de la lectura.
-Los campos de dureza y alcalinidad son opcionales; si no aparecen, devuelve null y confianza 0.
+Los campos de dureza, alcalinidad y turbidez son opcionales; si no aparecen, devuelve null y confianza 0.
 
 IMPORTANTE: Si la fecha esta en formato DD/MM/YYYY, conviertela a YYYY-MM-DD.`
 
