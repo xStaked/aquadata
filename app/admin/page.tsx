@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createInvitationCode } from '@/app/admin/actions'
 import { requireAdminUser } from '@/lib/auth/roles'
-import { Building2, Users, Waves, Fish, Ticket, UserRound, ArrowRight, Tags } from 'lucide-react'
+import { Building2, Users, Waves, Fish, Ticket, UserRound, ArrowRight, Tags, ShieldCheck } from 'lucide-react'
 import type { ComponentType } from 'react'
 import Link from 'next/link'
 
@@ -189,6 +189,12 @@ export default async function AdminPage() {
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[
+              {
+                href: '/admin/users',
+                title: 'Usuarios',
+                description: 'Gestion de usuarios, roles y acceso a granjas',
+                icon: ShieldCheck,
+              },
               {
                 href: '/admin/producers',
                 title: 'Productores',

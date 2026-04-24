@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { inviteOrganizationUser } from '@/app/admin/actions'
+import { createOrganizationUser } from '@/app/admin/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,7 +27,7 @@ export function CreateOrganizationUserForm({
 
         startTransition(async () => {
           try {
-            await inviteOrganizationUser(formData)
+            await createOrganizationUser(formData)
             ;(event.currentTarget as HTMLFormElement).reset()
             setSuccess('Invitación enviada. El usuario quedará creado dentro de esta finca.')
           } catch (err) {
@@ -50,6 +50,10 @@ export function CreateOrganizationUserForm({
         <div className="space-y-1">
           <Label htmlFor="phone">Teléfono</Label>
           <Input id="phone" name="phone" inputMode="numeric" maxLength={10} placeholder="3001234567" required />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="password">Contraseña</Label>
+          <Input id="password" name="password" type="password" placeholder="Minimo 6 caracteres" minLength={6} required />
         </div>
         <div className="space-y-1">
           <Label htmlFor="role">Rol</Label>
