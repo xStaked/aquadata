@@ -2,11 +2,10 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DollarSign, FlaskConical, Fish, Scale, Target } from 'lucide-react'
+import { DollarSign, FlaskConical, Fish, Target } from 'lucide-react'
 import { getColombianMarketPrices } from '@/lib/market-data'
 import { SyncMarketPricesButton } from '@/components/sync-market-prices-button'
 import { InvestmentTab } from './_tabs/investment-tab'
-import { HarvestTab } from './_tabs/harvest-tab'
 import { FishTab } from './_tabs/fish-tab'
 import { BioTab } from './_tabs/bio-tab'
 import {
@@ -14,7 +13,6 @@ import {
   WHOLE_TO_EVISCERATED_FACTOR,
   type Treatment,
   type BatchSummary,
-  type HarvestRecord,
 } from './types'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
@@ -33,7 +31,6 @@ export default async function CostsPage() {
 
   let treatments: Treatment[] = []
   let batches: BatchSummary[] = []
-  let harvests: HarvestRecord[] = []
   let marketPrices: Awaited<ReturnType<typeof getColombianMarketPrices>> = []
 
   let customFishPrices: Record<string, number> = {}
@@ -55,7 +52,6 @@ export default async function CostsPage() {
       { data: ponds },
       { data: rawTreatments },
       { data: rawBatches },
-      { data: rawHarvests },
       { data: orgData },
     ] = await Promise.all([
       supabase
@@ -81,10 +77,6 @@ export default async function CostsPage() {
           monthly_feed_records (kg_used, cost_per_kg)
         `)
         .eq('status', 'active'),
-      supabase
-        .from('harvest_records')
-        .select('id, batch_id, harvest_date, total_animals, avg_weight_whole_g, avg_weight_eviscerated_g, labor_cost, notes')
-        .order('harvest_date', { ascending: false }),
       supabase
         .from('organizations')
         .select('custom_fish_prices')
@@ -116,7 +108,6 @@ export default async function CostsPage() {
       return new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
     })
     const orgRawBatches = sortedRawBatches.filter((b: any) => pondOrderMap[b.pond_id] != null)
-    const orgBatchIds = new Set(orgRawBatches.map((b: any) => b.id))
 
     // ── bioremediation ──────────────────────────────────────────
     treatments = (rawTreatments ?? []).map(t => {
@@ -207,23 +198,6 @@ export default async function CostsPage() {
       }
     })
 
-    // ── harvests with pond name ─────────────────────────────────
-    const batchPondMap: Record<string, string> = {}
-    for (const b of orgRawBatches) batchPondMap[b.id] = pondMap[b.pond_id]?.name ?? 'S/E'
-
-    harvests = (rawHarvests ?? [])
-      .filter(h => orgBatchIds.has(h.batch_id))
-      .map(h => ({
-      id: h.id,
-      batch_id: h.batch_id,
-      pond_name: batchPondMap[h.batch_id] ?? 'S/E',
-      harvest_date: h.harvest_date,
-      total_animals: h.total_animals,
-      avg_weight_whole_g: Number(h.avg_weight_whole_g),
-      avg_weight_eviscerated_g: h.avg_weight_eviscerated_g != null ? Number(h.avg_weight_eviscerated_g) : null,
-      labor_cost: Number(h.labor_cost),
-      notes: h.notes,
-    }))
   }
 
   // ── aggregated KPIs ─────────────────────────────────────────
@@ -235,13 +209,6 @@ export default async function CostsPage() {
   const totalFeedCostAll = batches.reduce((s, b) => s + b.total_feed_cost, 0)
   const totalLaborCostAll = batches.reduce((s, b) => s + b.total_labor_cost, 0)
   const totalFingerlingCostAll = batches.reduce((s, b) => s + b.total_fingerling_cost, 0)
-
-  const batchesForForms = batches.map(b => ({
-    id: b.id,
-    pond_name: b.pond_name,
-    species: b.species,
-    initial_population: b.population,
-  }))
 
   return (
     <div className="flex flex-col gap-6">
@@ -262,7 +229,7 @@ export default async function CostsPage() {
       {!canEdit ? <ReadOnlyBanner description="Puedes consultar costos, ventas y cosechas históricas, pero no modificar precios ni registrar nuevas operaciones." /> : null}
 
       <Tabs defaultValue="investment" className="w-full">
-        <TabsList className="flex w-full flex-wrap gap-1 h-auto sm:grid sm:grid-cols-4 sm:max-w-3xl">
+        <TabsList className="flex w-full flex-wrap gap-1 h-auto sm:grid sm:grid-cols-3 sm:max-w-3xl">
           <TabsTrigger value="investment" className="gap-1.5 text-xs sm:text-sm">
             <Target className="h-3.5 w-3.5" />
             Resumen
@@ -270,10 +237,6 @@ export default async function CostsPage() {
           <TabsTrigger value="fish" className="gap-1.5 text-xs sm:text-sm">
             <Fish className="h-3.5 w-3.5" />
             Ventas
-          </TabsTrigger>
-          <TabsTrigger value="harvest" className="gap-1.5 text-xs sm:text-sm">
-            <Scale className="h-3.5 w-3.5" />
-            Cosecha
           </TabsTrigger>
           <TabsTrigger value="bio" className="gap-1.5 text-xs sm:text-sm">
             <FlaskConical className="h-3.5 w-3.5" />
@@ -304,10 +267,6 @@ export default async function CostsPage() {
             totalFishUtility={totalFishUtility}
             canEdit={canEdit}
           />
-        </TabsContent>
-
-        <TabsContent value="harvest" className="mt-6">
-          <HarvestTab harvests={harvests} batchesForForms={batchesForForms} canEdit={canEdit} />
         </TabsContent>
 
         <TabsContent value="bio" className="mt-6">

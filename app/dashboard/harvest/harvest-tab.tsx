@@ -1,7 +1,25 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Scale, Fish, TrendingDown } from 'lucide-react'
 import { HarvestForm } from '@/components/harvest-form'
-import { type HarvestRecord, type BatchForForms } from '../types'
+
+export type HarvestRecord = {
+  id: string
+  batch_id: string
+  pond_name: string
+  harvest_date: string
+  total_animals: number
+  avg_weight_whole_g: number
+  avg_weight_eviscerated_g: number | null
+  labor_cost: number
+  notes: string | null
+}
+
+export type BatchForForms = {
+  id: string
+  pond_name: string
+  species: string
+  initial_population: number
+}
 
 interface HarvestTabProps {
   harvests: HarvestRecord[]

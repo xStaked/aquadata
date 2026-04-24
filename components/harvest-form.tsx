@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Scale, Trash2, TrendingDown } from 'lucide-react'
-import { createHarvestRecord, deleteHarvestRecord } from '@/app/dashboard/costs/actions'
+import { createHarvestRecord, deleteHarvestRecord } from '@/app/dashboard/harvest/actions'
 import { formatCOP } from '@/lib/format'
 
 interface Batch {
