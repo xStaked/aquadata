@@ -19,19 +19,16 @@ import { Label } from '@/components/ui/label'
 export function BatchEditModal({
   batchId,
   startDate: initialStartDate,
-  pondEntryDate: initialPondEntryDate,
   seedSource: initialSeedSource,
 }: {
   batchId: string
   startDate: string
-  pondEntryDate: string | null
   seedSource: string | null
 }) {
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [startDate, setStartDate] = useState(initialStartDate)
-  const [pondEntryDate, setPondEntryDate] = useState(initialPondEntryDate ?? initialStartDate)
   const [seedSource, setSeedSource] = useState(initialSeedSource ?? '')
 
   const resetState = (nextOpen: boolean) => {
@@ -40,7 +37,6 @@ export function BatchEditModal({
       setError(null)
       setIsSaving(false)
       setStartDate(initialStartDate)
-      setPondEntryDate(initialPondEntryDate ?? initialStartDate)
       setSeedSource(initialSeedSource ?? '')
     }
   }
@@ -54,7 +50,6 @@ export function BatchEditModal({
       const formData = new FormData()
       formData.set('batch_id', batchId)
       formData.set('start_date', startDate)
-      formData.set('pond_entry_date', pondEntryDate)
       formData.set('seed_source', seedSource)
 
       await updateBatchDetails(formData)
@@ -84,16 +79,6 @@ export function BatchEditModal({
               id={`batch-start-date-${batchId}`}
               value={startDate}
               onChange={setStartDate}
-              buttonClassName="w-full justify-between"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor={`batch-pond-entry-date-${batchId}`}>Fecha ingreso al lago</Label>
-            <DatePicker
-              id={`batch-pond-entry-date-${batchId}`}
-              value={pondEntryDate}
-              onChange={setPondEntryDate}
               buttonClassName="w-full justify-between"
             />
           </div>

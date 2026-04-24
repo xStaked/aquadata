@@ -322,7 +322,6 @@ function SortablePondCard({
                       <BatchEditModal
                         batchId={batch.id}
                         startDate={batch.start_date}
-                        pondEntryDate={batch.pond_entry_date}
                         seedSource={batch.seed_source}
                       />
                       <BatchFinancialConfig
