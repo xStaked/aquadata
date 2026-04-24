@@ -25,6 +25,7 @@ export async function createAlerts(
     organization_id: string
     pond_id?: string | null
     batch_id?: string | null
+    record_id?: string | null
     alert_type: AlertType
     severity: AlertSeverity
     message: string
@@ -39,6 +40,7 @@ export async function createAlerts(
       organization_id: a.organization_id,
       pond_id: a.pond_id ?? null,
       batch_id: a.batch_id ?? null,
+      record_id: a.record_id ?? null,
       alert_type: a.alert_type,
       severity: a.severity,
       message: a.message,
@@ -97,12 +99,25 @@ export async function getUnresolvedAlertsByOrg(orgId: string): Promise<Alert[]> 
   return (data ?? []).map(normalizeAlert)
 }
 
+export async function deleteAlertsByRecordId(recordId: string, orgId: string): Promise<void> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('alerts')
+    .delete()
+    .eq('record_id', recordId)
+    .eq('organization_id', orgId)
+
+  if (error) throw new Error(`Error deleting alerts by record: ${error.message}`)
+}
+
 function normalizeAlert(raw: Record<string, unknown>): Alert {
   return {
     id: raw.id as string,
     organization_id: raw.organization_id as string,
     pond_id: (raw.pond_id as string) ?? null,
     batch_id: (raw.batch_id as string) ?? null,
+    record_id: (raw.record_id as string) ?? null,
     alert_type: raw.alert_type as AlertType,
     severity: raw.severity as AlertSeverity,
     message: raw.message as string,

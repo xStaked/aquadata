@@ -78,6 +78,7 @@ export {
   markAlertResolved,
   markAllAlertsRead,
   getUnresolvedAlertsByOrg,
+  deleteAlertsByRecordId,
 } from './repositories/alert-repository'
 
 // ── Upload Repository ─────────────────────────────────────────

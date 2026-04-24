@@ -30,4 +30,9 @@ export interface AlertServicePort {
    * Mark all alerts as read for an organization
    */
   markAllRead(orgId: string): Promise<Result<void>>
+
+  /**
+   * Delete all alerts linked to a specific production record
+   */
+  deleteByRecordId(recordId: string, orgId: string): Promise<Result<void>>
 }

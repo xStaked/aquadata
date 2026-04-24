@@ -64,11 +64,15 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
       })
 
       // 6. Create record (delegate to repo - it handles the DB insert)
-      await this.recordRepo.create({
+      const recordResult = await this.recordRepo.create({
         ...input,
         fish_count: resolvedFishCount,
         biomass_kg,
       })
+      if (!recordResult.ok) {
+        return failure('Error al crear el registro', 'CREATE_RECORD_FAILED')
+      }
+      const recordId = recordResult.data.id
 
       // 7. Generate alerts
       const batchWithPond = await this.batchRepo.findByIdWithPond(input.batch_id)
@@ -77,6 +81,7 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
       const reading: WaterQualityReading = {
         batch_id: input.batch_id,
         pond_id: pondId,
+        record_id: recordId,
         oxygen_mg_l: input.oxygen_mg_l,
         ammonia_mg_l: input.ammonia_mg_l,
         ph: input.ph,
@@ -92,7 +97,7 @@ export class CreateProductionRecordUseCase implements CreateProductionRecord {
 
       const alertResult = await this.generateAlertsInternal(reading, input.orgId)
       if (alertResult.ok && alertResult.data.length > 0) {
-        await this.alertService.createBatch(alertResult.data)
+        await this.alertService.createBatch(alertResult.data.map((a) => ({ ...a, record_id: recordId })))
       }
 
       return success(undefined)

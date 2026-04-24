@@ -113,12 +113,12 @@ export async function createRecord(data: {
   sampling_weight_g?: number | null
   confirmed_by?: string | null
   upload_id?: string | null
-}): Promise<void> {
+}): Promise<string> {
   const supabase = await createClient()
   const avgWeightKg =
     data.avg_weight_kg ?? (data.avg_weight_g != null ? data.avg_weight_g / 1000 : null)
 
-  const { error } = await supabase.from('production_records').insert({
+  const { data: inserted, error } = await supabase.from('production_records').insert({
     batch_id: data.batch_id,
     record_date: data.record_date,
     report_type: data.report_type ?? null,
@@ -146,9 +146,10 @@ export async function createRecord(data: {
     sampling_weight_g: data.sampling_weight_g ?? null,
     confirmed_by: data.confirmed_by ?? null,
     upload_id: data.upload_id ?? null,
-  })
+  }).select('id').single()
 
   if (error) throw new Error(`Error creating production record: ${error.message}`)
+  return inserted.id as string
 }
 
 /**

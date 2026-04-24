@@ -13,11 +13,11 @@ import { createRecord as dbCreateRecord, updateRecord as dbUpdateRecord, getReco
 export class SupabaseProductionRecordRepository implements ProductionRecordRepositoryPort {
   async create(input: ProductionRecordInput): Promise<Result<ProductionRecord>> {
     try {
-      await dbCreateRecord({
+      const recordId = await dbCreateRecord({
         ...input,
         mortality_count: input.mortality_count ?? undefined,
       })
-      return success({} as ProductionRecord)
+      return success({ id: recordId } as ProductionRecord)
     } catch (err) {
       return failure(
         err instanceof Error ? err.message : 'Error al crear el registro de producción',

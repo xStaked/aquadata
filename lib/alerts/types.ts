@@ -22,6 +22,7 @@ export type AlertSeverity = 'warning' | 'critical'
 export interface WaterQualityReading {
   batch_id: string
   pond_id: string | null
+  record_id?: string
   oxygen_mg_l: number | null
   ammonia_mg_l: number | null
   ph: number | null
@@ -39,6 +40,7 @@ export interface AlertPayload {
   organization_id: string
   pond_id: string | null
   batch_id: string
+  record_id?: string
   alert_type: AlertType
   severity: AlertSeverity
   message: string

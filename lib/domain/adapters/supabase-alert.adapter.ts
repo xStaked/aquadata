@@ -6,7 +6,7 @@ import type { Result } from '@/domain/types/result'
 import { success, failure } from '@/domain/types/result'
 import type { AlertServicePort } from '@/domain/ports/output/alert.service.port'
 import type { Alert } from '@/db/types'
-import { getAlertsByOrg, createAlerts, markAlertResolved, markAllAlertsRead, getUnresolvedAlertsByOrg } from '@/lib/db'
+import { getAlertsByOrg, createAlerts, markAlertResolved, markAllAlertsRead, getUnresolvedAlertsByOrg, deleteAlertsByRecordId } from '@/lib/db'
 
 export class SupabaseAlertService implements AlertServicePort {
   async findByOrg(orgId: string): Promise<Result<Alert[]>> {
@@ -65,6 +65,18 @@ export class SupabaseAlertService implements AlertServicePort {
       return failure(
         err instanceof Error ? err.message : 'Error al marcar alertas como leídas',
         'MARK_ALL_READ_FAILED',
+      )
+    }
+  }
+
+  async deleteByRecordId(recordId: string, orgId: string): Promise<Result<void>> {
+    try {
+      await deleteAlertsByRecordId(recordId, orgId)
+      return success(undefined)
+    } catch (err) {
+      return failure(
+        err instanceof Error ? err.message : 'Error al eliminar alertas del registro',
+        'DELETE_BY_RECORD_FAILED',
       )
     }
   }

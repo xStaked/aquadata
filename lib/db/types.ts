@@ -194,6 +194,7 @@ export interface Alert {
   organization_id: string
   pond_id: string | null
   batch_id: string | null
+  record_id: string | null
   alert_type: AlertType
   severity: AlertSeverity
   message: string

@@ -3,10 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { differenceInDays, subDays } from 'date-fns'
 import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
-import { updateBatchPopulation, updateRecord } from '@/lib/db'
+import { updateBatchPopulation, updateRecord, createAlerts, deleteAlertsByRecordId } from '@/lib/db'
 import { getPreviousRecordByBatch } from '@/lib/db/repositories/production-record-repository'
 import { calculateDailyGainG } from '@/lib/growth'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
+import { generateAlerts, type WaterQualityReading } from '@/lib/alerts'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
 import { createClient } from '@/lib/supabase/server'
 
@@ -194,9 +195,35 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     confirmed_by: userId,
   }, orgId)
 
+  // Regenerate alerts for this record
+  await deleteAlertsByRecordId(data.id, orgId)
+
+  const reading: WaterQualityReading = {
+    batch_id: existingRecord.batch_id,
+    pond_id: batchPond.pond_id,
+    record_id: data.id,
+    oxygen_mg_l: data.oxygen_mg_l,
+    ammonia_mg_l: data.ammonia_mg_l,
+    ph: data.ph,
+    temperature_c: data.temperature_c,
+    nitrite_mg_l: data.nitrite_mg_l,
+    nitrate_mg_l: data.nitrate_mg_l,
+    hardness_mg_l: data.hardness_mg_l,
+    alkalinity_mg_l: data.alkalinity_mg_l,
+    phosphate_mg_l: data.phosphate_mg_l,
+    mortality_count: data.mortality_count,
+    effective_fca,
+  }
+
+  const alertPayloads = generateAlerts(reading, orgId).map((a) => ({ ...a, record_id: data.id }))
+  if (alertPayloads.length > 0) {
+    await createAlerts(alertPayloads)
+  }
+
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/records')
   revalidatePath('/dashboard/analytics')
+  revalidatePath('/dashboard/alerts')
 }
 
 export async function getProductionRecordDetail(recordId: string): Promise<ProductionRecordDetail | null> {

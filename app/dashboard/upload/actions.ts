@@ -79,7 +79,7 @@ export async function confirmProductionRecord(data: ProductionData) {
   )
 
   // Create production record
-  await createRecord({
+  const recordId = await createRecord({
     batch_id: data.batch_id,
     record_date: data.record_date,
     report_type: data.report_type,
@@ -113,6 +113,7 @@ export async function confirmProductionRecord(data: ProductionData) {
   const reading: WaterQualityReading = {
     batch_id: data.batch_id,
     pond_id: batch.pond_id,
+    record_id: recordId,
     oxygen_mg_l: data.oxygen_mg_l,
     ammonia_mg_l: data.ammonia_mg_l,
     ph: data.ph,
@@ -126,7 +127,7 @@ export async function confirmProductionRecord(data: ProductionData) {
     effective_fca,
   }
 
-  const alertPayloads = generateAlerts(reading, orgId)
+  const alertPayloads = generateAlerts(reading, orgId).map((a) => ({ ...a, record_id: recordId }))
   if (alertPayloads.length > 0) {
     await createAlerts(alertPayloads)
   }
