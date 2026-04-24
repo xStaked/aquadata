@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { type Concentrate, type FeedInventoryEntry, type FeedStock } from '../costs/types'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
+import { LowStockBanner } from '@/components/low-stock-banner'
+import { isLowStock } from '@/lib/inventory/constants'
 
 export default async function InventoryPage() {
   const supabase = await createClient()
@@ -98,6 +100,7 @@ export default async function InventoryPage() {
   const totalBagsInStock = stock.reduce((sum, s) => sum + s.total_bags, 0)
   const totalKgAvailable = stock.reduce((sum, s) => sum + s.available_kg, 0)
   const activeConcentrates = concentrates.filter(c => c.is_active).length
+  const lowStockItems = stock.filter(s => isLowStock(s.available_kg, s.total_kg_in))
 
   return (
     <div className="flex flex-col gap-6">
@@ -117,6 +120,8 @@ export default async function InventoryPage() {
       {!canEdit ? (
         <ReadOnlyBanner description="Puedes consultar el inventario y el historial de compras, pero no registrar ni editar entradas." />
       ) : null}
+
+      <LowStockBanner items={lowStockItems} />
 
       {/* Summary stats */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

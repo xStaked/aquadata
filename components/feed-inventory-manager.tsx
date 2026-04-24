@@ -35,6 +35,7 @@ import {
   deleteFeedInventoryEntry,
 } from '@/app/dashboard/feed/actions'
 import { formatCOP } from '@/lib/format'
+import { isLowStock, stockPercentage } from '@/lib/inventory/constants'
 
 interface Concentrate {
   id: string
@@ -205,7 +206,7 @@ export function FeedInventoryManager({ concentrates, inventoryEntries, stock, ca
       {/* Summary cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {stock.map(s => {
-          const lowStock = s.available_kg < 100
+          const lowStock = isLowStock(s.available_kg, s.total_kg_in)
           return (
             <Card
               key={s.concentrate_id}
@@ -221,7 +222,7 @@ export function FeedInventoryManager({ concentrates, inventoryEntries, stock, ca
                   {lowStock && (
                     <div className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
                       <AlertTriangle className="h-3 w-3" />
-                      Bajo stock
+                      {stockPercentage(s.available_kg, s.total_kg_in)} stock
                     </div>
                   )}
                 </div>
