@@ -27,7 +27,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Package, Plus, Pencil, Trash2, ArrowDown, ArrowUp, AlertTriangle } from 'lucide-react'
+import { Package, Plus, Pencil, Trash2, ArrowDown, ArrowUp, AlertTriangle, ShoppingCart } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   createFeedInventoryEntry,
   updateFeedInventoryEntry,
@@ -206,32 +207,43 @@ export function FeedInventoryManager({ concentrates, inventoryEntries, stock, ca
         {stock.map(s => {
           const lowStock = s.available_kg < 100
           return (
-            <div
+            <Card
               key={s.concentrate_id}
-              className={`rounded-lg border bg-background p-3 flex flex-col gap-1 ${
-                lowStock ? 'border-amber-400/50 bg-amber-50/30' : ''
+              className={`transition-shadow hover:shadow-sm ${
+                lowStock
+                  ? 'border-amber-400/60 bg-amber-50/30 border-l-4 border-l-amber-500'
+                  : 'border-l-4 border-l-primary'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold truncate">{s.concentrate_name}</span>
-                {lowStock && <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />}
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-primary">{s.available_kg.toLocaleString()}</span>
-                <span className="text-xs text-muted-foreground">kg disp.</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>{s.total_bags.toLocaleString()} bultos entrados</span>
-                <span className="text-muted-foreground/40">|</span>
-                <span>{s.latest_cost_per_kg ? formatCOP(s.latest_cost_per_kg) + '/kg' : 'Sin compras'}</span>
-              </div>
-            </div>
+              <CardContent className="p-4 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold truncate">{s.concentrate_name}</span>
+                  {lowStock && (
+                    <div className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                      <AlertTriangle className="h-3 w-3" />
+                      Bajo stock
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-primary">{s.available_kg.toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">kg disp.</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{s.total_bags.toLocaleString()} bultos entrados</span>
+                  <span className="text-muted-foreground/40">|</span>
+                  <span>{s.latest_cost_per_kg ? formatCOP(s.latest_cost_per_kg) + '/kg' : 'Sin compras'}</span>
+                </div>
+              </CardContent>
+            </Card>
           )
         })}
         {stock.length === 0 && (
-          <div className="col-span-full rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-            No hay entradas de inventario registradas. Registra tu primera compra de concentrado.
-          </div>
+          <Card className="col-span-full border-dashed bg-muted/30">
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              No hay entradas de inventario registradas. Registra tu primera compra de concentrado.
+            </CardContent>
+          </Card>
         )}
       </div>
 
@@ -249,123 +261,132 @@ export function FeedInventoryManager({ concentrates, inventoryEntries, stock, ca
         </div>
       )}
 
-      {/* Actions + History */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">Historial de compras</p>
-        {canEdit ? (
-          <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-            <DialogTrigger asChild>
-              <Button size="sm" onClick={handleOpenAdd} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Registrar compra
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Registrar compra de concentrado</DialogTitle>
-              </DialogHeader>
-              <InventoryForm
-                form={form}
-                setForm={setForm}
-                error={error}
-                concentrates={concentrates}
-              />
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setOpenAdd(false)}>Cancelar</Button>
-                <Button onClick={handleAdd} disabled={isPending}>
-                  {isPending ? 'Guardando…' : 'Guardar'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Concentrado</TableHead>
-            <TableHead>Bultos</TableHead>
-            <TableHead>Kg/Bulto</TableHead>
-            <TableHead>Kg total</TableHead>
-            <TableHead>Precio/bulto</TableHead>
-            <TableHead>Costo/kg</TableHead>
-            {canEdit ? <TableHead className="text-right">Acciones</TableHead> : null}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inventoryEntries.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={canEdit ? 8 : 7} className="h-20 text-center text-muted-foreground">
-                No hay compras registradas.
-              </TableCell>
+      <Card className="transition-shadow hover:shadow-sm overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-primary" />
+              Historial de compras
+            </CardTitle>
+            {canEdit ? (
+              <Dialog open={openAdd} onOpenChange={setOpenAdd}>
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={handleOpenAdd} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Registrar compra
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Registrar compra de concentrado</DialogTitle>
+                  </DialogHeader>
+                  <InventoryForm
+                    form={form}
+                    setForm={setForm}
+                    error={error}
+                    concentrates={concentrates}
+                  />
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="outline" onClick={() => setOpenAdd(false)}>Cancelar</Button>
+                    <Button onClick={handleAdd} disabled={isPending}>
+                      {isPending ? 'Guardando…' : 'Guardar'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Fecha</TableHead>
+              <TableHead>Concentrado</TableHead>
+              <TableHead className="text-right">Bultos</TableHead>
+              <TableHead className="text-right">Kg/Bulto</TableHead>
+              <TableHead className="text-right">Kg total</TableHead>
+              <TableHead className="text-right">Precio/bulto</TableHead>
+              <TableHead className="text-right">Costo/kg</TableHead>
+              {canEdit ? <TableHead className="text-right w-[100px]">Acciones</TableHead> : null}
             </TableRow>
-          ) : (
-            inventoryEntries.map(e => {
-              const totalKg = e.bags_received * e.kg_per_bag
-              const costPerKg = calculateCostPerKg(e.price_per_bag, e.kg_per_bag)
-              return (
-                <TableRow key={e.id} className="transition-colors hover:bg-muted/40">
-                  <TableCell className="font-medium">{e.entry_date}</TableCell>
-                  <TableCell>{e.concentrate_name}</TableCell>
-                  <TableCell>{e.bags_received}</TableCell>
-                  <TableCell>{e.kg_per_bag} kg</TableCell>
-                  <TableCell>{totalKg.toLocaleString()} kg</TableCell>
-                  <TableCell>{formatCOP(e.price_per_bag)}</TableCell>
-                  <TableCell className="font-semibold text-primary">
-                    {costPerKg ? formatCOP(costPerKg) : '—'}
-                  </TableCell>
-                  {canEdit ? (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Dialog open={editTarget?.id === e.id} onOpenChange={open => !open && setEditTarget(null)}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 cursor-pointer"
-                              onClick={() => handleOpenEdit(e)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle>Editar compra</DialogTitle>
-                            </DialogHeader>
-                            <InventoryForm
-                              form={form}
-                              setForm={setForm}
-                              error={error}
-                              concentrates={concentrates}
-                            />
-                            <div className="flex justify-end gap-2 pt-2">
-                              <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
-                              <Button onClick={handleEdit} disabled={isPending}>
-                                {isPending ? 'Guardando…' : 'Actualizar'}
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(e.id)}
-                          disabled={isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+          </TableHeader>
+          <TableBody>
+            {inventoryEntries.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={canEdit ? 8 : 7} className="h-20 text-center text-muted-foreground">
+                  No hay compras registradas.
+                </TableCell>
+              </TableRow>
+            ) : (
+              inventoryEntries.map(e => {
+                const totalKg = e.bags_received * e.kg_per_bag
+                const costPerKg = calculateCostPerKg(e.price_per_bag, e.kg_per_bag)
+                return (
+                  <TableRow key={e.id} className="group transition-colors hover:bg-muted/50">
+                    <TableCell className="font-medium whitespace-nowrap">{e.entry_date}</TableCell>
+                    <TableCell className="whitespace-nowrap">{e.concentrate_name}</TableCell>
+                    <TableCell className="text-right tabular-nums">{e.bags_received}</TableCell>
+                    <TableCell className="text-right tabular-nums">{e.kg_per_bag} kg</TableCell>
+                    <TableCell className="text-right tabular-nums">{totalKg.toLocaleString()} kg</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCOP(e.price_per_bag)}</TableCell>
+                    <TableCell className="text-right font-semibold text-primary tabular-nums">
+                      {costPerKg ? formatCOP(costPerKg) : '—'}
                     </TableCell>
-                  ) : null}
-                </TableRow>
-              )
-            })
-          )}
-        </TableBody>
-      </Table>
+                    {canEdit ? (
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Dialog open={editTarget?.id === e.id} onOpenChange={open => !open && setEditTarget(null)}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 cursor-pointer opacity-60 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleOpenEdit(e)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Editar compra</DialogTitle>
+                              </DialogHeader>
+                              <InventoryForm
+                                form={form}
+                                setForm={setForm}
+                                error={error}
+                                concentrates={concentrates}
+                              />
+                              <div className="flex justify-end gap-2 pt-2">
+                                <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
+                                <Button onClick={handleEdit} disabled={isPending}>
+                                  {isPending ? 'Guardando…' : 'Actualizar'}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 cursor-pointer text-destructive/70 hover:text-destructive opacity-60 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDelete(e.id)}
+                            disabled={isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -481,20 +502,22 @@ function InventoryForm({ form, setForm, error, concentrates }: InventoryFormProp
 
       {/* Preview */}
       {totalKg > 0 && totalCost > 0 && (
-        <div className="rounded-lg border bg-primary/5 p-3 text-sm flex flex-col gap-1">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Kg totales:</span>
-            <span className="font-medium">{totalKg.toLocaleString()} kg</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Costo total:</span>
-            <span className="font-medium">{formatCOP(totalCost)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Costo por kg:</span>
-            <span className="font-bold text-primary">{costPerKg ? formatCOP(costPerKg) : '—'}</span>
-          </div>
-        </div>
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-3 text-sm flex flex-col gap-1.5">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Kg totales:</span>
+              <span className="font-medium tabular-nums">{totalKg.toLocaleString()} kg</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Costo total:</span>
+              <span className="font-medium tabular-nums">{formatCOP(totalCost)}</span>
+            </div>
+            <div className="flex justify-between border-t border-primary/10 pt-1.5 mt-0.5">
+              <span className="text-muted-foreground">Costo por kg:</span>
+              <span className="font-bold text-primary tabular-nums">{costPerKg ? formatCOP(costPerKg) : '—'}</span>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}

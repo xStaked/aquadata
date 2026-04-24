@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
-import { Package } from 'lucide-react'
+import { Package, Boxes, Warehouse, TrendingUp } from 'lucide-react'
 import { ConcentrateManager } from '@/components/concentrate-manager'
 import { FeedInventoryManager } from '@/components/feed-inventory-manager'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -78,7 +78,7 @@ export default async function InventoryPage() {
       notes: e.notes,
     }))
 
-    const latestCostMap: Record<string, number | null> = {}
+      const latestCostMap: Record<string, number | null> = {}
     for (const lc of (rawLatestCosts ?? [])) {
       latestCostMap[lc.concentrate_id] = lc.latest_cost_per_kg != null ? Number(lc.latest_cost_per_kg) : null
     }
@@ -94,8 +94,14 @@ export default async function InventoryPage() {
     }))
   }
 
+  const totalConcentrates = concentrates.length
+  const totalBagsInStock = stock.reduce((sum, s) => sum + s.total_bags, 0)
+  const totalKgAvailable = stock.reduce((sum, s) => sum + s.available_kg, 0)
+  const activeConcentrates = concentrates.filter(c => c.is_active).length
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -112,9 +118,61 @@ export default async function InventoryPage() {
         <ReadOnlyBanner description="Puedes consultar el inventario y el historial de compras, pero no registrar ni editar entradas." />
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Concentrados registrados</CardTitle>
+      {/* Summary stats */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-l-4 border-l-primary transition-shadow hover:shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Boxes className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Concentrados</p>
+              <p className="text-xl font-bold leading-tight">{totalConcentrates}</p>
+              <p className="text-[11px] text-muted-foreground">{activeConcentrates} activos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-sky-500 transition-shadow hover:shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+              <Warehouse className="h-5 w-5 text-sky-600" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Stock total</p>
+              <p className="text-xl font-bold leading-tight">{totalKgAvailable.toLocaleString()} kg</p>
+              <p className="text-[11px] text-muted-foreground">{totalBagsInStock} bultos entrados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-emerald-500 transition-shadow hover:shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Entradas registradas</p>
+              <p className="text-xl font-bold leading-tight">{inventoryEntries.length}</p>
+              <p className="text-[11px] text-muted-foreground">compras en historial</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-amber-500 transition-shadow hover:shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+              <Package className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Alertas de stock</p>
+              <p className="text-xl font-bold leading-tight">{stock.filter(s => s.available_kg < 100).length}</p>
+              <p className="text-[11px] text-muted-foreground">con bajo inventario</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="transition-shadow hover:shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Concentrados registrados</CardTitle>
           <CardDescription>
             Alimentos que usa en su granja: nombre, marca, precio y % de proteína.
             {canEdit

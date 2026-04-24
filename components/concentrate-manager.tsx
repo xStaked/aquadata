@@ -20,9 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Plus, Pencil, Trash2, FlaskConical } from 'lucide-react'
+import { Plus, Pencil, Trash2, FlaskConical, Eye, Activity } from 'lucide-react'
 import { createConcentrate, updateConcentrate, deleteConcentrate } from '@/app/dashboard/feed/actions'
 import { formatCOP } from '@/lib/format'
+import Link from 'next/link'
 
 interface Concentrate {
   id: string
@@ -206,91 +207,110 @@ export function ConcentrateManager({ concentrates, canEdit }: ConcentrateManager
         ) : null}
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Marca</TableHead>
-            <TableHead>Proteína</TableHead>
-            <TableHead>Precio/kg</TableHead>
-            <TableHead>Estado</TableHead>
-            {canEdit ? <TableHead className="text-right">Acciones</TableHead> : null}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {concentrates.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={canEdit ? 6 : 5} className="h-20 text-center text-muted-foreground">
-                No hay concentrados registrados. Agrega uno para comenzar.
-              </TableCell>
+      <div className="overflow-x-auto -mx-2 px-2">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[200px]">Nombre</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead>Proteína</TableHead>
+              <TableHead>Precio/kg</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right w-[120px]">Acciones</TableHead>
             </TableRow>
-          ) : (
-            concentrates.map(c => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.name}</TableCell>
-                <TableCell className="text-muted-foreground">{c.brand ?? '—'}</TableCell>
-                <TableCell>
-                  {c.protein_pct != null ? (
-                    <Badge variant="outline" className="border-primary/30 text-primary">
-                      {c.protein_pct}%
+          </TableHeader>
+          <TableBody>
+            {concentrates.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+                  No hay concentrados registrados. Agrega uno para comenzar.
+                </TableCell>
+              </TableRow>
+            ) : (
+              concentrates.map(c => (
+                <TableRow key={c.id} className="group transition-colors hover:bg-muted/50">
+                  <TableCell className="font-medium">
+                    <Link href={`/dashboard/inventory/concentrates/${c.id}`} className="hover:text-primary transition-colors cursor-pointer">
+                      {c.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{c.brand ?? '—'}</TableCell>
+                  <TableCell>
+                    {c.protein_pct != null ? (
+                      <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+                        {c.protein_pct}%
+                      </Badge>
+                    ) : '—'}
+                  </TableCell>
+                  <TableCell className="font-semibold tabular-nums">{formatCOP(c.price_per_kg)}/kg</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={c.is_active
+                        ? 'border-emerald-500/30 text-emerald-600 bg-emerald-50/50'
+                        : 'border-muted text-muted-foreground bg-muted/30'}
+                    >
+                      <Activity className="h-3 w-3 mr-1" />
+                      {c.is_active ? 'Activo' : 'Inactivo'}
                     </Badge>
-                  ) : '—'}
-                </TableCell>
-                <TableCell className="font-semibold">{formatCOP(c.price_per_kg)}/kg</TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={c.is_active
-                      ? 'border-green-500/30 text-green-600'
-                      : 'border-muted text-muted-foreground'}
-                  >
-                    {c.is_active ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </TableCell>
-                {canEdit ? (
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Dialog open={editTarget?.id === c.id} onOpenChange={open => !open && setEditTarget(null)}>
-                      <DialogTrigger asChild>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Link href={`/dashboard/inventory/concentrates/${c.id}`}>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 cursor-pointer"
-                          onClick={() => handleOpenEdit(c)}
+                          className="h-8 w-8 cursor-pointer opacity-60 group-hover:opacity-100 transition-opacity"
+                          title="Ver detalle"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Editar concentrado</DialogTitle>
-                        </DialogHeader>
-                        <FormFields form={form} setForm={setForm} error={error} />
-                        <div className="flex justify-end gap-2 pt-2">
-                          <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
-                          <Button onClick={handleEdit} disabled={isPending}>
-                            {isPending ? 'Guardando…' : 'Actualizar'}
+                      </Link>
+                      {canEdit ? (
+                        <>
+                          <Dialog open={editTarget?.id === c.id} onOpenChange={open => !open && setEditTarget(null)}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 cursor-pointer opacity-60 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleOpenEdit(c)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Editar concentrado</DialogTitle>
+                              </DialogHeader>
+                              <FormFields form={form} setForm={setForm} error={error} />
+                              <div className="flex justify-end gap-2 pt-2">
+                                <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
+                                <Button onClick={handleEdit} disabled={isPending}>
+                                  {isPending ? 'Guardando…' : 'Actualizar'}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 cursor-pointer text-destructive/70 hover:text-destructive opacity-60 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDelete(c.id)}
+                            disabled={isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(c.id)}
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-                ) : null}
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                        </>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }
