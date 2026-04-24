@@ -154,7 +154,7 @@ export function checkHighPhosphate(reading: WaterQualityReading, orgId: string):
 }
 
 export function checkHighMortality(reading: WaterQualityReading, orgId: string): AlertPayload | null {
-  if (reading.mortality_count === null || reading.mortality_count <= 50) return null
+  if (reading.mortality_count === null || reading.mortality_count < 50) return null
   return alert(
     reading, orgId, 'high_mortality', 'critical',
     `Mortalidad elevada: ${reading.mortality_count} individuos en un dia`,
