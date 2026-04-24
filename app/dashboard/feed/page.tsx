@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Wheat } from 'lucide-react'
 import { FeedTab } from './feed-tab'
-import { type Concentrate, type FeedRecord, type BatchForForms } from '../costs/types'
+import { type Concentrate, type FeedRecord, type BatchForForms, type FeedStock } from '../costs/types'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
 
@@ -22,6 +22,7 @@ export default async function FeedPage() {
   let concentrates: Concentrate[] = []
   let feedRecords: FeedRecord[] = []
   let batchesForForms: BatchForForms[] = []
+  let stock: FeedStock[] = []
 
   if (profile?.organization_id) {
     const [
@@ -29,6 +30,8 @@ export default async function FeedPage() {
       { data: rawBatches },
       { data: rawConcentrates },
       { data: rawFeedRecords },
+      { data: rawStock },
+      { data: rawLatestCosts },
     ] = await Promise.all([
       supabase
         .from('ponds')
@@ -54,6 +57,14 @@ export default async function FeedPage() {
         .select('id, batch_id, concentrate_id, concentrate_name, production_stage, year, month, kg_used, cost_per_kg')
         .order('year', { ascending: false })
         .order('month', { ascending: false }),
+      supabase
+        .from('feed_stock_summary')
+        .select('concentrate_id, total_bags, total_kg_in, total_kg_out, available_kg')
+        .eq('organization_id', profile.organization_id),
+      supabase
+        .from('feed_latest_entry_cost')
+        .select('concentrate_id, latest_cost_per_kg')
+        .eq('organization_id', profile.organization_id),
     ])
 
     const pondMap: Record<string, { name: string; species: string }> = {}
@@ -113,6 +124,24 @@ export default async function FeedPage() {
         kg_used: Number(r.kg_used),
         cost_per_kg: Number(r.cost_per_kg),
       }))
+
+    // ── stock with latest cost ──────────────────────────────────
+    const concentrateMap: Record<string, string> = {}
+    for (const c of (rawConcentrates ?? [])) concentrateMap[c.id] = c.name
+    const latestCostMap: Record<string, number | null> = {}
+    for (const lc of (rawLatestCosts ?? [])) {
+      latestCostMap[lc.concentrate_id] = lc.latest_cost_per_kg != null ? Number(lc.latest_cost_per_kg) : null
+    }
+
+    stock = (rawStock ?? []).map(s => ({
+      concentrate_id: s.concentrate_id,
+      concentrate_name: concentrateMap[s.concentrate_id] ?? 'Desconocido',
+      total_bags: Number(s.total_bags),
+      total_kg_in: Number(s.total_kg_in),
+      total_kg_out: Number(s.total_kg_out),
+      available_kg: Number(s.available_kg),
+      latest_cost_per_kg: latestCostMap[s.concentrate_id] ?? null,
+    }))
   }
 
   return (
@@ -135,6 +164,7 @@ export default async function FeedPage() {
         concentrates={concentrates}
         batchesForForms={batchesForForms}
         feedRecords={feedRecords}
+        stock={stock}
         canEdit={canEdit}
       />
     </div>

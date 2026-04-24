@@ -129,3 +129,71 @@ export async function deleteMonthlyFeedRecord(id: string) {
   if (error) throw new Error(error.message)
   revalidatePath('/dashboard/feed')
 }
+
+// ── Inventario de concentrado ─────────────────────────────────
+
+export async function createFeedInventoryEntry(data: {
+  concentrate_id: string
+  bags_received: number
+  kg_per_bag: number
+  price_per_bag: number
+  supplier?: string
+  lot_number?: string
+  entry_date: string
+  notes?: string
+}) {
+  const { supabase, orgId } = await getContext()
+  const { error } = await supabase.from('feed_inventory_entries').insert({
+    organization_id: orgId,
+    concentrate_id: data.concentrate_id,
+    bags_received: data.bags_received,
+    kg_per_bag: data.kg_per_bag,
+    price_per_bag: data.price_per_bag,
+    supplier: data.supplier || null,
+    lot_number: data.lot_number || null,
+    entry_date: data.entry_date,
+    notes: data.notes || null,
+  })
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/feed')
+}
+
+export async function updateFeedInventoryEntry(id: string, data: {
+  concentrate_id: string
+  bags_received: number
+  kg_per_bag: number
+  price_per_bag: number
+  supplier?: string
+  lot_number?: string
+  entry_date: string
+  notes?: string
+}) {
+  const { supabase, orgId } = await getContext()
+  const { error } = await supabase
+    .from('feed_inventory_entries')
+    .update({
+      concentrate_id: data.concentrate_id,
+      bags_received: data.bags_received,
+      kg_per_bag: data.kg_per_bag,
+      price_per_bag: data.price_per_bag,
+      supplier: data.supplier || null,
+      lot_number: data.lot_number || null,
+      entry_date: data.entry_date,
+      notes: data.notes || null,
+    })
+    .eq('id', id)
+    .eq('organization_id', orgId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/feed')
+}
+
+export async function deleteFeedInventoryEntry(id: string) {
+  const { supabase, orgId } = await getContext()
+  const { error } = await supabase
+    .from('feed_inventory_entries')
+    .delete()
+    .eq('id', id)
+    .eq('organization_id', orgId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/feed')
+}

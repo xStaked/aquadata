@@ -20,6 +20,7 @@ import {
   Scale,
   Settings,
   Wheat,
+  Package,
   X,
   ShieldCheck,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/costs', label: 'Ventas', icon: DollarSign },
   { href: '/dashboard/harvest', label: 'Cosecha', icon: Scale },
   { href: '/dashboard/feed', label: 'Alimentación', icon: Wheat },
+  { href: '/dashboard/inventory', label: 'Inventario', icon: Package },
   { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },
   { href: '/dashboard/bioremediation', label: 'Bioremediacion', icon: Calculator },
   { href: '/dashboard/settings', label: 'Configuracion', icon: Settings },

@@ -77,6 +77,29 @@ export type BatchForForms = {
   initial_population: number
 }
 
+export type FeedInventoryEntry = {
+  id: string
+  concentrate_id: string
+  concentrate_name: string
+  bags_received: number
+  kg_per_bag: number
+  price_per_bag: number
+  supplier: string | null
+  lot_number: string | null
+  entry_date: string
+  notes: string | null
+}
+
+export type FeedStock = {
+  concentrate_id: string
+  concentrate_name: string
+  total_bags: number
+  total_kg_in: number
+  total_kg_out: number
+  available_kg: number
+  latest_cost_per_kg: number | null
+}
+
 export function profitabilityColor(pct: number, target: number) {
   if (pct >= target) return 'text-green-600'
   if (pct >= target * 0.6) return 'text-amber-600'

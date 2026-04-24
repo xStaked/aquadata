@@ -62,10 +62,17 @@ interface FeedRecord {
   cost_per_kg: number
 }
 
+interface StockItem {
+  concentrate_id: string
+  available_kg: number
+  latest_cost_per_kg: number | null
+}
+
 interface MonthlyFeedFormProps {
   batches: Batch[]
   concentrates: Concentrate[]
   feedRecords: FeedRecord[]
+  stock?: StockItem[]
   canEdit: boolean
 }
 
@@ -99,7 +106,7 @@ const emptyForm: FeedFormState = {
 
 const emptyQuick = { name: '', brand: '', price_per_kg: '' }
 
-export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }: MonthlyFeedFormProps) {
+export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = [], canEdit }: MonthlyFeedFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
@@ -120,19 +127,23 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }:
 
   const handleConcentrateChange = (id: string) => {
     const c = concentrates.find(x => x.id === id)
+    const s = stock.find(x => x.concentrate_id === id)
+    const autoPrice = s?.latest_cost_per_kg ?? c?.price_per_kg
     setForm(f => ({
       ...f,
       concentrate_id: id,
-      cost_per_kg: c ? String(c.price_per_kg) : f.cost_per_kg,
+      cost_per_kg: autoPrice != null ? String(autoPrice) : f.cost_per_kg,
     }))
   }
 
   const handleEditConcentrateChange = (id: string) => {
     const c = concentrates.find(x => x.id === id)
+    const s = stock.find(x => x.concentrate_id === id)
+    const autoPrice = s?.latest_cost_per_kg ?? c?.price_per_kg
     setEditForm(f => ({
       ...f,
       concentrate_id: id,
-      cost_per_kg: c ? String(c.price_per_kg) : f.cost_per_kg,
+      cost_per_kg: autoPrice != null ? String(autoPrice) : f.cost_per_kg,
     }))
   }
 
@@ -141,15 +152,17 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }:
     if (pendingSelect && concentrates.length > 0) {
       const found = concentrates.find(c => c.name === pendingSelect)
       if (found) {
+        const s = stock.find(x => x.concentrate_id === found.id)
+        const autoPrice = s?.latest_cost_per_kg ?? found.price_per_kg
         setForm(f => ({
           ...f,
           concentrate_id: found.id,
-          cost_per_kg: String(found.price_per_kg),
+          cost_per_kg: autoPrice != null ? String(autoPrice) : f.cost_per_kg,
         }))
         setPendingSelect('')
       }
     }
-  }, [concentrates, pendingSelect])
+  }, [concentrates, stock, pendingSelect])
 
   const handleQuickCreate = () => {
     if (!quickForm.name.trim() || !quickForm.price_per_kg) {
@@ -193,6 +206,12 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }:
     }
     if (!form.cost_per_kg || Number(form.cost_per_kg) <= 0) {
       setError('El precio por kg debe ser mayor a 0')
+      return
+    }
+    const kgUsed = Number(form.kg_used)
+    const s = stock.find(x => x.concentrate_id === form.concentrate_id)
+    if (s && kgUsed > s.available_kg) {
+      setError(`Stock insuficiente. Disponible: ${s.available_kg.toLocaleString()} kg`)
       return
     }
     setError('')
@@ -347,13 +366,32 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }:
                         <SelectValue placeholder="Seleccionar concentrado…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {concentrates.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name} — {formatCOP(c.price_per_kg)}/kg
-                          </SelectItem>
-                        ))}
+                        {concentrates.map(c => {
+                          const s = stock.find(x => x.concentrate_id === c.id)
+                          return (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name} — {formatCOP(c.price_per_kg)}/kg {s ? `(${s.available_kg.toLocaleString()} kg disp.)` : ''}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
+                  )}
+
+                  {/* Stock availability hint */}
+                  {form.concentrate_id && !showQuick && (
+                    (() => {
+                      const s = stock.find(x => x.concentrate_id === form.concentrate_id)
+                      if (!s) return null
+                      const low = s.available_kg < 100
+                      return (
+                        <p className={`text-xs ${low ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                          Stock disponible: {s.available_kg.toLocaleString()} kg
+                          {s.latest_cost_per_kg ? ` · Costo/kg: ${formatCOP(s.latest_cost_per_kg)}` : ''}
+                          {low && ' · Stock bajo'}
+                        </p>
+                      )
+                    })()
                   )}
 
                   {/* Inline quick-create form */}
@@ -597,13 +635,28 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, canEdit }:
                                   <SelectValue placeholder="Seleccionar concentrado…" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {concentrates.map(c => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                      {c.name} — {formatCOP(c.price_per_kg)}/kg
-                                    </SelectItem>
-                                  ))}
+                                  {concentrates.map(c => {
+                                    const s = stock.find(x => x.concentrate_id === c.id)
+                                    return (
+                                      <SelectItem key={c.id} value={c.id}>
+                                        {c.name} — {formatCOP(c.price_per_kg)}/kg {s ? `(${s.available_kg.toLocaleString()} kg disp.)` : ''}
+                                      </SelectItem>
+                                    )
+                                  })}
                                 </SelectContent>
                               </Select>
+                              {editForm.concentrate_id && (() => {
+                                const s = stock.find(x => x.concentrate_id === editForm.concentrate_id)
+                                if (!s) return null
+                                const low = s.available_kg < 100
+                                return (
+                                  <p className={`text-xs ${low ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                                    Stock disponible: {s.available_kg.toLocaleString()} kg
+                                    {s.latest_cost_per_kg ? ` · Costo/kg: ${formatCOP(s.latest_cost_per_kg)}` : ''}
+                                    {low && ' · Stock bajo'}
+                                  </p>
+                                )
+                              })()}
                             </div>
                             <div className="flex flex-col gap-1.5">
                               <Label>Año *</Label>
