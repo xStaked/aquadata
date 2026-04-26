@@ -57,6 +57,7 @@ interface OcrResult {
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
   turbidity_ntu: number | null
+  record_time: string | null
   notes: string | null
   confidence: {
     record_date: number
@@ -233,6 +234,7 @@ export function UploadForm({
         hardness_mg_l: editedData.hardness_mg_l ?? null,
         alkalinity_mg_l: editedData.alkalinity_mg_l ?? null,
         turbidity_ntu: editedData.turbidity_ntu ?? null,
+        record_time: editedData.record_time ?? null,
         notes: editedData.notes ?? null,
         fca_source: fcaMode,
       })

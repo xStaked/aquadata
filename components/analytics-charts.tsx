@@ -32,6 +32,8 @@ interface ProductionRecord {
   effective_fca: number | null
   biomass_kg: number | null
   pond_name: string
+  created_at?: string
+  record_time?: string | null
 }
 
 const MAX_POINTS = 90
@@ -39,6 +41,15 @@ const MAX_POINTS = 90
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T12:00:00')
   return `${d.getDate()}/${d.getMonth() + 1}`
+}
+
+function formatDateTime(dateStr: string) {
+  const d = new Date(dateStr)
+  const day = d.getDate().toString().padStart(2, '0')
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  const hours = d.getHours().toString().padStart(2, '0')
+  const minutes = d.getMinutes().toString().padStart(2, '0')
+  return `${day}/${month} ${hours}:${minutes}`
 }
 
 /**
@@ -175,7 +186,9 @@ export function WaterQualityChart({ records }: { records: ProductionRecord[] }) 
       .filter((r) => r.temperature_c !== null || r.oxygen_mg_l !== null)
       .sort((a, b) => a.record_date.localeCompare(b.record_date))
       .map((r) => ({
-        date: formatDate(r.record_date),
+        date: r.record_time
+          ? formatDateTime(`${r.record_date}T${r.record_time}`)
+          : formatDate(r.record_date),
         temperatura: r.temperature_c as number,
         oxigeno: r.oxygen_mg_l as number,
       }))

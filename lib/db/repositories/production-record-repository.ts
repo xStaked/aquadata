@@ -28,6 +28,7 @@ const PRODUCTION_RECORD_SELECT = `
   fca_source,
   biomass_kg,
   sampling_weight_g,
+  record_time,
   notes,
   confirmed_by,
   created_at
@@ -111,6 +112,7 @@ export async function createRecord(data: {
   fca_source?: FcaSource | null
   biomass_kg?: number | null
   sampling_weight_g?: number | null
+  record_time?: string | null
   confirmed_by?: string | null
   upload_id?: string | null
 }): Promise<string> {
@@ -144,6 +146,7 @@ export async function createRecord(data: {
     fca_source: data.fca_source ?? null,
     biomass_kg: data.biomass_kg ?? null,
     sampling_weight_g: data.sampling_weight_g ?? null,
+    record_time: data.record_time ?? null,
     confirmed_by: data.confirmed_by ?? null,
     upload_id: data.upload_id ?? null,
   }).select('id').single()
@@ -181,6 +184,7 @@ export async function updateRecord(
     fca_source: FcaSource | null
     biomass_kg: number | null
     sampling_weight_g: number | null
+    record_time: string | null
     confirmed_by: string | null
   }>,
   orgId: string
@@ -310,6 +314,7 @@ function normalizeRecord(raw: Record<string, unknown>): ProductionRecord {
       raw.biomass_kg != null ? Number(raw.biomass_kg) : null,
     sampling_weight_g:
       raw.sampling_weight_g != null ? Number(raw.sampling_weight_g) : null,
+    record_time: (raw.record_time as string) ?? null,
     notes: (raw.notes as string) ?? null,
     confirmed_by: (raw.confirmed_by as string) ?? null,
     created_at: raw.created_at as string,

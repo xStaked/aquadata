@@ -30,6 +30,7 @@ interface UpdateProductionRecordInput {
   hardness_mg_l: number | null
   alkalinity_mg_l: number | null
   turbidity_ntu: number | null
+  record_time: string | null
   notes: string | null
   fca_source: FcaSource
 }
@@ -188,6 +189,7 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
     alkalinity_mg_l: data.alkalinity_mg_l,
     turbidity_ntu: data.turbidity_ntu,
     daily_gain_g,
+    record_time: data.record_time,
     notes: data.notes,
     calculated_fca,
     effective_fca,

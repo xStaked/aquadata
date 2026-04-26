@@ -139,6 +139,7 @@ export function ManualRecordForm({
     hardness_mg_l: '',
     alkalinity_mg_l: '',
     turbidity_ntu: '',
+    record_time: '',
     notes: '',
   })
 
@@ -219,6 +220,7 @@ export function ManualRecordForm({
         hardness_mg_l: toNum(formData.hardness_mg_l),
         alkalinity_mg_l: toNum(formData.alkalinity_mg_l),
         turbidity_ntu: toNum(formData.turbidity_ntu),
+        record_time: formData.record_time || null,
         notes: formData.notes || null,
         fca_source: fcaMode,
       })
@@ -265,6 +267,7 @@ export function ManualRecordForm({
       hardness_mg_l: '',
       alkalinity_mg_l: '',
       turbidity_ntu: '',
+      record_time: '',
       notes: '',
     })
   }
@@ -368,12 +371,21 @@ export function ManualRecordForm({
           {reportType === 'daily' ? (
             <div className="flex flex-col gap-2">
               <FieldLabel htmlFor="m_record_date">Fecha del registro</FieldLabel>
-              <DatePicker
-                id="m_record_date"
-                value={formData.record_date}
-                onChange={(value) => updateField('record_date', value)}
-                buttonClassName="h-9"
-              />
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  id="m_record_date"
+                  value={formData.record_date}
+                  onChange={(value) => updateField('record_date', value)}
+                  buttonClassName="h-9 flex-1"
+                />
+                <input
+                  id="m_record_time"
+                  type="time"
+                  value={formData.record_time}
+                  onChange={(e) => updateField('record_time', e.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -387,6 +399,13 @@ export function ManualRecordForm({
                     setFormData((prev) => ({ ...prev, record_date: value, week_end_date: addDays(value, 6) }))
                   }}
                   buttonClassName="h-9 flex-1"
+                />
+                <input
+                  id="m_record_time_weekly"
+                  type="time"
+                  value={formData.record_time}
+                  onChange={(e) => updateField('record_time', e.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
                 <span className="text-xs text-muted-foreground shrink-0">al</span>
                 <DatePicker

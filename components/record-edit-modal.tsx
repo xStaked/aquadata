@@ -51,12 +51,14 @@ interface RecordEditModalProps {
     turbidity_ntu: number | null
     effective_fca: number | null
     fca_source: 'calculated' | 'default' | null
+    record_time: string | null
     notes: string | null
   }
 }
 
 type FormState = {
   record_date: string
+  record_time: string
   fish_count: string
   feed_kg: string
   avg_weight_g: string
@@ -101,6 +103,7 @@ function buildFormState(record: RecordEditModalProps['record']): FormState {
     alkalinity_mg_l: toInputValue(record.alkalinity_mg_l),
     turbidity_ntu: toInputValue(record.turbidity_ntu),
     fca_source: record.fca_source === 'default' ? 'default' : 'calculated',
+    record_time: record.record_time ?? '',
     notes: record.notes ?? '',
   }
 }
@@ -189,6 +192,7 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
         hardness_mg_l: toNullableNumber(form.hardness_mg_l),
         alkalinity_mg_l: toNullableNumber(form.alkalinity_mg_l),
         turbidity_ntu: toNullableNumber(form.turbidity_ntu),
+        record_time: form.record_time || null,
         fca_source: form.fca_source,
         notes: form.notes.trim() || null,
       })
@@ -285,6 +289,16 @@ export function RecordEditModal({ record, defaultFca }: RecordEditModalProps) {
                 id={`record-date-${record.id}`}
                 value={form.record_date}
                 onChange={(value) => setField('record_date', value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`record-time-${record.id}`}>Hora</Label>
+              <input
+                id={`record-time-${record.id}`}
+                type="time"
+                value={form.record_time}
+                onChange={(e) => setField('record_time', e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
           </div>

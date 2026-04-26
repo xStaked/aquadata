@@ -284,6 +284,8 @@ export default async function PondDetailPage({
       effective_fca: r.effective_fca,
       biomass_kg: r.biomass_kg,
       pond_name: pond.name,
+      created_at: r.created_at,
+      record_time: r.record_time,
     }))
 
   return (

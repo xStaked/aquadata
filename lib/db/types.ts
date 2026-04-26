@@ -179,6 +179,7 @@ export interface ProductionRecord {
   fca_source: FcaSource | null
   biomass_kg: number | null
   sampling_weight_g: number | null
+  record_time: string | null
   notes: string | null
   confirmed_by: string | null
   created_at: string

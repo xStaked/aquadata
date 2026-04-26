@@ -42,6 +42,7 @@ const PRODUCTION_RECORD_FIELDS = `
   fca_source,
   biomass_kg,
   sampling_weight_g,
+  record_time,
   notes,
   report_type,
   week_end_date,
@@ -93,6 +94,7 @@ export default async function RecordsPage({
     fca_source: 'calculated' | 'default' | null
     biomass_kg: number | null
     sampling_weight_g: number | null
+    record_time: string | null
     notes: string | null
     report_type: 'daily' | 'weekly' | null
     week_end_date: string | null
@@ -410,6 +412,7 @@ export default async function RecordsPage({
                             turbidity_ntu: rec.turbidity_ntu,
                             effective_fca: rec.effective_fca,
                             fca_source: rec.fca_source,
+                            record_time: rec.record_time,
                             notes: rec.notes,
                           }}
                           defaultFca={organizationDefaultFca}
