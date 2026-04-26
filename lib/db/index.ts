@@ -15,6 +15,8 @@ export type {
   Batch,
   BatchWithPond,
   BatchStatus,
+  BatchTransfer,
+  BatchTransferWithPonds,
   ProductionRecord,
   ProductionRecordWithBatch,
   FcaSource,
@@ -92,3 +94,10 @@ export {
   createBioremediationCalc,
   getCalcsByUser,
 } from './repositories/bioremediation-repository'
+
+// ── Transfer Repository ───────────────────────────────────────
+export {
+  getTransfersByOrg,
+  createTransfer,
+  deleteTransfer,
+} from './repositories/transfer-repository'

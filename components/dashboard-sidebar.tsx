@@ -23,6 +23,7 @@ import {
   Package,
   X,
   ShieldCheck,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { useState, type ComponentType } from 'react'
 
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/analytics', label: 'Analitica', icon: BarChart3 },
   { href: '/dashboard/costs', label: 'Ventas', icon: DollarSign },
   { href: '/dashboard/harvest', label: 'Cosecha', icon: Scale },
+  { href: '/dashboard/transfers', label: 'Traslados', icon: ArrowRightLeft },
   { href: '/dashboard/feed', label: 'Alimentación', icon: Wheat },
   { href: '/dashboard/inventory', label: 'Inventario', icon: Package },
   { href: '/dashboard/alerts', label: 'Alertas', icon: Bell },

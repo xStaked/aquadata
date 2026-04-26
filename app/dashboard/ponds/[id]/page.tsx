@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   CalendarDays,
+  CheckCircle2,
   ClipboardList,
   Droplets,
   Eye,
@@ -20,6 +21,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { formatCOP } from '@/lib/format'
 import { WeightChart, WaterQualityChart, MortalityChart } from '@/components/analytics-charts'
 import { cn } from '@/lib/utils'
@@ -194,8 +201,13 @@ export default async function PondDetailPage({
     }
   })
 
+  const activeBatchSummaries = batchSummaries.filter((b) => b.status === 'active')
+  const closedBatchSummaries = batchSummaries.filter((b) => b.status !== 'active')
+
+  const totalAnimalActual = activeBatchSummaries.reduce((sum, b) => sum + b.animal_actual, 0)
+  const totalBiomass = activeBatchSummaries.reduce((sum, b) => sum + (b.latest_biomass_kg ?? 0), 0)
+
   const totalReports = records?.length ?? 0
-  const activeBatches = batchSummaries.filter((batch) => batch.status === 'active')
   const totalFeedKg = (feedRecords ?? []).reduce((sum, item) => sum + Number(item.kg_used ?? 0), 0)
   const totalFeedCost = (feedRecords ?? []).reduce(
     (sum, item) => sum + Number(item.kg_used ?? 0) * Number(item.cost_per_kg ?? 0),
@@ -204,24 +216,22 @@ export default async function PondDetailPage({
   const unreadAlerts = (alerts ?? []).filter((alert) => !alert.is_read).length
   const latestRecord = records && records.length > 0 ? records[0] : null
 
-  const activeBatchForKpi = activeBatches[0] ?? null
-
-  const density = activeBatchForKpi && pond.area_m2
-    ? activeBatchForKpi.animal_actual / Number(pond.area_m2)
+  const density = pond.area_m2 && totalAnimalActual > 0
+    ? totalAnimalActual / Number(pond.area_m2)
     : null
 
-  const productivity = activeBatchForKpi?.latest_biomass_kg && pond.area_m2
-    ? activeBatchForKpi.latest_biomass_kg / Number(pond.area_m2)
+  const productivity = totalBiomass > 0 && pond.area_m2
+    ? totalBiomass / Number(pond.area_m2)
     : null
 
   const daysWithoutReport = latestRecord
     ? differenceInDays(new Date(), new Date(latestRecord.record_date))
     : null
 
-  const avgDailyGain = activeBatchForKpi
+  const avgDailyGain = activeBatchSummaries.length > 0
     ? (() => {
         const gains = (records ?? [])
-          .filter((r) => r.batch_id === activeBatchForKpi.id && r.daily_gain_g != null)
+          .filter((r) => activeBatchSummaries.some((b) => b.id === r.batch_id) && r.daily_gain_g != null)
           .map((r) => Number(r.daily_gain_g))
         if (gains.length === 0) return null
         return gains.reduce((a, b) => a + b, 0) / gains.length
@@ -301,7 +311,7 @@ export default async function PondDetailPage({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <ValueCard label="Lotes activos" value={String(activeBatches.length)} helper={`${batchSummaries.length} lotes registrados`} />
+        <ValueCard label="Lotes activos" value={String(activeBatchSummaries.length)} helper={`${batchSummaries.length} lotes registrados`} />
         <ValueCard label="Reportes asociados" value={String(totalReports)} helper="Producción histórica del estanque" />
         <ValueCard label="Alimentación" value={`${formatNumber(totalFeedKg)} kg`} helper={feedRecords && feedRecords.length > 0 ? formatCOP(totalFeedCost) : 'Sin registros mensuales'} />
         <ValueCard label="Oxígeno más reciente" value={latestRecord?.oxygen_mg_l != null ? `${formatNumber(Number(latestRecord.oxygen_mg_l))} mg/L` : '-'} helper={latestRecord ? format(new Date(latestRecord.record_date), 'dd/MM/yyyy') : 'Sin lecturas'} />
@@ -312,7 +322,7 @@ export default async function PondDetailPage({
         <ValueCard label="Densidad" value={density != null ? `${formatNumber(density, 1)} anim/m²` : '-'} helper={pond.area_m2 ? `Área: ${formatNumber(Number(pond.area_m2), 0)} m²` : 'Sin área registrada'} />
         <ValueCard label="Productividad" value={productivity != null ? `${formatNumber(productivity, 1)} kg/m²` : '-'} helper={pond.area_m2 ? `Área: ${formatNumber(Number(pond.area_m2), 0)} m²` : 'Sin área registrada'} />
         <ValueCard label="Días sin reporte" value={daysWithoutReport != null ? String(daysWithoutReport) : '-'} helper={latestRecord ? format(new Date(latestRecord.record_date), 'dd/MM/yyyy') : 'Sin lecturas'} valueClassName={daysWithoutReport != null && daysWithoutReport > 3 ? 'text-destructive' : undefined} />
-        <ValueCard label="Ganancia diaria promedio" value={avgDailyGain != null ? `${formatNumber(avgDailyGain, 1)} g/día` : '-'} helper={activeBatchForKpi ? 'Lote activo' : 'Sin lote activo'} />
+        <ValueCard label="Ganancia diaria promedio" value={avgDailyGain != null ? `${formatNumber(avgDailyGain, 1)} g/día` : '-'} helper={activeBatchSummaries.length > 0 ? 'Lotes activos' : 'Sin lotes activos'} />
       </div>
 
       <div>
@@ -343,28 +353,28 @@ export default async function PondDetailPage({
             </CardContent>
           </Card>
 
+          {/* Lotes activos */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Fish className="h-4 w-4" />
-                Lotes Del Estanque
+                Lotes Activos
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {batchSummaries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay lotes registrados en este estanque.</p>
+              {activeBatchSummaries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay lotes activos en este estanque.</p>
               ) : (
-                batchSummaries.map((batch) => (
+                activeBatchSummaries.map((batch) => (
                   <div key={batch.id} className="rounded-xl border border-border/70 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-foreground">{batch.status === 'active' ? 'Lote activo' : 'Lote cerrado'}</p>
-                          <Badge variant={batch.status === 'active' ? 'default' : 'secondary'}>{batch.status}</Badge>
+                          <p className="font-semibold text-foreground">Lote activo</p>
+                          <Badge variant="default">active</Badge>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Inicio: {format(new Date(batch.start_date), 'dd/MM/yyyy')}
-                          {batch.end_date ? ` · Fin: ${format(new Date(batch.end_date), 'dd/MM/yyyy')}` : ''}
                         </p>
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -386,6 +396,58 @@ export default async function PondDetailPage({
               )}
             </CardContent>
           </Card>
+
+          {/* Lotes cerrados — colapsados */}
+          {closedBatchSummaries.length > 0 && (
+            <Accordion type="single" collapsible defaultValue="">
+              <AccordionItem value="closed" className="border-0">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <AccordionTrigger className="py-0 hover:no-underline">
+                      <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                        <CalendarDays className="h-4 w-4" />
+                        Historial de lotes cerrados
+                        <Badge variant="secondary" className="ml-2">{closedBatchSummaries.length}</Badge>
+                      </CardTitle>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                    <CardContent className="space-y-4 pt-0">
+                      {closedBatchSummaries.map((batch) => (
+                        <div key={batch.id} className="rounded-xl border border-border/70 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-semibold text-foreground">Lote cerrado</p>
+                                <Badge variant="secondary">closed</Badge>
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                Inicio: {format(new Date(batch.start_date), 'dd/MM/yyyy')}
+                                {batch.end_date ? ` · Fin: ${format(new Date(batch.end_date), 'dd/MM/yyyy')}` : ''}
+                              </p>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {batch.total_records} reporte{batch.total_records !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            <ValueCard label="Días cultivo" value={`${batch.days_culture} días`} />
+                            <ValueCard label="Días lago" value={`${batch.days_pond} días`} />
+                            <ValueCard label="Animal actual" value={batch.animal_actual.toLocaleString('es-CO')} />
+                            <ValueCard label="% sobrevivencia" value={batch.survival_pct != null ? `${formatNumber(batch.survival_pct, 1)}%` : '-'} />
+                            <ValueCard label="Consumo acumulado" value={`${formatNumber(batch.accumulated_feed_kg)} kg`} />
+                            <ValueCard label="Consumo quincenal" value={`${formatNumber(batch.fortnightly_feed_kg)} kg`} />
+                            <ValueCard label="Última biomasa" value={batch.latest_biomass_kg != null ? `${formatNumber(batch.latest_biomass_kg)} kg` : '-'} />
+                            <ValueCard label="Origen de semilla" value={batch.seed_source ?? '-'} />
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+            </Accordion>
+          )}
 
           <Card>
             <CardHeader>

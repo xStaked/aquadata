@@ -1,8 +1,9 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Trash2, XCircle } from 'lucide-react'
+import { Trash2, XCircle, ArrowRightLeft } from 'lucide-react'
 import { deletePond, closeBatch } from '@/app/dashboard/ponds/actions'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export function DeletePondButton({ pondId }: { pondId: string }) {
@@ -59,6 +60,22 @@ export function CloseBatchButton({ batchId }: { batchId: string }) {
     >
       <XCircle className="h-3.5 w-3.5" />
       Cerrar
+    </Button>
+  )
+}
+
+export function TransferBatchButton({ batchId }: { batchId: string }) {
+  const router = useRouter()
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="gap-1 text-muted-foreground hover:text-primary"
+      onClick={() => router.push('/dashboard/transfers')}
+    >
+      <ArrowRightLeft className="h-3.5 w-3.5" />
+      Trasladar
     </Button>
   )
 }

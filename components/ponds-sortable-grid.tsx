@@ -35,7 +35,7 @@ import { updatePondOrder } from '@/app/dashboard/ponds/actions'
 import { BatchFinancialConfig } from '@/components/batch-financial-config'
 import { BatchEditModal } from '@/components/batch-edit-modal'
 import { BatchForm } from '@/components/batch-form'
-import { CloseBatchButton, DeletePondButton } from '@/components/pond-actions'
+import { CloseBatchButton, DeletePondButton, TransferBatchButton } from '@/components/pond-actions'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -283,9 +283,9 @@ function SortablePondCard({
             {canEdit ? <BatchForm pondId={pond.id} /> : null}
           </div>
 
-          {pond.batches && pond.batches.length > 0 ? (
+          {activeBatches.length > 0 ? (
             <div className="flex flex-col gap-1.5">
-              {pond.batches.map((batch) => (
+              {activeBatches.map((batch) => (
                 <div
                   key={batch.id}
                   className="group flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2 transition-colors duration-150 hover:bg-muted/70"
@@ -317,7 +317,7 @@ function SortablePondCard({
                       </div>
                     ) : null}
                   </div>
-                  {batch.status === 'active' && canEdit && (
+                  {canEdit && (
                     <div className="flex shrink-0 items-center gap-1">
                       <BatchEditModal
                         batchId={batch.id}
@@ -338,6 +338,7 @@ function SortablePondCard({
                           bioterra_quantity: batch.bioterra_quantity,
                         }}
                       />
+                      <TransferBatchButton batchId={batch.id} />
                       <CloseBatchButton batchId={batch.id} />
                     </div>
                   )}
@@ -346,7 +347,7 @@ function SortablePondCard({
             </div>
           ) : (
             <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-4 text-xs text-muted-foreground">
-              Sin lotes registrados
+              Sin lotes activos
             </div>
           )}
         </div>

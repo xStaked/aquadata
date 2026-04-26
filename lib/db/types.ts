@@ -121,6 +121,31 @@ export interface BatchFinancialUpdate {
   bioterra_quantity?: number
 }
 
+// ── Batch Transfers ───────────────────────────────────────────
+
+export interface BatchTransfer {
+  id: string
+  organization_id: string
+  source_batch_id: string
+  source_pond_id: string
+  destination_batch_id: string | null
+  destination_pond_id: string
+  transfer_date: string
+  animal_count: number
+  avg_weight_g: number | null
+  is_partial_harvest: boolean
+  notes: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export interface BatchTransferWithPonds extends BatchTransfer {
+  source_pond: { name: string }
+  destination_pond: { name: string }
+  source_batch: { start_date: string }
+  destination_batch: { start_date: string } | null
+}
+
 // ── Production Records ────────────────────────────────────────
 
 export type FcaSource = 'calculated' | 'default'
