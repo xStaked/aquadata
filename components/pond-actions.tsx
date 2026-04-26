@@ -53,13 +53,14 @@ export function CloseBatchButton({ batchId }: { batchId: string }) {
   return (
     <Button
       variant="ghost"
-      size="sm"
-      className="gap-1 text-muted-foreground hover:text-destructive"
+      size="icon"
+      className="h-8 w-8 text-muted-foreground hover:text-destructive"
       onClick={handleClose}
       disabled={isLoading}
+      aria-label="Cerrar lote"
+      title="Cerrar lote"
     >
-      <XCircle className="h-3.5 w-3.5" />
-      Cerrar
+      <XCircle className="h-4 w-4" />
     </Button>
   )
 }
@@ -70,12 +71,13 @@ export function TransferBatchButton({ batchId }: { batchId: string }) {
   return (
     <Button
       variant="ghost"
-      size="sm"
-      className="gap-1 text-muted-foreground hover:text-primary"
+      size="icon"
+      className="h-8 w-8 text-muted-foreground hover:text-primary"
       onClick={() => router.push('/dashboard/transfers')}
+      aria-label="Trasladar lote"
+      title="Trasladar lote"
     >
-      <ArrowRightLeft className="h-3.5 w-3.5" />
-      Trasladar
+      <ArrowRightLeft className="h-4 w-4" />
     </Button>
   )
 }

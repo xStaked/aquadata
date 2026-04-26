@@ -28,9 +28,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, ArrowRightLeft, Trash2, Fish } from 'lucide-react'
+import { Plus, ArrowRightLeft, Trash2, Fish, Calendar } from 'lucide-react'
 import { createTransferRecord, deleteTransferRecord } from '@/app/dashboard/transfers/actions'
 
 interface Pond {
@@ -138,26 +139,26 @@ export function TransferForm({ ponds, activeBatches, transfers, canEdit }: Trans
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <ArrowRightLeft className="h-4 w-4" />
-          <span>
-            {transfers.length} traslado{transfers.length !== 1 ? 's' : ''} registrado
-            {transfers.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        {canEdit ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2" onClick={() => { setForm(emptyForm); setError('') }}>
-                <Plus className="h-4 w-4" />
-                Registrar traslado
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Registro de traslado entre estanques</DialogTitle>
-              </DialogHeader>
+      <Card className="overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-3">
+          <div className="min-w-0">
+            <CardTitle className="text-base">Historial de traslados</CardTitle>
+            <CardDescription>
+              {transfers.length} traslado{transfers.length !== 1 ? 's' : ''} registrado{transfers.length !== 1 ? 's' : ''}
+            </CardDescription>
+          </div>
+          {canEdit ? (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="shrink-0 gap-2" onClick={() => { setForm(emptyForm); setError('') }}>
+                  <Plus className="h-4 w-4" />
+                  Registrar traslado
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Registro de traslado entre estanques</DialogTitle>
+                </DialogHeader>
 
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -309,79 +310,100 @@ export function TransferForm({ ponds, activeBatches, transfers, canEdit }: Trans
             </DialogContent>
           </Dialog>
         ) : null}
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Origen → Destino</TableHead>
-            <TableHead>Animales</TableHead>
-            <TableHead>Peso prom.</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Notas</TableHead>
-            {canEdit ? <TableHead /> : null}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transfers.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={canEdit ? 7 : 6}
-                className="h-20 text-center text-muted-foreground"
-              >
-                No hay traslados registrados.
-              </TableCell>
-            </TableRow>
-          ) : (
-            transfers.map((t) => (
-              <TableRow key={t.id}>
-                <TableCell className="text-sm">
-                  {new Date(t.transfer_date + 'T12:00:00').toLocaleDateString('es-CO')}
-                </TableCell>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-1.5">
-                    <span>{t.source_pond.name}</span>
-                    <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                    <span>{t.destination_pond.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{t.animal_count.toLocaleString()}</TableCell>
-                <TableCell>
-                  {t.avg_weight_g != null ? `${t.avg_weight_g} g` : '—'}
-                </TableCell>
-                <TableCell>
-                  {t.is_partial_harvest ? (
-                    <Badge variant="outline" className="text-xs">
-                      Parcial
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-xs">
-                      Total
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                  {t.notes || '—'}
-                </TableCell>
-                {canEdit ? (
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(t.id)}
-                      disabled={isPending}
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="overflow-x-auto -mx-2 px-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">Fecha</TableHead>
+                  <TableHead className="whitespace-nowrap">Origen → Destino</TableHead>
+                  <TableHead className="whitespace-nowrap">Animales</TableHead>
+                  <TableHead className="whitespace-nowrap">Peso prom.</TableHead>
+                  <TableHead className="whitespace-nowrap">Tipo</TableHead>
+                  <TableHead>Notas</TableHead>
+                  {canEdit ? <TableHead className="w-10" /> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transfers.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={canEdit ? 7 : 6}
+                      className="h-32 text-center"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                ) : null}
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                          <ArrowRightLeft className="h-5 w-5 opacity-50" />
+                        </div>
+                        <p className="text-sm font-medium">No hay traslados registrados</p>
+                        {canEdit && (
+                          <p className="text-xs">
+                            Usa el botón superior para registrar el primer traslado entre estanques.
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  transfers.map((t) => (
+                    <TableRow key={t.id} className="group transition-colors hover:bg-muted/50">
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                          {new Date(t.transfer_date + 'T12:00:00').toLocaleDateString('es-CO')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <span className="font-medium">{t.source_pond.name}</span>
+                          <ArrowRightLeft className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="font-medium">{t.destination_pond.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <span className="font-semibold tabular-nums">{t.animal_count.toLocaleString()}</span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                        {t.avg_weight_g != null ? `${t.avg_weight_g} g` : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {t.is_partial_harvest ? (
+                          <Badge variant="outline" className="text-xs border-amber-500/30 text-amber-700 bg-amber-500/10">
+                            Parcial
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10">
+                            Total
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
+                        {t.notes || '—'}
+                      </TableCell>
+                      {canEdit ? (
+                        <TableCell className="w-10">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 cursor-pointer text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(t.id)}
+                            disabled={isPending}
+                            aria-label="Eliminar traslado"
+                            title="Eliminar traslado"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

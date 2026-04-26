@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { ArrowRightLeft } from 'lucide-react'
+import { ArrowRightLeft, Fish, Layers, Scale } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
 import { TransferForm } from '@/components/transfer-form'
@@ -64,6 +65,14 @@ export default async function TransfersPage() {
     transfers = transfersData
   }
 
+  const totalTransfers = transfers.length
+  const totalAnimals = transfers.reduce((sum, t) => sum + t.animal_count, 0)
+  const partialTransfers = transfers.filter((t) => t.is_partial_harvest).length
+  const totalBiomassKg = transfers.reduce(
+    (sum, t) => sum + (t.avg_weight_g ? (t.animal_count * t.avg_weight_g) / 1000 : 0),
+    0
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -81,6 +90,62 @@ export default async function TransfersPage() {
       {!canEdit ? (
         <ReadOnlyBanner description="Puedes consultar los traslados históricos, pero no registrar ni eliminar traslados." />
       ) : null}
+
+      {transfers.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-l-4 border-l-primary transition-shadow hover:shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <ArrowRightLeft className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Total traslados</p>
+                <p className="text-xl font-bold leading-tight">{totalTransfers}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-sky-500 transition-shadow hover:shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+                <Fish className="h-5 w-5 text-sky-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Animales trasladados</p>
+                <p className="text-xl font-bold leading-tight">{totalAnimals.toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-amber-500 transition-shadow hover:shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                <Layers className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Traslados parciales</p>
+                <p className="text-xl font-bold leading-tight">{partialTransfers}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {totalTransfers > 0 ? Math.round((partialTransfers / totalTransfers) * 100) : 0}% del total
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-emerald-500 transition-shadow hover:shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                <Scale className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Biomasa trasladada</p>
+                <p className="text-xl font-bold leading-tight">{totalBiomassKg.toFixed(1)} kg</p>
+                <p className="text-[11px] text-muted-foreground">estimación total</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <TransferForm
         ponds={ponds}

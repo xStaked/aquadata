@@ -284,7 +284,7 @@ function SortablePondCard({
           </div>
 
           {activeBatches.length > 0 ? (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex max-h-[180px] flex-col gap-1.5 overflow-y-auto pr-1">
               {activeBatches.map((batch) => (
                 <div
                   key={batch.id}

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/accordion'
 import { formatCOP } from '@/lib/format'
 import { WeightChart, WaterQualityChart, MortalityChart } from '@/components/analytics-charts'
+import { PaginatedRecordsTable } from '@/components/paginated-records-table'
 import { cn } from '@/lib/utils'
 
 function formatNumber(value: number | null, decimals = 1) {
@@ -114,7 +115,7 @@ export default async function PondDetailPage({
           .select(`
             id, batch_id, record_date, report_type, week_end_date, fish_count, feed_kg, avg_weight_kg,
             mortality_count, oxygen_mg_l, ammonia_mg_l, temperature_c, ph, effective_fca, biomass_kg,
-            daily_gain_g, turbidity_ntu, nitrite_mg_l, nitrate_mg_l, hardness_mg_l, alkalinity_mg_l, created_at
+            daily_gain_g, turbidity_ntu, nitrite_mg_l, nitrate_mg_l, phosphate_mg_l, hardness_mg_l, alkalinity_mg_l, created_at
           `)
           .in('batch_id', batchIds)
           .order('record_date', { ascending: false })
@@ -457,52 +458,7 @@ export default async function PondDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              {records && records.length > 0 ? (
-                <Table className="text-sm">
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-10 px-2 text-center text-[10px] uppercase tracking-wider"></TableHead>
-                      <TableHead className="px-2 text-[10px] uppercase tracking-wider">Fecha</TableHead>
-                      <TableHead className="w-16 px-2 text-center text-[10px] uppercase tracking-wider">Tipo</TableHead>
-                      <TableHead className="px-2 text-right text-[10px] uppercase tracking-wider">Peces</TableHead>
-                      <TableHead className="px-2 text-right text-[10px] uppercase tracking-wider">Peso (g)</TableHead>
-                      <TableHead className="px-2 text-right text-[10px] uppercase tracking-wider">Biomasa</TableHead>
-                      <TableHead className="px-2 text-right text-[10px] uppercase tracking-wider">FCA</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {records.map((record) => (
-                      <TableRow key={record.id} className="group">
-                        <TableCell className="px-2 text-center">
-                          <Link
-                            href={`/dashboard/records/${record.id}`}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                            title="Ver detalle del reporte"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Link>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap px-2">
-                          {record.report_type === 'weekly' && record.week_end_date
-                            ? `${format(new Date(record.record_date), 'dd/MM')} - ${format(new Date(record.week_end_date), 'dd/MM/yyyy')}`
-                            : format(new Date(record.record_date), 'dd/MM/yyyy')}
-                        </TableCell>
-                        <TableCell className="px-2 text-center">
-                          <Badge variant="outline" className="text-[10px] font-normal">
-                            {record.report_type === 'weekly' ? 'Sem' : 'Dia'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="px-2 text-right tabular-nums">{record.fish_count?.toLocaleString('es-CO') ?? '-'}</TableCell>
-                        <TableCell className="px-2 text-right tabular-nums">{record.avg_weight_kg != null ? formatNumber(Number(record.avg_weight_kg) * 1000, 1) : '-'}</TableCell>
-                        <TableCell className="px-2 text-right tabular-nums">{record.biomass_kg != null ? `${formatNumber(Number(record.biomass_kg))} kg` : '-'}</TableCell>
-                        <TableCell className="px-2 text-right tabular-nums">{record.effective_fca != null ? formatNumber(Number(record.effective_fca), 2) : '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-sm text-muted-foreground">No hay reportes productivos asociados a este estanque.</p>
-              )}
+              <PaginatedRecordsTable records={records ?? []} />
             </CardContent>
           </Card>
 
@@ -604,6 +560,7 @@ export default async function PondDetailPage({
               <ValueCard label="Turbidez" value={latestRecord?.turbidity_ntu != null ? `${formatNumber(Number(latestRecord.turbidity_ntu), 1)} NTU` : '-'} />
               <ValueCard label="Nitritos" value={latestRecord?.nitrite_mg_l != null ? `${formatNumber(Number(latestRecord.nitrite_mg_l), 2)} mg/L` : '-'} />
               <ValueCard label="Nitratos" value={latestRecord?.nitrate_mg_l != null ? `${formatNumber(Number(latestRecord.nitrate_mg_l), 2)} mg/L` : '-'} />
+              <ValueCard label="Fosfato" value={latestRecord?.phosphate_mg_l != null ? `${formatNumber(Number(latestRecord.phosphate_mg_l), 2)} mg/L` : '-'} />
               <ValueCard label="Dureza" value={latestRecord?.hardness_mg_l != null ? `${formatNumber(Number(latestRecord.hardness_mg_l), 1)} mg/L` : '-'} />
               <ValueCard label="Alcalinidad" value={latestRecord?.alkalinity_mg_l != null ? `${formatNumber(Number(latestRecord.alkalinity_mg_l), 1)} mg/L` : '-'} />
             </CardContent>
