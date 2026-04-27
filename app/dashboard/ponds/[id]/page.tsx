@@ -120,7 +120,7 @@ export default async function PondDetailPage({
         supabase
           .from('production_records')
           .select(`
-            id, batch_id, record_date, report_type, week_end_date, fish_count, feed_kg, avg_weight_kg,
+            id, batch_id, record_date, record_time, report_type, week_end_date, fish_count, feed_kg, avg_weight_kg,
             mortality_count, oxygen_mg_l, ammonia_mg_l, temperature_c, ph, effective_fca, biomass_kg,
             daily_gain_g, turbidity_ntu, nitrite_mg_l, nitrate_mg_l, phosphate_mg_l, hardness_mg_l, alkalinity_mg_l, created_at
           `)
@@ -371,7 +371,7 @@ export default async function PondDetailPage({
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Analíticas del estanque</h2>
         <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0"><WeightChart records={chartRecords} /></div>
-          <div className="min-w-0"><WaterQualityChart records={chartRecords} /></div>
+          <div className="min-w-0"><WaterQualityChart records={chartRecords} waterQualityReadings={waterQualityReadings ?? []} /></div>
           <div className="min-w-0"><MortalityChart records={chartRecords} /></div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
+import { format } from 'date-fns'
+import { fromZonedTime, toZonedTime } from 'date-fns-tz'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   LineChart,
@@ -36,20 +38,35 @@ interface ProductionRecord {
   record_time?: string | null
 }
 
-const MAX_POINTS = 90
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + 'T12:00:00')
-  return `${d.getDate()}/${d.getMonth() + 1}`
+interface WaterQualityReading {
+  id: string
+  reading_date: string
+  reading_time: string | null
+  temperature_c: number | null
+  oxygen_mg_l: number | null
 }
 
-function formatDateTime(dateStr: string) {
-  const d = new Date(dateStr)
-  const day = d.getDate().toString().padStart(2, '0')
-  const month = (d.getMonth() + 1).toString().padStart(2, '0')
-  const hours = d.getHours().toString().padStart(2, '0')
-  const minutes = d.getMinutes().toString().padStart(2, '0')
-  return `${day}/${month} ${hours}:${minutes}`
+const MAX_POINTS = 90
+// Zona horaria donde se toman las mediciones en la granja
+const FARM_TIMEZONE = 'America/Bogota'
+
+function getUserTimezone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
+function formatDate(dateStr: string) {
+  const localDateTime = `${dateStr} 12:00`
+  const utcDate = fromZonedTime(localDateTime, FARM_TIMEZONE)
+  const userDate = toZonedTime(utcDate, getUserTimezone())
+  return format(userDate, 'dd/MM')
+}
+
+function formatDateTime(dateStr: string, timeStr: string) {
+  const timePart = timeStr.slice(0, 5)
+  const localDateTime = `${dateStr} ${timePart}`
+  const utcDate = fromZonedTime(localDateTime, FARM_TIMEZONE)
+  const userDate = toZonedTime(utcDate, getUserTimezone())
+  return format(userDate, 'dd/MM HH:mm')
 }
 
 /**
@@ -180,20 +197,51 @@ export function FeedConsumptionChart({ records }: { records: ProductionRecord[] 
   )
 }
 
-export function WaterQualityChart({ records }: { records: ProductionRecord[] }) {
+export function WaterQualityChart({
+  records,
+  waterQualityReadings = [],
+}: {
+  records: ProductionRecord[]
+  waterQualityReadings?: WaterQualityReading[]
+}) {
   const data = useMemo(() => {
-    const raw = records
-      .filter((r) => r.temperature_c !== null || r.oxygen_mg_l !== null)
-      .sort((a, b) => a.record_date.localeCompare(b.record_date))
+    // Fecha límite: mañana (evita mostrar datos con fechas futuras/erróneas)
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(23, 59, 59, 999)
+    const cutoff = tomorrow.toISOString().slice(0, 10)
+
+    const productionPoints = records
+      .filter((r) => (r.temperature_c !== null || r.oxygen_mg_l !== null) && r.record_date <= cutoff)
+      .map((r) => {
+        const timeStr = r.record_time
+        return {
+          date: timeStr
+            ? formatDateTime(r.record_date, timeStr)
+            : formatDate(r.record_date),
+          temperatura: r.temperature_c as number,
+          oxigeno: r.oxygen_mg_l as number,
+          sortKey: `${r.record_date}T${timeStr ?? '00:00:00'}`,
+        }
+      })
+
+    const readingPoints = waterQualityReadings
+      .filter((r) => (r.temperature_c !== null || r.oxygen_mg_l !== null) && r.reading_date <= cutoff)
       .map((r) => ({
-        date: r.record_time
-          ? formatDateTime(`${r.record_date}T${r.record_time}`)
-          : formatDate(r.record_date),
+        date: r.reading_time
+          ? formatDateTime(r.reading_date, r.reading_time)
+          : formatDate(r.reading_date),
         temperatura: r.temperature_c as number,
         oxigeno: r.oxygen_mg_l as number,
+        sortKey: `${r.reading_date}T${r.reading_time ?? '00:00:00'}`,
       }))
-    return downsample(raw, ['temperatura', 'oxigeno'])
-  }, [records])
+
+    const combined = [...productionPoints, ...readingPoints].sort((a, b) =>
+      a.sortKey.localeCompare(b.sortKey)
+    )
+
+    return downsample(combined, ['temperatura', 'oxigeno'])
+  }, [records, waterQualityReadings])
 
   return (
     <Card>
