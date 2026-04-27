@@ -315,25 +315,23 @@ export default async function RecordsPage({
       <div className="flex gap-2">
         <Link
           href={buildViewHref('records')}
-          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
-            currentView === 'records'
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${currentView === 'records'
               ? 'border-primary bg-primary/10 text-primary'
               : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
-          }`}
+            }`}
         >
           <ClipboardList className="h-3.5 w-3.5" />
           Reportes de Producción
         </Link>
         <Link
           href={buildViewHref('readings')}
-          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
-            currentView === 'readings'
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${currentView === 'readings'
               ? 'border-primary bg-primary/10 text-primary'
               : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
-          }`}
+            }`}
         >
           <Gauge className="h-3.5 w-3.5" />
-          Lecturas Rápidas
+          Oxigeno y temperatura
         </Link>
       </div>
 
@@ -419,277 +417,277 @@ export default async function RecordsPage({
         <>
           {records.length === 0 ? (
             <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-            <ClipboardList className="h-10 w-10 text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Sin registros</h3>
-              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Sube tu primer reporte fotografico en la seccion de Captura OCR para comenzar.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">
-              {totalRecords} registros
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {canEdit ? <TableHead className="text-center">Editar</TableHead> : null}
-                  <TableHead className="text-center">Detalle</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Estanque</TableHead>
-                  <TableHead>Subido por</TableHead>
-                  <TableHead className="text-right">Días cultivo</TableHead>
-                  <TableHead className="text-right">Días lago</TableHead>
-                  <TableHead className="text-right">Nº Peces</TableHead>
-                  <TableHead className="text-right">Animal actual</TableHead>
-                  <TableHead className="text-right">% Sob.</TableHead>
-                  <TableHead className="text-right">Alimento (kg)</TableHead>
-                  <TableHead className="text-right">Peso prom. (g)</TableHead>
-                  <TableHead className="text-right">Peso muestreo (g)</TableHead>
-                  <TableHead className="text-right">Mortalidad</TableHead>
-                  <TableHead className="text-right">Temp. (C)</TableHead>
-                  <TableHead className="text-right">O2 (mg/L)</TableHead>
-                  <TableHead className="text-right">NH3</TableHead>
-                  <TableHead className="text-right">NO2</TableHead>
-                  <TableHead className="text-right">pH</TableHead>
-                  <TableHead className="text-right">Fosfato (mg/L)</TableHead>
-                  <TableHead className="text-right">Dureza (mg/L)</TableHead>
-                  <TableHead className="text-right">Alcalinidad (mg/L)</TableHead>
-                  <TableHead className="text-right">Turbidez (NTU)</TableHead>
-                  <TableHead className="text-right">Ganancia diaria (g/día)</TableHead>
-                  <TableHead className="text-right">FCA</TableHead>
-                  <TableHead className="text-right">Biomasa (kg)</TableHead>
-                  <TableHead className="text-center">Descargar</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {records.map((rec) => (
-                  <TableRow id={`record-${rec.id}`} key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
-                    {canEdit ? (
-                      <TableCell className="text-center">
-                        <RecordEditModal
-                          record={{
-                            id: rec.id,
-                            record_date: rec.record_date,
-                            pond_name: batchPondMap[rec.batch_id] || '-',
-                            fish_count: rec.fish_count,
-                            feed_kg: rec.feed_kg,
-                            avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
-                            biomass_kg: rec.biomass_kg,
-                            sampling_weight_g: rec.sampling_weight_g,
-                            mortality_count: rec.mortality_count,
-                            temperature_c: rec.temperature_c,
-                            oxygen_mg_l: rec.oxygen_mg_l,
-                            ammonia_mg_l: rec.ammonia_mg_l,
-                            nitrite_mg_l: rec.nitrite_mg_l,
-                            nitrate_mg_l: rec.nitrate_mg_l,
-                            ph: rec.ph,
-                            phosphate_mg_l: rec.phosphate_mg_l,
-                            hardness_mg_l: rec.hardness_mg_l,
-                            alkalinity_mg_l: rec.alkalinity_mg_l,
-                            turbidity_ntu: rec.turbidity_ntu,
-                            effective_fca: rec.effective_fca,
-                            fca_source: rec.fca_source,
-                            record_time: rec.record_time,
-                            notes: rec.notes,
-                          }}
-                          defaultFca={organizationDefaultFca}
-                        />
-                      </TableCell>
-                    ) : null}
-                    <TableCell className="text-center">
-                      <Link
-                        href={`/dashboard/records/${rec.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                        aria-label="Ver detalle del reporte"
-                        title="Ver detalle del reporte"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {rec.report_type === 'weekly' && rec.week_end_date ? (
-                        <span className="whitespace-nowrap">
-                          {format(new Date(rec.record_date), 'dd/MM')} – {format(new Date(rec.week_end_date), 'dd/MM/yyyy')}
-                        </span>
-                      ) : (
-                        format(new Date(rec.record_date), 'dd/MM/yyyy')
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {rec.report_type === 'weekly' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                          <CalendarRange className="h-3 w-3" />
-                          Semanal
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          <CalendarDays className="h-3 w-3" />
-                          Diario
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{batchPondMap[rec.batch_id] || '-'}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="min-w-[180px]">
-                        {rec.upload?.sender_name || rec.upload?.sender_phone ? (
-                          <div className="flex flex-col">
-                            <span className="font-medium text-foreground">
-                              {rec.upload?.sender_name ?? 'Contacto WhatsApp'}
+              <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+                <ClipboardList className="h-10 w-10 text-muted-foreground" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Sin registros</h3>
+                  <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                    Sube tu primer reporte fotografico en la seccion de Captura OCR para comenzar.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-foreground">
+                  {totalRecords} registros
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {canEdit ? <TableHead className="text-center">Editar</TableHead> : null}
+                      <TableHead className="text-center">Detalle</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Estanque</TableHead>
+                      <TableHead>Subido por</TableHead>
+                      <TableHead className="text-right">Días cultivo</TableHead>
+                      <TableHead className="text-right">Días lago</TableHead>
+                      <TableHead className="text-right">Nº Peces</TableHead>
+                      <TableHead className="text-right">Animal actual</TableHead>
+                      <TableHead className="text-right">% Sob.</TableHead>
+                      <TableHead className="text-right">Alimento (kg)</TableHead>
+                      <TableHead className="text-right">Peso prom. (g)</TableHead>
+                      <TableHead className="text-right">Peso muestreo (g)</TableHead>
+                      <TableHead className="text-right">Mortalidad</TableHead>
+                      <TableHead className="text-right">Temp. (C)</TableHead>
+                      <TableHead className="text-right">O2 (mg/L)</TableHead>
+                      <TableHead className="text-right">NH3</TableHead>
+                      <TableHead className="text-right">NO2</TableHead>
+                      <TableHead className="text-right">pH</TableHead>
+                      <TableHead className="text-right">Fosfato (mg/L)</TableHead>
+                      <TableHead className="text-right">Dureza (mg/L)</TableHead>
+                      <TableHead className="text-right">Alcalinidad (mg/L)</TableHead>
+                      <TableHead className="text-right">Turbidez (NTU)</TableHead>
+                      <TableHead className="text-right">Ganancia diaria (g/día)</TableHead>
+                      <TableHead className="text-right">FCA</TableHead>
+                      <TableHead className="text-right">Biomasa (kg)</TableHead>
+                      <TableHead className="text-center">Descargar</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {records.map((rec) => (
+                      <TableRow id={`record-${rec.id}`} key={rec.id} className="transition-colors duration-150 hover:bg-muted/50">
+                        {canEdit ? (
+                          <TableCell className="text-center">
+                            <RecordEditModal
+                              record={{
+                                id: rec.id,
+                                record_date: rec.record_date,
+                                pond_name: batchPondMap[rec.batch_id] || '-',
+                                fish_count: rec.fish_count,
+                                feed_kg: rec.feed_kg,
+                                avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                                biomass_kg: rec.biomass_kg,
+                                sampling_weight_g: rec.sampling_weight_g,
+                                mortality_count: rec.mortality_count,
+                                temperature_c: rec.temperature_c,
+                                oxygen_mg_l: rec.oxygen_mg_l,
+                                ammonia_mg_l: rec.ammonia_mg_l,
+                                nitrite_mg_l: rec.nitrite_mg_l,
+                                nitrate_mg_l: rec.nitrate_mg_l,
+                                ph: rec.ph,
+                                phosphate_mg_l: rec.phosphate_mg_l,
+                                hardness_mg_l: rec.hardness_mg_l,
+                                alkalinity_mg_l: rec.alkalinity_mg_l,
+                                turbidity_ntu: rec.turbidity_ntu,
+                                effective_fca: rec.effective_fca,
+                                fca_source: rec.fca_source,
+                                record_time: rec.record_time,
+                                notes: rec.notes,
+                              }}
+                              defaultFca={organizationDefaultFca}
+                            />
+                          </TableCell>
+                        ) : null}
+                        <TableCell className="text-center">
+                          <Link
+                            href={`/dashboard/records/${rec.id}`}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                            aria-label="Ver detalle del reporte"
+                            title="Ver detalle del reporte"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {rec.report_type === 'weekly' && rec.week_end_date ? (
+                            <span className="whitespace-nowrap">
+                              {format(new Date(rec.record_date), 'dd/MM')} – {format(new Date(rec.week_end_date), 'dd/MM/yyyy')}
                             </span>
-                            {rec.upload?.sender_phone ? (
-                              <span className="text-xs text-muted-foreground">
-                                {formatColombianPhoneNumber(rec.upload.sender_phone)}
+                          ) : (
+                            format(new Date(rec.record_date), 'dd/MM/yyyy')
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {rec.report_type === 'weekly' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                              <CalendarRange className="h-3 w-3" />
+                              Semanal
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              <CalendarDays className="h-3 w-3" />
+                              Diario
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{batchPondMap[rec.batch_id] || '-'}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="min-w-[180px]">
+                            {rec.upload?.sender_name || rec.upload?.sender_phone ? (
+                              <div className="flex flex-col">
+                                <span className="font-medium text-foreground">
+                                  {rec.upload?.sender_name ?? 'Contacto WhatsApp'}
+                                </span>
+                                {rec.upload?.sender_phone ? (
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatColombianPhoneNumber(rec.upload.sender_phone)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            ) : rec.upload?.source === 'web' || !rec.upload_id ? (
+                              <span className="text-sm text-muted-foreground">Panel web</span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">WhatsApp</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        {(() => {
+                          const batchInfo = batchDataMap[rec.batch_id]
+                          const diasCultivo = batchInfo
+                            ? differenceInDays(new Date(rec.record_date), new Date(batchInfo.start_date))
+                            : null
+                          const diasLago = batchInfo
+                            ? differenceInDays(new Date(rec.record_date), new Date(batchInfo.pond_entry_date ?? batchInfo.start_date))
+                            : null
+                          const animalActual = batchInfo?.current_population ?? batchInfo?.initial_population ?? null
+                          const pctSob = batchInfo && batchInfo.initial_population > 0 && animalActual != null
+                            ? (animalActual / batchInfo.initial_population) * 100
+                            : null
+                          return (
+                            <>
+                              <TableCell className="text-right">{diasCultivo != null ? diasCultivo : '-'}</TableCell>
+                              <TableCell className="text-right">{diasLago != null ? diasLago : '-'}</TableCell>
+                              <TableCell className="text-right">{rec.fish_count ?? '-'}</TableCell>
+                              <TableCell className="text-right">{animalActual ?? '-'}</TableCell>
+                              <TableCell className="text-right">{pctSob != null ? pctSob.toFixed(1) + '%' : '-'}</TableCell>
+                            </>
+                          )
+                        })()}
+                        <TableCell className="text-right">{rec.feed_kg?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">
+                          {rec.avg_weight_kg != null ? (rec.avg_weight_kg * 1000).toFixed(1) : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">{rec.sampling_weight_g?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">
+                          {rec.mortality_count > 0 ? (
+                            <span className="text-destructive">{rec.mortality_count}</span>
+                          ) : (
+                            '0'
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">{rec.temperature_c?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.oxygen_mg_l?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.ammonia_mg_l?.toFixed(2) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.nitrite_mg_l?.toFixed(2) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.ph?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.phosphate_mg_l?.toFixed(2) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.hardness_mg_l?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.alkalinity_mg_l?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.turbidity_ntu?.toFixed(1) ?? '-'}</TableCell>
+                        <TableCell className="text-right">{rec.daily_gain_g?.toFixed(2) ?? '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <span>{rec.effective_fca != null ? rec.effective_fca.toFixed(2) : '-'}</span>
+                            {rec.fca_source ? (
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                {rec.fca_source === 'default' ? 'configurado' : 'calculado'}
                               </span>
                             ) : null}
                           </div>
-                        ) : rec.upload?.source === 'web' || !rec.upload_id ? (
-                          <span className="text-sm text-muted-foreground">Panel web</span>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">WhatsApp</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    {(() => {
-                      const batchInfo = batchDataMap[rec.batch_id]
-                      const diasCultivo = batchInfo
-                        ? differenceInDays(new Date(rec.record_date), new Date(batchInfo.start_date))
-                        : null
-                      const diasLago = batchInfo
-                        ? differenceInDays(new Date(rec.record_date), new Date(batchInfo.pond_entry_date ?? batchInfo.start_date))
-                        : null
-                      const animalActual = batchInfo?.current_population ?? batchInfo?.initial_population ?? null
-                      const pctSob = batchInfo && batchInfo.initial_population > 0 && animalActual != null
-                        ? (animalActual / batchInfo.initial_population) * 100
-                        : null
-                      return (
-                        <>
-                          <TableCell className="text-right">{diasCultivo != null ? diasCultivo : '-'}</TableCell>
-                          <TableCell className="text-right">{diasLago != null ? diasLago : '-'}</TableCell>
-                          <TableCell className="text-right">{rec.fish_count ?? '-'}</TableCell>
-                          <TableCell className="text-right">{animalActual ?? '-'}</TableCell>
-                          <TableCell className="text-right">{pctSob != null ? pctSob.toFixed(1) + '%' : '-'}</TableCell>
-                        </>
-                      )
-                    })()}
-                    <TableCell className="text-right">{rec.feed_kg?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">
-                      {rec.avg_weight_kg != null ? (rec.avg_weight_kg * 1000).toFixed(1) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">{rec.sampling_weight_g?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">
-                      {rec.mortality_count > 0 ? (
-                        <span className="text-destructive">{rec.mortality_count}</span>
-                      ) : (
-                        '0'
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{rec.temperature_c?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.oxygen_mg_l?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.ammonia_mg_l?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.nitrite_mg_l?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.ph?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.phosphate_mg_l?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.hardness_mg_l?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.alkalinity_mg_l?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.turbidity_ntu?.toFixed(1) ?? '-'}</TableCell>
-                    <TableCell className="text-right">{rec.daily_gain_g?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex flex-col items-end gap-1">
-                        <span>{rec.effective_fca != null ? rec.effective_fca.toFixed(2) : '-'}</span>
-                        {rec.fca_source ? (
-                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                            {rec.fca_source === 'default' ? 'configurado' : 'calculado'}
-                          </span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {rec.biomass_kg != null ? rec.biomass_kg.toFixed(1) : '-'}
-                    </TableCell>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {rec.biomass_kg != null ? rec.biomass_kg.toFixed(1) : '-'}
+                        </TableCell>
 
-                    <TableCell className="text-center">
-                      <SingleRecordExport
-                        record={{
-                          id: rec.id,
-                          record_date: rec.record_date,
-                          pond_name: batchPondMap[rec.batch_id] || '-',
-                          fish_count: rec.fish_count,
-                          feed_kg: rec.feed_kg,
-                          avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
-                          biomass_kg: rec.biomass_kg,
-                          sampling_weight_g: rec.sampling_weight_g,
-                          mortality_count: rec.mortality_count,
-                          temperature_c: rec.temperature_c,
-                          oxygen_mg_l: rec.oxygen_mg_l,
-                          ammonia_mg_l: rec.ammonia_mg_l,
-                          nitrite_mg_l: rec.nitrite_mg_l,
-                          ph: rec.ph,
-                          phosphate_mg_l: rec.phosphate_mg_l,
-                          hardness_mg_l: rec.hardness_mg_l,
-                          alkalinity_mg_l: rec.alkalinity_mg_l,
-                          turbidity_ntu: rec.turbidity_ntu,
-                          daily_gain_g: rec.daily_gain_g,
-                          effective_fca: rec.effective_fca,
-                          fca_source: rec.fca_source,
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                Mostrando {startItem}-{endItem} de {totalRecords}
-              </p>
-              <div className="flex items-center gap-2">
-                {hasPrevPage ? (
-                  <a
-                    href={buildPageHref(safeCurrentPage - 1)}
-                    className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
-                  >
-                    Anterior
-                  </a>
-                ) : (
-                  <span className="rounded-md border border-input px-3 py-2 text-sm font-medium text-muted-foreground">
-                    Anterior
-                  </span>
-                )}
-                <span className="text-sm text-muted-foreground">
-                  Pagina {safeCurrentPage} de {totalPages}
-                </span>
-                {hasNextPage ? (
-                  <a
-                    href={buildPageHref(safeCurrentPage + 1)}
-                    className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
-                  >
-                    Siguiente
-                  </a>
-                ) : (
-                  <span className="rounded-md border border-input px-3 py-2 text-sm font-medium text-muted-foreground">
-                    Siguiente
-                  </span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </>
-  ) : (
-    <>
-      {readings.length === 0 ? (
+                        <TableCell className="text-center">
+                          <SingleRecordExport
+                            record={{
+                              id: rec.id,
+                              record_date: rec.record_date,
+                              pond_name: batchPondMap[rec.batch_id] || '-',
+                              fish_count: rec.fish_count,
+                              feed_kg: rec.feed_kg,
+                              avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                              biomass_kg: rec.biomass_kg,
+                              sampling_weight_g: rec.sampling_weight_g,
+                              mortality_count: rec.mortality_count,
+                              temperature_c: rec.temperature_c,
+                              oxygen_mg_l: rec.oxygen_mg_l,
+                              ammonia_mg_l: rec.ammonia_mg_l,
+                              nitrite_mg_l: rec.nitrite_mg_l,
+                              ph: rec.ph,
+                              phosphate_mg_l: rec.phosphate_mg_l,
+                              hardness_mg_l: rec.hardness_mg_l,
+                              alkalinity_mg_l: rec.alkalinity_mg_l,
+                              turbidity_ntu: rec.turbidity_ntu,
+                              daily_gain_g: rec.daily_gain_g,
+                              effective_fca: rec.effective_fca,
+                              fca_source: rec.fca_source,
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {startItem}-{endItem} de {totalRecords}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {hasPrevPage ? (
+                      <a
+                        href={buildPageHref(safeCurrentPage - 1)}
+                        className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
+                      >
+                        Anterior
+                      </a>
+                    ) : (
+                      <span className="rounded-md border border-input px-3 py-2 text-sm font-medium text-muted-foreground">
+                        Anterior
+                      </span>
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      Pagina {safeCurrentPage} de {totalPages}
+                    </span>
+                    {hasNextPage ? (
+                      <a
+                        href={buildPageHref(safeCurrentPage + 1)}
+                        className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
+                      >
+                        Siguiente
+                      </a>
+                    ) : (
+                      <span className="rounded-md border border-input px-3 py-2 text-sm font-medium text-muted-foreground">
+                        Siguiente
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <>
+          {readings.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
                 <Gauge className="h-10 w-10 text-muted-foreground" />
