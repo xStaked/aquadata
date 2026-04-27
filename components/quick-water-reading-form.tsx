@@ -163,11 +163,8 @@ export function QuickWaterReadingForm({ ponds }: { ponds: Pond[] }) {
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-3.5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Lectura Rápida de Calidad de Agua
+          Oxigeno y temperatura
         </p>
-        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-accent">
-          Oxígeno / Temperatura
-        </span>
       </div>
 
       <div className="space-y-6 p-6">

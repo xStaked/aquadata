@@ -112,7 +112,7 @@ export default async function UploadPage() {
         <Tabs defaultValue="manual" className="w-full">
           <TabsList>
             <TabsTrigger value="manual">Manual</TabsTrigger>
-            <TabsTrigger value="quick">Lectura Rápida</TabsTrigger>
+            <TabsTrigger value="quick">Oxigeno y temperatura</TabsTrigger>
             <TabsTrigger value="ocr">Captura OCR</TabsTrigger>
           </TabsList>
           <TabsContent value="manual" className="mt-4">

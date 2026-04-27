@@ -116,7 +116,7 @@ export default async function PondDetailPage({
     { data: vaccineTypes },
     waterQualityReadings,
   ] = batchIds.length > 0
-    ? await Promise.all([
+      ? await Promise.all([
         supabase
           .from('production_records')
           .select(`
@@ -157,7 +157,7 @@ export default async function PondDetailPage({
           .order('name', { ascending: true }),
         getWaterQualityReadingsByPond(pond.id, 20),
       ])
-    : await Promise.all([
+      : await Promise.all([
         Promise.resolve({ data: [] as any[] }),
         Promise.resolve({ data: [] as any[] }),
         supabase
@@ -265,12 +265,12 @@ export default async function PondDetailPage({
 
   const avgDailyGain = activeBatchSummaries.length > 0
     ? (() => {
-        const gains = (records ?? [])
-          .filter((r) => activeBatchSummaries.some((b) => b.id === r.batch_id) && r.daily_gain_g != null)
-          .map((r) => Number(r.daily_gain_g))
-        if (gains.length === 0) return null
-        return gains.reduce((a, b) => a + b, 0) / gains.length
-      })()
+      const gains = (records ?? [])
+        .filter((r) => activeBatchSummaries.some((b) => b.id === r.batch_id) && r.daily_gain_g != null)
+        .map((r) => Number(r.daily_gain_g))
+      if (gains.length === 0) return null
+      return gains.reduce((a, b) => a + b, 0) / gains.length
+    })()
     : null
 
   function getRiskScore(record: typeof latestRecord) {
@@ -347,7 +347,7 @@ export default async function PondDetailPage({
             <Link href="/dashboard/upload">Subir reporte</Link>
           </Button>
           <Button asChild>
-            <Link href={`/dashboard/upload?tab=quick&pond_id=${pond.id}`}>Lectura rápida</Link>
+            <Link href={`/dashboard/upload?tab=quick&pond_id=${pond.id}`}>Oxigeno y temperatura</Link>
           </Button>
         </div>
       </div>
