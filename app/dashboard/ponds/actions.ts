@@ -146,3 +146,120 @@ export async function updatePondOrder(pondIds: string[]) {
   revalidatePath('/dashboard/records')
   revalidatePath('/dashboard/alerts')
 }
+
+// ── Vaccine Types ─────────────────────────────────────────────
+
+export async function createVaccineType(data: { name: string; description?: string }) {
+  const ctx = await requireOrgWriteContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('vaccine_types')
+    .insert({
+      organization_id: ctx.orgId,
+      name: data.name.trim(),
+      description: data.description?.trim() || null,
+    })
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/ponds')
+}
+
+export async function updateVaccineType(id: string, data: { name: string; description?: string }) {
+  await requireOrgWriteContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('vaccine_types')
+    .update({
+      name: data.name.trim(),
+      description: data.description?.trim() || null,
+    })
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/ponds')
+}
+
+export async function deleteVaccineType(id: string) {
+  await requireOrgWriteContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('vaccine_types')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/ponds')
+}
+
+// ── Batch Vaccines ────────────────────────────────────────────
+
+export async function createBatchVaccine(data: {
+  batch_id: string
+  vaccine_type_id: string | null
+  vaccine_type_name: string
+  is_vaccinated: boolean
+  application_date: string | null
+  notes?: string | null
+}) {
+  await requireOrgWriteContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('batch_vaccines')
+    .insert({
+      batch_id: data.batch_id,
+      vaccine_type_id: data.vaccine_type_id,
+      vaccine_type_name: data.vaccine_type_name.trim(),
+      is_vaccinated: data.is_vaccinated,
+      application_date: data.application_date || null,
+      notes: data.notes?.trim() || null,
+    })
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/ponds')
+}
+
+export async function updateBatchVaccine(
+  id: string,
+  data: {
+    vaccine_type_id: string | null
+    vaccine_type_name: string
+    is_vaccinated: boolean
+    application_date: string | null
+    notes?: string | null
+  }
+) {
+  await requireOrgWriteContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('batch_vaccines')
+    .update({
+      vaccine_type_id: data.vaccine_type_id,
+      vaccine_type_name: data.vaccine_type_name.trim(),
+      is_vaccinated: data.is_vaccinated,
+      application_date: data.application_date || null,
+      notes: data.notes?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/ponds')
+}
+
+export async function deleteBatchVaccine(id: string) {
+  await requireOrgWriteContext()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('batch_vaccines')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/dashboard/ponds')
+}

@@ -31,6 +31,8 @@ import { formatCOP } from '@/lib/format'
 import { WeightChart, WaterQualityChart, MortalityChart } from '@/components/analytics-charts'
 import { PaginatedRecordsTable } from '@/components/paginated-records-table'
 import { cn } from '@/lib/utils'
+import { isWriterRole } from '@/lib/auth/roles'
+import { BatchVaccines } from '@/components/batch-vaccines'
 
 function formatNumber(value: number | null, decimals = 1) {
   if (value == null) return '-'
@@ -73,7 +75,7 @@ export default async function PondDetailPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organization_id, role')
     .eq('id', user!.id)
     .single()
 
@@ -108,6 +110,8 @@ export default async function PondDetailPage({
     { data: feedRecords },
     { data: alerts },
     { data: treatments },
+    { data: batchVaccines },
+    { data: vaccineTypes },
   ] = batchIds.length > 0
     ? await Promise.all([
         supabase
@@ -138,6 +142,16 @@ export default async function PondDetailPage({
           .eq('pond_id', pond.id)
           .order('treatment_date', { ascending: false })
           .limit(10),
+        supabase
+          .from('batch_vaccines')
+          .select('id, batch_id, vaccine_type_id, vaccine_type_name, is_vaccinated, application_date, notes, created_at')
+          .in('batch_id', batchIds)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('vaccine_types')
+          .select('id, name, description')
+          .eq('organization_id', profile.organization_id)
+          .order('name', { ascending: true }),
       ])
     : await Promise.all([
         Promise.resolve({ data: [] as any[] }),
@@ -154,6 +168,12 @@ export default async function PondDetailPage({
           .eq('pond_id', pond.id)
           .order('treatment_date', { ascending: false })
           .limit(10),
+        Promise.resolve({ data: [] as any[] }),
+        supabase
+          .from('vaccine_types')
+          .select('id, name, description')
+          .eq('organization_id', profile.organization_id)
+          .order('name', { ascending: true }),
       ])
 
   const recordsByBatch = new Map<string, typeof records>()
@@ -162,6 +182,15 @@ export default async function PondDetailPage({
     existing.push(record)
     recordsByBatch.set(record.batch_id, existing)
   }
+
+  const vaccinesByBatch = new Map<string, typeof batchVaccines>()
+  for (const vaccine of batchVaccines ?? []) {
+    const existing = vaccinesByBatch.get(vaccine.batch_id) ?? []
+    existing.push(vaccine)
+    vaccinesByBatch.set(vaccine.batch_id, existing)
+  }
+
+  const canEdit = isWriterRole(profile?.role)
 
   const batchSummaries = (batches ?? []).map((batch) => {
     const batchRecords = [...(recordsByBatch.get(batch.id) ?? [])].sort((a, b) => {
@@ -394,6 +423,15 @@ export default async function PondDetailPage({
                       <ValueCard label="Última biomasa" value={batch.latest_biomass_kg != null ? `${formatNumber(batch.latest_biomass_kg)} kg` : '-'} />
                       <ValueCard label="Origen de semilla" value={batch.seed_source ?? '-'} />
                     </div>
+                    <div className="mt-4 border-t border-border/40 pt-4">
+                      <BatchVaccines
+                        batchId={batch.id}
+                        batchName={format(new Date(batch.start_date), 'dd/MM/yyyy')}
+                        vaccines={vaccinesByBatch.get(batch.id) ?? []}
+                        vaccineTypes={vaccineTypes ?? []}
+                        canEdit={canEdit}
+                      />
+                    </div>
                   </div>
                 ))
               )}
@@ -442,6 +480,15 @@ export default async function PondDetailPage({
                             <ValueCard label="Consumo quincenal" value={`${formatNumber(batch.fortnightly_feed_kg)} kg`} />
                             <ValueCard label="Última biomasa" value={batch.latest_biomass_kg != null ? `${formatNumber(batch.latest_biomass_kg)} kg` : '-'} />
                             <ValueCard label="Origen de semilla" value={batch.seed_source ?? '-'} />
+                          </div>
+                          <div className="mt-4 border-t border-border/40 pt-4">
+                            <BatchVaccines
+                              batchId={batch.id}
+                              batchName={format(new Date(batch.start_date), 'dd/MM/yyyy')}
+                              vaccines={vaccinesByBatch.get(batch.id) ?? []}
+                              vaccineTypes={vaccineTypes ?? []}
+                              canEdit={canEdit}
+                            />
                           </div>
                         </div>
                       ))}
