@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
-import { getBatch, updateBatchPopulation, createRecord, createAlerts } from '@/lib/db'
+import { getBatch, updateBatchPopulation, createRecord, createAlerts, createWaterQualityReading, getWaterQualityReadingsByPondAndDate } from '@/lib/db'
 import { getPreviousRecordByBatch } from '@/lib/db/repositories/production-record-repository'
 import { calculateDailyGainG } from '@/lib/growth'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
@@ -10,6 +10,7 @@ import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/l
 import { generateAlerts, type WaterQualityReading } from '@/lib/alerts'
 import { revalidatePath } from 'next/cache'
 import { differenceInDays } from 'date-fns'
+import type { WaterQualityReading as WaterQualityReadingType } from '@/db/types'
 
 interface ProductionData {
   batch_id: string
@@ -155,6 +156,78 @@ export interface BatchSummary {
   accumulated_mortality: number | null
   latest_avg_weight_g: number | null
   latest_biomass_kg: number | null
+}
+
+export async function confirmWaterQualityReading(data: {
+  pond_id: string
+  reading_date: string
+  reading_time?: string | null
+  temperature_c?: number | null
+  oxygen_mg_l?: number | null
+  notes?: string | null
+}) {
+  const ctx = await requireOrgWriteContext()
+  const { userId, orgId } = ctx
+
+  const supabase = await createClient()
+
+  // Verify pond belongs to user's org
+  const { data: pond } = await supabase
+    .from('ponds')
+    .select('id')
+    .eq('id', data.pond_id)
+    .eq('organization_id', orgId)
+    .single()
+
+  if (!pond) throw new Error('Estanque no encontrado o no pertenece a tu organización')
+
+  // Try to find active batch for this pond to link the reading
+  const { data: activeBatch } = await supabase
+    .from('batches')
+    .select('id')
+    .eq('pond_id', data.pond_id)
+    .eq('status', 'active')
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .single()
+
+  const readingId = await createWaterQualityReading({
+    pond_id: data.pond_id,
+    batch_id: activeBatch?.id ?? null,
+    reading_date: data.reading_date,
+    reading_time: data.reading_time ?? null,
+    temperature_c: data.temperature_c ?? null,
+    oxygen_mg_l: data.oxygen_mg_l ?? null,
+    notes: data.notes ?? null,
+    created_by: userId,
+  })
+
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/ponds')
+  revalidatePath(`/dashboard/ponds/${data.pond_id}`)
+
+  return readingId
+}
+
+export async function getWaterQualityReadingsForPondDate(
+  pondId: string,
+  date: string
+): Promise<WaterQualityReadingType[]> {
+  const { orgId } = await getOrgContext()
+
+  const supabase = await createClient()
+
+  // Verify pond belongs to org
+  const { data: pond } = await supabase
+    .from('ponds')
+    .select('id')
+    .eq('id', pondId)
+    .eq('organization_id', orgId)
+    .single()
+
+  if (!pond) throw new Error('Estanque no encontrado')
+
+  return getWaterQualityReadingsByPondAndDate(pondId, date)
 }
 
 export async function getBatchSummary(batchId: string): Promise<BatchSummary | null> {

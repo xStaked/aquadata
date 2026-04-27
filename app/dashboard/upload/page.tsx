@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AuthorizedWhatsappNumbersCard } from '@/components/authorized-whatsapp-numbers-card'
 import { UploadForm } from '@/components/upload-form'
 import { ManualRecordForm } from '@/components/manual-record-form'
+import { QuickWaterReadingForm } from '@/components/quick-water-reading-form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AuthorizedWhatsappContact } from '@/db/types'
 import { parseAuthorizedWhatsappContacts } from '@/lib/whatsapp-contacts'
@@ -26,10 +27,13 @@ export default async function UploadPage() {
   let batches: Array<{
     id: string
     pond_name: string
+    pond_id: string
     start_date: string
     status: string
     estimated_fish_count: number | null
   }> = []
+
+  let ponds: Array<{ id: string; name: string }> = []
 
   if (profile?.organization_id) {
     const { data: organization } = await supabase
@@ -41,12 +45,14 @@ export default async function UploadPage() {
     organizationDefaultFca = organization?.default_fca != null ? Number(organization.default_fca) : null
     authorizedWhatsappContacts = parseAuthorizedWhatsappContacts(organization?.authorized_whatsapp_contacts)
 
-    const { data: ponds } = await supabase
+    const { data: pondsData } = await supabase
       .from('ponds')
       .select('id, name')
       .eq('organization_id', profile.organization_id)
       .order('sort_order', { ascending: true })
       .order('name')
+
+    ponds = pondsData ?? []
 
     if (ponds && ponds.length > 0) {
       const pondOrderMap: Record<string, number> = {}
@@ -72,6 +78,7 @@ export default async function UploadPage() {
         batches = sortedBatches.map(b => ({
           id: b.id,
           pond_name: ponds.find(p => p.id === b.pond_id)?.name ?? 'Estanque',
+          pond_id: b.pond_id,
           start_date: b.start_date,
           status: b.status,
           estimated_fish_count:
@@ -105,10 +112,14 @@ export default async function UploadPage() {
         <Tabs defaultValue="manual" className="w-full">
           <TabsList>
             <TabsTrigger value="manual">Manual</TabsTrigger>
+            <TabsTrigger value="quick">Lectura Rápida</TabsTrigger>
             <TabsTrigger value="ocr">Captura OCR</TabsTrigger>
           </TabsList>
           <TabsContent value="manual" className="mt-4">
             <ManualRecordForm batches={batches} defaultFca={organizationDefaultFca} />
+          </TabsContent>
+          <TabsContent value="quick" className="mt-4">
+            <QuickWaterReadingForm ponds={ponds} />
           </TabsContent>
           <TabsContent value="ocr" className="mt-4">
             <UploadForm batches={batches} defaultFca={organizationDefaultFca} />

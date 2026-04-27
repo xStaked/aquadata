@@ -22,13 +22,15 @@ import {
   CalendarDays,
   CalendarRange,
 } from 'lucide-react'
-import { confirmProductionRecord } from '@/app/dashboard/upload/actions'
+import { confirmProductionRecord, getWaterQualityReadingsForPondDate } from '@/app/dashboard/upload/actions'
 import { BatchSummaryCard } from '@/components/batch-summary-card'
 import { BatchContextFields } from '@/components/batch-context-fields'
+import type { WaterQualityReading } from '@/db/types'
 
 interface Batch {
   id: string
   pond_name: string
+  pond_id: string
   start_date: string
   status: string
   estimated_fish_count: number | null
@@ -117,6 +119,7 @@ export function ManualRecordForm({
   const [done, setDone] = useState(false)
   const [fcaMode, setFcaMode] = useState<FcaMode>(defaultFca != null ? 'default' : 'calculated')
   const [reportType, setReportType] = useState<ReportType>('daily')
+  const [quickReadings, setQuickReadings] = useState<WaterQualityReading[]>([])
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -174,6 +177,48 @@ export function ManualRecordForm({
       cancelled = true
     }
   }, [])
+
+  // Load quick water quality readings when batch or date changes
+  useEffect(() => {
+    let cancelled = false
+
+    const loadQuickReadings = async () => {
+      if (!selectedBatch) {
+        setQuickReadings([])
+        return
+      }
+      const batch = batches.find((b) => b.id === selectedBatch)
+      if (!batch) return
+
+      try {
+        const readings = await getWaterQualityReadingsForPondDate(batch.pond_id, formData.record_date)
+        if (cancelled) return
+        setQuickReadings(readings)
+
+        // Pre-fill O₂ and T from the latest reading of the day if fields are empty
+        if (readings.length > 0) {
+          const latest = readings[0]
+          setFormData((prev) => ({
+            ...prev,
+            temperature_c: prev.temperature_c === '' && latest.temperature_c != null
+              ? String(latest.temperature_c)
+              : prev.temperature_c,
+            oxygen_mg_l: prev.oxygen_mg_l === '' && latest.oxygen_mg_l != null
+              ? String(latest.oxygen_mg_l)
+              : prev.oxygen_mg_l,
+          }))
+        }
+      } catch {
+        // Silently ignore errors loading quick readings
+      }
+    }
+
+    void loadQuickReadings()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBatch, formData.record_date, batches])
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -609,6 +654,22 @@ export function ManualRecordForm({
             title={reportType === 'weekly' ? 'Calidad del Agua (promedios)' : 'Calidad del Agua'}
             variant="accent"
           />
+          {quickReadings.length > 0 && (
+            <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+              <p className="text-[11px] text-accent-foreground">
+                <span className="font-semibold">Lecturas rápidas hoy:</span>{' '}
+                {quickReadings.map((r, i) => (
+                  <span key={r.id}>
+                    {r.reading_time ? r.reading_time.slice(0, 5) : '??:??'} → O₂{' '}
+                    {r.oxygen_mg_l != null ? r.oxygen_mg_l : '-'} / T{' '}
+                    {r.temperature_c != null ? r.temperature_c : '-'}
+                    {i < quickReadings.length - 1 ? ' | ' : ''}
+                  </span>
+                ))}
+                . <span className="italic">Usando la más reciente.</span>
+              </p>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
               <FieldLabel htmlFor="m_temperature_c" unit="°C">Temperatura</FieldLabel>

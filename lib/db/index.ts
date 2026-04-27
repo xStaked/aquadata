@@ -28,6 +28,7 @@ export type {
   UploadStatus,
   UploadSource,
   BioremediationCalc,
+  WaterQualityReading,
   OrgContext,
 } from './types'
 
@@ -101,3 +102,11 @@ export {
   createTransfer,
   deleteTransfer,
 } from './repositories/transfer-repository'
+
+// ── Water Quality Reading Repository ──────────────────────────
+export {
+  createWaterQualityReading,
+  getWaterQualityReadingsByPondAndDate,
+  getLatestWaterQualityReadingByPond,
+  getWaterQualityReadingsByPond,
+} from './repositories/water-quality-reading-repository'

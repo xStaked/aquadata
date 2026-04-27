@@ -263,6 +263,21 @@ export interface BioremediationCalc {
   created_at: string
 }
 
+// ── Water Quality Readings ──────────────────────────────────
+
+export interface WaterQualityReading {
+  id: string
+  pond_id: string
+  batch_id: string | null
+  reading_date: string
+  reading_time: string | null
+  temperature_c: number | null
+  oxygen_mg_l: number | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+}
+
 // ── Org context ───────────────────────────────────────────────
 
 export interface OrgContext {

@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ClipboardList, CalendarDays, CalendarRange, CalendarRangeIcon, Eye } from 'lucide-react'
+import { ClipboardList, CalendarDays, CalendarRange, CalendarRangeIcon, Eye, Gauge } from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
 import { RecordsExport, SingleRecordExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -55,9 +55,10 @@ const PRODUCTION_RECORD_FIELDS = `
 export default async function RecordsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pond?: string; from?: string; to?: string; page?: string; type?: string }>
+  searchParams: Promise<{ pond?: string; from?: string; to?: string; page?: string; type?: string; view?: string }>
 }) {
-  const { pond: pondFilter, from: fromDateFilter, to: toDateFilter, page: pageParam, type: typeFilter } = await searchParams
+  const { pond: pondFilter, from: fromDateFilter, to: toDateFilter, page: pageParam, type: typeFilter, view: viewParam } = await searchParams
+  const currentView = viewParam === 'readings' ? 'readings' : 'records'
   const currentPage = Number(pageParam) > 0 ? Math.floor(Number(pageParam)) : 1
   const pageSize = 20
   const supabase = await createClient()
@@ -120,6 +121,20 @@ export default async function RecordsPage({
   let totalRecords = 0
   let organizationDefaultFca: number | null = null
 
+  let readings: Array<{
+    id: string
+    pond_id: string
+    batch_id: string | null
+    reading_date: string
+    reading_time: string | null
+    temperature_c: number | null
+    oxygen_mg_l: number | null
+    notes: string | null
+    created_at: string
+  }> = []
+
+  let totalReadings = 0
+
   if (profile?.organization_id) {
     const { data: organization } = await supabase
       .from('organizations')
@@ -141,62 +156,90 @@ export default async function RecordsPage({
     if (ponds && ponds.length > 0) {
       const selectedPondId = pondFilter && ponds.some((p) => p.id === pondFilter) ? pondFilter : null
       const pondIds = selectedPondId ? [selectedPondId] : ponds.map((p) => p.id)
-      const { data: allBatches } = await supabase
-        .from('batches')
-        .select('id, pond_id, start_date, initial_population, current_population, pond_entry_date, seed_source')
-        .in('pond_id', pondIds)
 
-      if (allBatches) {
-        for (const b of allBatches) {
-          const pondName = ponds.find(p => p.id === b.pond_id)?.name ?? ''
-          batchPondMap[b.id] = pondName
-          batchDataMap[b.id] = {
-            start_date: b.start_date,
-            initial_population: b.initial_population,
-            current_population: b.current_population,
-            pond_entry_date: b.pond_entry_date,
-            seed_source: b.seed_source,
+      if (currentView === 'records') {
+        const { data: allBatches } = await supabase
+          .from('batches')
+          .select('id, pond_id, start_date, initial_population, current_population, pond_entry_date, seed_source')
+          .in('pond_id', pondIds)
+
+        if (allBatches) {
+          for (const b of allBatches) {
+            const pondName = ponds.find(p => p.id === b.pond_id)?.name ?? ''
+            batchPondMap[b.id] = pondName
+            batchDataMap[b.id] = {
+              start_date: b.start_date,
+              initial_population: b.initial_population,
+              current_population: b.current_population,
+              pond_entry_date: b.pond_entry_date,
+              seed_source: b.seed_source,
+            }
+          }
+
+          const batchIds = allBatches.map(b => b.id)
+          if (batchIds.length > 0) {
+            let recordsQuery = supabase
+              .from('production_records')
+              .select(PRODUCTION_RECORD_FIELDS, { count: 'exact' })
+              .in('batch_id', batchIds)
+              .order('record_date', { ascending: false })
+              .order('created_at', { ascending: false })
+
+            if (fromDateFilter) {
+              recordsQuery = recordsQuery.gte('record_date', fromDateFilter)
+            }
+
+            if (toDateFilter) {
+              recordsQuery = recordsQuery.lte('record_date', toDateFilter)
+            }
+
+            if (typeFilter === 'daily' || typeFilter === 'weekly') {
+              recordsQuery = recordsQuery.eq('report_type', typeFilter)
+            }
+
+            const from = (currentPage - 1) * pageSize
+            const to = from + pageSize - 1
+            const { data: recs, count } = await recordsQuery.range(from, to)
+
+            records = (recs as unknown as typeof records) ?? []
+            totalRecords = count ?? 0
           }
         }
+      } else {
+        // readings view
+        let readingsQuery = supabase
+          .from('water_quality_readings')
+          .select('id, pond_id, batch_id, reading_date, reading_time, temperature_c, oxygen_mg_l, notes, created_at', { count: 'exact' })
+          .in('pond_id', pondIds)
+          .order('reading_date', { ascending: false })
+          .order('reading_time', { ascending: false })
 
-        const batchIds = allBatches.map(b => b.id)
-        if (batchIds.length > 0) {
-          let recordsQuery = supabase
-            .from('production_records')
-            .select(PRODUCTION_RECORD_FIELDS, { count: 'exact' })
-            .in('batch_id', batchIds)
-            .order('record_date', { ascending: false })
-            .order('created_at', { ascending: false })
-
-          if (fromDateFilter) {
-            recordsQuery = recordsQuery.gte('record_date', fromDateFilter)
-          }
-
-          if (toDateFilter) {
-            recordsQuery = recordsQuery.lte('record_date', toDateFilter)
-          }
-
-          if (typeFilter === 'daily' || typeFilter === 'weekly') {
-            recordsQuery = recordsQuery.eq('report_type', typeFilter)
-          }
-
-          const from = (currentPage - 1) * pageSize
-          const to = from + pageSize - 1
-          const { data: recs, count } = await recordsQuery.range(from, to)
-
-          records = (recs as unknown as typeof records) ?? []
-          totalRecords = count ?? 0
+        if (fromDateFilter) {
+          readingsQuery = readingsQuery.gte('reading_date', fromDateFilter)
         }
+
+        if (toDateFilter) {
+          readingsQuery = readingsQuery.lte('reading_date', toDateFilter)
+        }
+
+        const from = (currentPage - 1) * pageSize
+        const to = from + pageSize - 1
+        const { data: rds, count } = await readingsQuery.range(from, to)
+
+        readings = (rds as unknown as typeof readings) ?? []
+        totalReadings = count ?? 0
       }
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
+  const totalItems = currentView === 'records' ? totalRecords : totalReadings
+  const currentItems = currentView === 'records' ? records.length : readings.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
   const safeCurrentPage = Math.min(currentPage, totalPages)
   const hasPrevPage = safeCurrentPage > 1
   const hasNextPage = safeCurrentPage < totalPages
-  const startItem = totalRecords === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1
-  const endItem = totalRecords === 0 ? 0 : startItem + records.length - 1
+  const startItem = totalItems === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1
+  const endItem = totalItems === 0 ? 0 : startItem + currentItems - 1
   const activePondFilter =
     pondFilter && ponds.some((pond) => pond.id === pondFilter) ? pondFilter : undefined
 
@@ -208,7 +251,19 @@ export default async function RecordsPage({
     if (fromDateFilter) params.set('from', fromDateFilter)
     if (toDateFilter) params.set('to', toDateFilter)
     if (activeTypeFilter) params.set('type', activeTypeFilter)
+    if (currentView === 'readings') params.set('view', 'readings')
     if (page > 1) params.set('page', String(page))
+    const query = params.toString()
+    return query ? `/dashboard/records?${query}` : '/dashboard/records'
+  }
+
+  const buildViewHref = (view: string) => {
+    const params = new URLSearchParams()
+    if (activePondFilter) params.set('pond', activePondFilter)
+    if (fromDateFilter) params.set('from', fromDateFilter)
+    if (toDateFilter) params.set('to', toDateFilter)
+    if (activeTypeFilter) params.set('type', activeTypeFilter)
+    if (view === 'readings') params.set('view', 'readings')
     const query = params.toString()
     return query ? `/dashboard/records?${query}` : '/dashboard/records'
   }
@@ -227,37 +282,66 @@ export default async function RecordsPage({
             Ver valores por periodo
           </Link>
         </div>
-        <RecordsExport
-          records={records.map((rec) => ({
-            id: rec.id,
-            record_date: rec.record_date,
-            pond_name: batchPondMap[rec.batch_id] || '-',
-            fish_count: rec.fish_count,
-            feed_kg: rec.feed_kg,
-            avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
-            mortality_count: rec.mortality_count,
-            temperature_c: rec.temperature_c,
-            oxygen_mg_l: rec.oxygen_mg_l,
-            ammonia_mg_l: rec.ammonia_mg_l,
-            nitrite_mg_l: rec.nitrite_mg_l,
-            ph: rec.ph,
-            phosphate_mg_l: rec.phosphate_mg_l,
-            hardness_mg_l: rec.hardness_mg_l,
-            alkalinity_mg_l: rec.alkalinity_mg_l,
-            turbidity_ntu: rec.turbidity_ntu,
-            daily_gain_g: rec.daily_gain_g,
-            effective_fca: rec.effective_fca,
-            fca_source: rec.fca_source,
-            biomass_kg: rec.biomass_kg,
-            sampling_weight_g: rec.sampling_weight_g,
-          }))}
-        />
+        {currentView === 'records' ? (
+          <RecordsExport
+            records={records.map((rec) => ({
+              id: rec.id,
+              record_date: rec.record_date,
+              pond_name: batchPondMap[rec.batch_id] || '-',
+              fish_count: rec.fish_count,
+              feed_kg: rec.feed_kg,
+              avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+              mortality_count: rec.mortality_count,
+              temperature_c: rec.temperature_c,
+              oxygen_mg_l: rec.oxygen_mg_l,
+              ammonia_mg_l: rec.ammonia_mg_l,
+              nitrite_mg_l: rec.nitrite_mg_l,
+              ph: rec.ph,
+              phosphate_mg_l: rec.phosphate_mg_l,
+              hardness_mg_l: rec.hardness_mg_l,
+              alkalinity_mg_l: rec.alkalinity_mg_l,
+              turbidity_ntu: rec.turbidity_ntu,
+              daily_gain_g: rec.daily_gain_g,
+              effective_fca: rec.effective_fca,
+              fca_source: rec.fca_source,
+              biomass_kg: rec.biomass_kg,
+              sampling_weight_g: rec.sampling_weight_g,
+            }))}
+          />
+        ) : null}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <Link
+          href={buildViewHref('records')}
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
+            currentView === 'records'
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+          }`}
+        >
+          <ClipboardList className="h-3.5 w-3.5" />
+          Reportes de Producción
+        </Link>
+        <Link
+          href={buildViewHref('readings')}
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors ${
+            currentView === 'readings'
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+          }`}
+        >
+          <Gauge className="h-3.5 w-3.5" />
+          Lecturas Rápidas
+        </Link>
       </div>
 
       {!canEdit ? <ReadOnlyBanner description="Puedes consultar y exportar registros, pero no editar reportes existentes." /> : null}
       <Card>
         <CardContent className="pt-6">
           <form method="GET" className="flex flex-wrap items-end gap-3">
+            {currentView === 'readings' ? <input type="hidden" name="view" value="readings" /> : null}
             <div className="flex min-w-[220px] flex-col gap-1">
               <label htmlFor="pond" className="text-sm font-medium text-foreground">
                 Estanque
@@ -331,8 +415,10 @@ export default async function RecordsPage({
         </CardContent>
       </Card>
 
-      {records.length === 0 ? (
-        <Card className="border-dashed">
+      {currentView === 'records' ? (
+        <>
+          {records.length === 0 ? (
+            <Card className="border-dashed">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <ClipboardList className="h-10 w-10 text-muted-foreground" />
             <div>
@@ -599,6 +685,106 @@ export default async function RecordsPage({
             </div>
           </CardContent>
         </Card>
+      )}
+    </>
+  ) : (
+    <>
+      {readings.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+                <Gauge className="h-10 w-10 text-muted-foreground" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Sin lecturas rápidas</h3>
+                  <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                    No hay lecturas de oxígeno y temperatura para los filtros seleccionados.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-foreground">
+                  {totalReadings} lecturas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Hora</TableHead>
+                      <TableHead>Estanque</TableHead>
+                      <TableHead className="text-right">Oxígeno (mg/L)</TableHead>
+                      <TableHead className="text-right">Temperatura (°C)</TableHead>
+                      <TableHead>Notas</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {readings.map((reading) => (
+                      <TableRow key={reading.id} className="transition-colors duration-150 hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          {format(new Date(reading.reading_date), 'dd/MM/yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          {reading.reading_time ? reading.reading_time.slice(0, 5) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {ponds.find((p) => p.id === reading.pond_id)?.name || '-'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {reading.oxygen_mg_l != null ? reading.oxygen_mg_l.toFixed(1) : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {reading.temperature_c != null ? reading.temperature_c.toFixed(1) : '-'}
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
+                          {reading.notes || '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {startItem}-{endItem} de {totalReadings}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {hasPrevPage ? (
+                      <a
+                        href={buildPageHref(safeCurrentPage - 1)}
+                        className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
+                      >
+                        Anterior
+                      </a>
+                    ) : (
+                      <span className="rounded-md border border-input px-3 py-2 text-sm font-medium text-muted-foreground">
+                        Anterior
+                      </span>
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      Pagina {safeCurrentPage} de {totalPages}
+                    </span>
+                    {hasNextPage ? (
+                      <a
+                        href={buildPageHref(safeCurrentPage + 1)}
+                        className="rounded-md border border-input px-3 py-2 text-sm font-medium text-foreground"
+                      >
+                        Siguiente
+                      </a>
+                    ) : (
+                      <span className="rounded-md border border-input px-3 py-2 text-sm font-medium text-muted-foreground">
+                        Siguiente
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   )

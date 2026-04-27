@@ -11,6 +11,7 @@ import {
   Eye,
   Fish,
   FlaskConical,
+  Gauge,
   Package,
   Waves,
   Wheat,
@@ -33,6 +34,7 @@ import { PaginatedRecordsTable } from '@/components/paginated-records-table'
 import { cn } from '@/lib/utils'
 import { isWriterRole } from '@/lib/auth/roles'
 import { BatchVaccines } from '@/components/batch-vaccines'
+import { getWaterQualityReadingsByPond } from '@/lib/db'
 
 function formatNumber(value: number | null, decimals = 1) {
   if (value == null) return '-'
@@ -112,6 +114,7 @@ export default async function PondDetailPage({
     { data: treatments },
     { data: batchVaccines },
     { data: vaccineTypes },
+    waterQualityReadings,
   ] = batchIds.length > 0
     ? await Promise.all([
         supabase
@@ -152,6 +155,7 @@ export default async function PondDetailPage({
           .select('id, name, description')
           .eq('organization_id', profile.organization_id)
           .order('name', { ascending: true }),
+        getWaterQualityReadingsByPond(pond.id, 20),
       ])
     : await Promise.all([
         Promise.resolve({ data: [] as any[] }),
@@ -174,6 +178,7 @@ export default async function PondDetailPage({
           .select('id, name, description')
           .eq('organization_id', profile.organization_id)
           .order('name', { ascending: true }),
+        getWaterQualityReadingsByPond(pond.id, 20),
       ])
 
   const recordsByBatch = new Map<string, typeof records>()
@@ -337,9 +342,14 @@ export default async function PondDetailPage({
             Vista consolidada del estanque con lotes, reportes, alimentación y alertas.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/dashboard/upload">Subir reporte</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/dashboard/upload">Subir reporte</Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/dashboard/upload?tab=quick&pond_id=${pond.id}`}>Lectura rápida</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -612,6 +622,46 @@ export default async function PondDetailPage({
               <ValueCard label="Fosfato" value={latestRecord?.phosphate_mg_l != null ? `${formatNumber(Number(latestRecord.phosphate_mg_l), 2)} mg/L` : '-'} />
               <ValueCard label="Dureza" value={latestRecord?.hardness_mg_l != null ? `${formatNumber(Number(latestRecord.hardness_mg_l), 1)} mg/L` : '-'} />
               <ValueCard label="Alcalinidad" value={latestRecord?.alkalinity_mg_l != null ? `${formatNumber(Number(latestRecord.alkalinity_mg_l), 1)} mg/L` : '-'} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Gauge className="h-4 w-4 text-cyan-500" />
+                Lecturas Rápidas Recientes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {waterQualityReadings && waterQualityReadings.length > 0 ? (
+                waterQualityReadings.map((reading) => (
+                  <div key={reading.id} className="rounded-lg border border-border/70 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {reading.reading_time ? reading.reading_time.slice(0, 5) : '--:--'}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(reading.reading_date), 'dd/MM/yyyy')}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <ValueCard
+                        label="Oxígeno"
+                        value={reading.oxygen_mg_l != null ? `${formatNumber(Number(reading.oxygen_mg_l), 1)} mg/L` : '-'}
+                      />
+                      <ValueCard
+                        label="Temperatura"
+                        value={reading.temperature_c != null ? `${formatNumber(Number(reading.temperature_c), 1)} °C` : '-'}
+                      />
+                    </div>
+                    {reading.notes ? (
+                      <p className="mt-2 text-xs text-muted-foreground">{reading.notes}</p>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay lecturas rápidas recientes en este estanque.</p>
+              )}
             </CardContent>
           </Card>
 
