@@ -7,7 +7,7 @@ cd videos/commercial-system
 npx hyperframes preview
 ```
 
-Requires `index.html` from Task 2.
+Requires `videos/commercial-system/index.html` to exist.
 
 ## Validation
 
@@ -18,13 +18,13 @@ npx hyperframes validate
 npx hyperframes inspect --samples 15
 ```
 
-These checks also depend on `index.html` from Task 2.
+These checks also depend on `videos/commercial-system/index.html` to exist.
 
 ## Render
 
 ```bash
 cd videos/commercial-system
-npx hyperframes render index.html --output commercial-system.mp4
+npx hyperframes render --output commercial-system.mp4
 ```
 
-Render also depends on `index.html` from Task 2.
+Render also depends on `videos/commercial-system/index.html` to exist.
