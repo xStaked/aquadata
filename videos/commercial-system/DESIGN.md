@@ -14,6 +14,9 @@ Bright, premium operational software film for aquaculture. The piece should feel
 - Headlines: `"Libre Franklin"`
 - Data labels and body: `"IBM Plex Sans"`
 
+## Motion Intent
+Clean, executive, and fluid. Motion should feel polished and controlled, with clear transitions and no frantic or flashy movement.
+
 ## What NOT to Do
 - No dark-mode cyberpunk look
 - No literal screencast framing with browser chrome
