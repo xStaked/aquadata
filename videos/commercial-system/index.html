@@ -242,6 +242,9 @@
         overflow: hidden;
         padding: 26px 28px;
         min-height: 186px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
 
       .chart-card::before {
@@ -273,6 +276,66 @@
 
       .chart-card:not(.chart-card--wide) {
         grid-column: span 5;
+      }
+
+      .chart-card__eyebrow,
+      .alert-card__severity,
+      .module-card__eyebrow {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .chart-card__title,
+      .alert-card__title,
+      .module-card__title {
+        position: relative;
+        z-index: 1;
+        margin: 10px 0 0;
+        color: var(--ink);
+        font-size: 28px;
+        line-height: 1.05;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        max-width: 340px;
+      }
+
+      .chart-card__value,
+      .alert-card__meta,
+      .module-card__meta {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+      }
+
+      .chart-card__value strong {
+        color: var(--brand);
+        font-family: "Libre Franklin", "IBM Plex Sans", system-ui, sans-serif;
+        font-size: 54px;
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .chart-card__value span,
+      .alert-card__meta span,
+      .module-card__meta span {
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.3;
+      }
+
+      .chart-card__hint {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.45;
+        max-width: 280px;
       }
 
       .capture-flow {
@@ -323,6 +386,7 @@
         display: flex;
         align-items: center;
         gap: 20px;
+        justify-content: space-between;
       }
 
       .alert-card::before {
@@ -353,6 +417,22 @@
         background: var(--accent);
       }
 
+      .alert-card__copy {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 6px;
+      }
+
+      .alert-card__title {
+        margin: 0;
+        font-size: 26px;
+      }
+
+      .alert-card__meta {
+        color: var(--muted);
+      }
+
       .module-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -365,6 +445,11 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+      }
+
+      .module-card__eyebrow {
+        position: relative;
+        z-index: 1;
       }
 
       .module-card strong {
@@ -445,10 +530,30 @@
             <p>Peso, FCA, calidad de agua y tendencia productiva en una sola lectura.</p>
           </div>
           <div class="chart-wall">
-            <div class="chart-card chart-card--wide"></div>
-            <div class="chart-card"></div>
-            <div class="chart-card"></div>
-            <div class="chart-card chart-card--wide"></div>
+            <article id="chart-card-weight" data-role="analytics-card" class="chart-card chart-card--wide">
+              <div class="chart-card__eyebrow">Peso promedio</div>
+              <div class="chart-card__title">Tendencia de crecimiento por lote</div>
+              <div class="chart-card__value"><strong>+12%</strong><span>vs. semana anterior</span></div>
+              <p class="chart-card__hint">Los lotes avanzan con una curva estable y lectura clara para decidir ajustes.</p>
+            </article>
+            <article id="chart-card-fca" data-role="analytics-card" class="chart-card">
+              <div class="chart-card__eyebrow">FCA</div>
+              <div class="chart-card__title">Eficiencia alimentaria</div>
+              <div class="chart-card__value"><strong>1.58</strong><span>objetivo 1.50</span></div>
+              <p class="chart-card__hint">La variación se muestra de forma simple para priorizar control operativo.</p>
+            </article>
+            <article id="chart-card-water" data-role="analytics-card" class="chart-card">
+              <div class="chart-card__eyebrow">Calidad de agua</div>
+              <div class="chart-card__title">Oxígeno, pH y temperatura</div>
+              <div class="chart-card__value"><strong>OK</strong><span>3 variables estables</span></div>
+              <p class="chart-card__hint">La lectura rápida deja ver si la granja está dentro del rango esperado.</p>
+            </article>
+            <article id="chart-card-trend" data-role="analytics-card" class="chart-card chart-card--wide">
+              <div class="chart-card__eyebrow">Tendencia productiva</div>
+              <div class="chart-card__title">Ritmo de operación y alertas tempranas</div>
+              <div class="chart-card__value"><strong>92%</strong><span>salud operativa</span></div>
+              <p class="chart-card__hint">Una síntesis visual que ayuda a anticipar decisiones antes de que el problema escale.</p>
+            </article>
           </div>
         </div>
       </section>
@@ -471,9 +576,27 @@
       <section id="scene-4" class="scene">
         <div class="scene-shell scene-shell--alerts">
           <div class="alerts-stack">
-            <article class="alert-card alert-card--warning"></article>
-            <article class="alert-card alert-card--critical"></article>
-            <article class="alert-card alert-card--opportunity"></article>
+            <article id="alert-card-warning" data-role="alert-card" class="alert-card alert-card--warning">
+              <div class="alert-card__copy">
+                <div class="alert-card__severity">Advertencia</div>
+                <div class="alert-card__title">Oxígeno en descenso</div>
+                <div class="alert-card__meta"><span>Revisar aireación</span></div>
+              </div>
+            </article>
+            <article id="alert-card-critical" data-role="alert-card" class="alert-card alert-card--critical">
+              <div class="alert-card__copy">
+                <div class="alert-card__severity">Crítica</div>
+                <div class="alert-card__title">Lote fuera de rango</div>
+                <div class="alert-card__meta"><span>Escalar acción inmediata</span></div>
+              </div>
+            </article>
+            <article id="alert-card-opportunity" data-role="alert-card" class="alert-card alert-card--opportunity">
+              <div class="alert-card__copy">
+                <div class="alert-card__severity">Oportunidad</div>
+                <div class="alert-card__title">Bioremediación sugerida</div>
+                <div class="alert-card__meta"><span>Ir a calculadora operativa</span></div>
+              </div>
+            </article>
           </div>
           <div class="section-copy">
             <div class="eyebrow">Alerta a acción</div>
@@ -491,29 +614,35 @@
             <p>Convertimos operación compleja en software serio y vendible.</p>
           </div>
           <div class="module-grid">
-            <article class="module-card">
-              <span>Módulo</span>
-              <strong>Dashboard</strong>
+            <article id="module-card-dashboard" data-role="module-card" class="module-card">
+              <span class="module-card__eyebrow">Módulo</span>
+              <strong class="module-card__title">Dashboard</strong>
+              <div class="module-card__meta"><span>Una vista ejecutiva de la operación</span></div>
             </article>
-            <article class="module-card">
-              <span>Módulo</span>
-              <strong>Analítica</strong>
+            <article id="module-card-analytics" data-role="module-card" class="module-card">
+              <span class="module-card__eyebrow">Módulo</span>
+              <strong class="module-card__title">Analítica</strong>
+              <div class="module-card__meta"><span>Métricas para anticipar y decidir</span></div>
             </article>
-            <article class="module-card">
-              <span>Módulo</span>
-              <strong>OCR</strong>
+            <article id="module-card-ocr" data-role="module-card" class="module-card">
+              <span class="module-card__eyebrow">Módulo</span>
+              <strong class="module-card__title">OCR</strong>
+              <div class="module-card__meta"><span>Captura rápida desde el campo</span></div>
             </article>
-            <article class="module-card">
-              <span>Módulo</span>
-              <strong>Alertas</strong>
+            <article id="module-card-alerts" data-role="module-card" class="module-card">
+              <span class="module-card__eyebrow">Módulo</span>
+              <strong class="module-card__title">Alertas</strong>
+              <div class="module-card__meta"><span>Severidad y siguiente acción</span></div>
             </article>
-            <article class="module-card">
-              <span>Módulo</span>
-              <strong>Bioremediación</strong>
+            <article id="module-card-bioremediation" data-role="module-card" class="module-card">
+              <span class="module-card__eyebrow">Módulo</span>
+              <strong class="module-card__title">Bioremediación</strong>
+              <div class="module-card__meta"><span>Decisiones operativas guiadas</span></div>
             </article>
-            <article class="module-card">
-              <span>Módulo</span>
-              <strong>Utilidades</strong>
+            <article id="module-card-utilities" data-role="module-card" class="module-card">
+              <span class="module-card__eyebrow">Módulo</span>
+              <strong class="module-card__title">Utilidades</strong>
+              <div class="module-card__meta"><span>Herramientas que sostienen la operación</span></div>
             </article>
           </div>
         </div>
