@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Commercial System Video</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --bg: #f6fafd;
+        --surface: #ffffff;
+        --brand: #234085;
+        --accent: #2aa6d1;
+        --ink: #0f172a;
+        --muted: #5b6b80;
+        --line: rgba(35, 64, 133, 0.12);
+        --shadow: 0 24px 60px rgba(35, 64, 133, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 14% 14%, rgba(42, 166, 209, 0.08), transparent 26%),
+          radial-gradient(circle at 86% 18%, rgba(35, 64, 133, 0.08), transparent 28%),
+          var(--bg);
+        color: var(--ink);
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+      }
+
+      body {
+        position: relative;
+      }
+
+      [data-composition-id="commercial-system"] {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      [data-composition-id="commercial-system"]::before,
+      [data-composition-id="commercial-system"]::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        pointer-events: none;
+        filter: blur(4px);
+      }
+
+      [data-composition-id="commercial-system"]::before {
+        width: 560px;
+        height: 560px;
+        right: -180px;
+        top: -180px;
+        background: radial-gradient(circle, rgba(42, 166, 209, 0.12), transparent 68%);
+      }
+
+      [data-composition-id="commercial-system"]::after {
+        width: 760px;
+        height: 760px;
+        left: -260px;
+        bottom: -320px;
+        background: radial-gradient(circle, rgba(35, 64, 133, 0.1), transparent 66%);
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      #scene-1 {
+        z-index: 1;
+      }
+
+      #scene-2,
+      #scene-3,
+      #scene-4,
+      #scene-5 {
+        opacity: 0;
+        z-index: 2;
+      }
+
+      .scene-shell {
+        width: 100%;
+        height: 100%;
+        padding: 96px 112px;
+        display: grid;
+        gap: 32px;
+        align-content: center;
+      }
+
+      .scene-shell--hero {
+        grid-template-columns: 1.02fr 0.98fr;
+        align-items: center;
+      }
+
+      .scene-shell--split {
+        grid-template-columns: 0.98fr 1.02fr;
+        align-items: center;
+      }
+
+      .scene-shell--alerts {
+        grid-template-columns: 0.96fr 1.04fr;
+        align-items: center;
+      }
+
+      .scene-shell--closing {
+        grid-template-columns: 0.94fr 1.06fr;
+        align-items: center;
+      }
+
+      .hero-copy,
+      .section-copy,
+      .closing-copy {
+        max-width: 720px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        color: var(--brand);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 36px;
+        height: 2px;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Libre Franklin", "IBM Plex Sans", system-ui, sans-serif;
+        line-height: 0.96;
+        letter-spacing: -0.04em;
+      }
+
+      h1 {
+        font-size: 92px;
+        max-width: 760px;
+      }
+
+      h2 {
+        font-size: 64px;
+        max-width: 680px;
+      }
+
+      .hero-copy p,
+      .section-copy p,
+      .closing-copy p {
+        margin: 22px 0 0;
+        max-width: 620px;
+        color: var(--muted);
+        font-size: 24px;
+        line-height: 1.5;
+      }
+
+      .hero-panel,
+      .chart-wall,
+      .alerts-stack,
+      .module-grid {
+        min-width: 0;
+      }
+
+      .hero-panel {
+        display: grid;
+        align-items: center;
+        justify-items: end;
+      }
+
+      .kpi-grid {
+        width: 100%;
+        max-width: 740px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+      }
+
+      .kpi-card,
+      .chart-card,
+      .capture-card,
+      .alert-card,
+      .module-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+      }
+
+      .kpi-card {
+        padding: 30px 32px;
+        min-height: 164px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .kpi-card span,
+      .module-card span {
+        color: var(--muted);
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .kpi-card strong {
+        color: var(--brand);
+        font-family: "Libre Franklin", "IBM Plex Sans", system-ui, sans-serif;
+        font-size: 68px;
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .chart-wall {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-auto-rows: 186px;
+        gap: 22px;
+      }
+
+      .chart-card {
+        position: relative;
+        overflow: hidden;
+        padding: 26px 28px;
+        min-height: 186px;
+      }
+
+      .chart-card::before {
+        content: "";
+        position: absolute;
+        inset: auto 28px 32px 28px;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--brand), var(--accent));
+        opacity: 0.85;
+      }
+
+      .chart-card::after {
+        content: "";
+        position: absolute;
+        inset: 28px 28px 56px 28px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(35, 64, 133, 0.06), transparent 70%),
+          linear-gradient(90deg, rgba(35, 64, 133, 0.08) 0 1px, transparent 1px 100%),
+          linear-gradient(180deg, rgba(35, 64, 133, 0.08) 0 1px, transparent 1px 100%);
+        background-size: auto, 22% 100%, 100% 24%;
+        opacity: 0.95;
+      }
+
+      .chart-card--wide {
+        grid-column: span 7;
+      }
+
+      .chart-card:not(.chart-card--wide) {
+        grid-column: span 5;
+      }
+
+      .capture-flow {
+        display: grid;
+        gap: 18px;
+        max-width: 640px;
+      }
+
+      .capture-card {
+        min-height: 136px;
+        padding: 34px 36px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--ink);
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .capture-card::after {
+        content: "";
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 10px rgba(42, 166, 209, 0.12);
+      }
+
+      .capture-card--accent {
+        background: linear-gradient(135deg, rgba(35, 64, 133, 0.96), rgba(42, 166, 209, 0.9));
+        color: #ffffff;
+      }
+
+      .capture-card--accent::after {
+        background: #ffffff;
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.14);
+      }
+
+      .alerts-stack {
+        display: grid;
+        gap: 18px;
+        max-width: 680px;
+      }
+
+      .alert-card {
+        min-height: 132px;
+        padding: 26px 30px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .alert-card::before {
+        content: "";
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        flex: none;
+      }
+
+      .alert-card::after {
+        content: "";
+        flex: 1;
+        height: 16px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(35, 64, 133, 0.12), transparent 74%);
+      }
+
+      .alert-card--warning::before {
+        background: #f5a524;
+      }
+
+      .alert-card--critical::before {
+        background: #e5484d;
+      }
+
+      .alert-card--opportunity::before {
+        background: var(--accent);
+      }
+
+      .module-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .module-card {
+        min-height: 156px;
+        padding: 28px 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .module-card strong {
+        color: var(--brand);
+        font-family: "Libre Franklin", "IBM Plex Sans", system-ui, sans-serif;
+        font-size: 32px;
+        letter-spacing: -0.03em;
+      }
+
+      .surface-panel {
+        position: relative;
+        background: rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(35, 64, 133, 0.08);
+        border-radius: 36px;
+        padding: 28px;
+        backdrop-filter: blur(8px);
+      }
+
+      .scene-shell--hero .hero-panel,
+      .scene-shell--closing .module-grid {
+        position: relative;
+      }
+
+      .closing-copy {
+        max-width: 620px;
+      }
+
+      .scene-shell--closing .closing-copy p {
+        max-width: 560px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      data-composition-id="commercial-system"
+      data-width="1920"
+      data-height="1080"
+      data-start="0"
+      data-duration="40"
+    >
+      <section id="scene-1" class="scene">
+        <div class="scene-shell scene-shell--hero">
+          <div class="hero-copy">
+            <div class="eyebrow">Centro de control</div>
+            <h1>Toda la operación acuícola en una sola vista</h1>
+            <p>KPIs, alertas, captura inteligente y decisiones rápidas.</p>
+          </div>
+          <div class="hero-panel">
+            <div class="surface-panel">
+              <div class="kpi-grid">
+                <article class="kpi-card">
+                  <span>Estanques</span>
+                  <strong>24</strong>
+                </article>
+                <article class="kpi-card">
+                  <span>Lotes activos</span>
+                  <strong>08</strong>
+                </article>
+                <article class="kpi-card">
+                  <span>Alertas</span>
+                  <strong>03</strong>
+                </article>
+                <article class="kpi-card">
+                  <span>Salud operativa</span>
+                  <strong>92%</strong>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-2" class="scene">
+        <div class="scene-shell">
+          <div class="section-copy">
+            <div class="eyebrow">Analítica operativa</div>
+            <h2>Analítica para anticipar y decidir</h2>
+            <p>Peso, FCA, calidad de agua y tendencia productiva en una sola lectura.</p>
+          </div>
+          <div class="chart-wall">
+            <div class="chart-card chart-card--wide"></div>
+            <div class="chart-card"></div>
+            <div class="chart-card"></div>
+            <div class="chart-card chart-card--wide"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-3" class="scene">
+        <div class="scene-shell scene-shell--split">
+          <div class="capture-flow">
+            <div class="capture-card">Manual</div>
+            <div class="capture-card">Oxígeno y temperatura</div>
+            <div class="capture-card capture-card--accent">OCR por foto</div>
+          </div>
+          <div class="section-copy">
+            <div class="eyebrow">Captura inteligente</div>
+            <h2>Del campo al sistema en minutos</h2>
+            <p>Menos fricción para registrar lo que pasa en la granja.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-4" class="scene">
+        <div class="scene-shell scene-shell--alerts">
+          <div class="alerts-stack">
+            <article class="alert-card alert-card--warning"></article>
+            <article class="alert-card alert-card--critical"></article>
+            <article class="alert-card alert-card--opportunity"></article>
+          </div>
+          <div class="section-copy">
+            <div class="eyebrow">Alerta a acción</div>
+            <h2>Detecta, prioriza y actúa</h2>
+            <p>El sistema no solo reporta: orienta la siguiente decisión operativa.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-5" class="scene">
+        <div class="scene-shell scene-shell--closing">
+          <div class="closing-copy">
+            <div class="eyebrow">Software vertical</div>
+            <h2>Claridad, control y crecimiento</h2>
+            <p>Convertimos operación compleja en software serio y vendible.</p>
+          </div>
+          <div class="module-grid">
+            <article class="module-card">
+              <span>Módulo</span>
+              <strong>Dashboard</strong>
+            </article>
+            <article class="module-card">
+              <span>Módulo</span>
+              <strong>Analítica</strong>
+            </article>
+            <article class="module-card">
+              <span>Módulo</span>
+              <strong>OCR</strong>
+            </article>
+            <article class="module-card">
+              <span>Módulo</span>
+              <strong>Alertas</strong>
+            </article>
+            <article class="module-card">
+              <span>Módulo</span>
+              <strong>Bioremediación</strong>
+            </article>
+            <article class="module-card">
+              <span>Módulo</span>
+              <strong>Utilidades</strong>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["commercial-system"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>
