@@ -1,5 +1,7 @@
 # Commercial System Video
 
+This workspace becomes runnable after `videos/commercial-system/index.html` exists.
+
 ## Preview
 
 ```bash
