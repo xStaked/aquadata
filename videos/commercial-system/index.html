@@ -526,8 +526,8 @@
       data-start="0"
       data-duration="40"
     >
-      <section id="scene-1" class="scene" data-layout-allow-overflow>
-        <div class="scene-shell scene-shell--hero">
+      <section id="scene-1" class="scene">
+        <div class="scene-shell scene-shell--hero" data-layout-allow-overflow>
           <div class="hero-copy">
             <div class="eyebrow">Centro de control</div>
             <h1>Toda la operación acuícola en una sola vista</h1>
@@ -558,8 +558,8 @@
         </div>
       </section>
 
-      <section id="scene-2" class="scene" data-layout-allow-overflow>
-        <div class="scene-shell">
+      <section id="scene-2" class="scene">
+        <div class="scene-shell" data-layout-allow-overflow>
           <div class="section-copy">
             <div class="eyebrow">Analítica operativa</div>
             <h2>Analítica para anticipar y decidir</h2>
@@ -594,8 +594,8 @@
         </div>
       </section>
 
-      <section id="scene-3" class="scene" data-layout-allow-overflow>
-        <div class="scene-shell scene-shell--split">
+      <section id="scene-3" class="scene">
+        <div class="scene-shell scene-shell--split" data-layout-allow-overflow>
           <div class="capture-flow">
             <div id="capture-card-manual" data-role="capture-card" class="capture-card"><span class="capture-card__label">Manual</span></div>
             <div id="capture-card-oxygen-temp" data-role="capture-card" class="capture-card"><span class="capture-card__label">Oxígeno y temperatura</span></div>
@@ -609,8 +609,8 @@
         </div>
       </section>
 
-      <section id="scene-4" class="scene" data-layout-allow-overflow>
-        <div class="scene-shell scene-shell--alerts">
+      <section id="scene-4" class="scene">
+        <div class="scene-shell scene-shell--alerts" data-layout-allow-overflow>
           <div class="alerts-stack">
             <article id="alert-card-warning" data-role="alert-card" class="alert-card alert-card--warning">
               <div class="alert-card__copy">
@@ -642,8 +642,8 @@
         </div>
       </section>
 
-      <section id="scene-5" class="scene" data-layout-allow-overflow>
-        <div class="scene-shell scene-shell--closing">
+      <section id="scene-5" class="scene">
+        <div class="scene-shell scene-shell--closing" data-layout-allow-overflow>
           <div class="closing-copy">
             <div class="eyebrow">Software vertical</div>
             <h2>Claridad, control y crecimiento</h2>
@@ -701,14 +701,18 @@
       const scene5Cards = gsap.utils.toArray('#scene-5 [data-role="module-card"]');
 
       function pushTransition(fromScene, toScene, start) {
+        const fromShell = `${fromScene} .scene-shell`;
+        const toShell = `${toScene} .scene-shell`;
         tl.set(fromScene, { opacity: 1, visibility: "visible", clipPath: "inset(0 round 0)", zIndex: 3 }, start);
         tl.set(
           toScene,
-          { opacity: 1, visibility: "visible", clipPath: "inset(0 round 0)", xPercent: 100, zIndex: 4 },
+          { opacity: 1, visibility: "visible", clipPath: "inset(0 round 0)", zIndex: 4 },
           start,
         );
+        tl.set(fromShell, { xPercent: 0 }, start);
+        tl.set(toShell, { xPercent: 100 }, start);
         tl.to(
-          fromScene,
+          fromShell,
           {
             xPercent: -100,
             duration: transitionDuration,
@@ -717,7 +721,7 @@
           start,
         );
         tl.to(
-          toScene,
+          toShell,
           {
             xPercent: 0,
             duration: transitionDuration,
@@ -728,7 +732,6 @@
         tl.set(
           fromScene,
           {
-            xPercent: 0,
             opacity: 0,
             visibility: "hidden",
             clipPath: "inset(50%)",
@@ -736,7 +739,9 @@
           },
           start + transitionDuration + 0.02,
         );
+        tl.set(fromShell, { xPercent: 0 }, start + transitionDuration + 0.02);
         tl.set(toScene, { zIndex: 3 }, start + transitionDuration + 0.02);
+        tl.set(toShell, { xPercent: 0 }, start + transitionDuration + 0.02);
       }
 
       tl.set("#scene-1", { xPercent: 0, opacity: 1, visibility: "visible", clipPath: "inset(0 round 0)", zIndex: 1 }, 0);
@@ -745,6 +750,7 @@
         { xPercent: 0, opacity: 0, visibility: "hidden", clipPath: "inset(50%)", zIndex: 2 },
         0,
       );
+      tl.set('[data-composition-id="commercial-system"] .scene-shell', { xPercent: 0 }, 0);
 
       tl.addLabel("scene-1-intro", 0.34);
       tl.from(
