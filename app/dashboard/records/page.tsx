@@ -18,6 +18,7 @@ import { RecordEditModal } from '@/components/record-edit-modal'
 import { formatColombianPhoneNumber } from '@/lib/phone'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
+import { ProductionRecordWaterQualityImportDialog } from '@/components/production-record-water-quality-import-dialog'
 
 const PRODUCTION_RECORD_FIELDS = `
   id,
@@ -120,6 +121,7 @@ export default async function RecordsPage({
   let ponds: Array<{ id: string; name: string }> = []
   let totalRecords = 0
   let organizationDefaultFca: number | null = null
+  let activeBatchPondIds: string[] = []
 
   let readings: Array<{
     id: string
@@ -152,6 +154,16 @@ export default async function RecordsPage({
       .order('name')
 
     ponds = organizationPonds ?? []
+
+    if (ponds.length > 0) {
+      const { data: activeBatchPonds } = await supabase
+        .from('batches')
+        .select('pond_id')
+        .eq('status', 'active')
+        .in('pond_id', ponds.map((pond) => pond.id))
+
+      activeBatchPondIds = Array.from(new Set((activeBatchPonds ?? []).map((batch) => batch.pond_id)))
+    }
 
     if (ponds && ponds.length > 0) {
       const selectedPondId = pondFilter && ponds.some((p) => p.id === pondFilter) ? pondFilter : null
@@ -283,31 +295,39 @@ export default async function RecordsPage({
           </Link>
         </div>
         {currentView === 'records' ? (
-          <RecordsExport
-            records={records.map((rec) => ({
-              id: rec.id,
-              record_date: rec.record_date,
-              pond_name: batchPondMap[rec.batch_id] || '-',
-              fish_count: rec.fish_count,
-              feed_kg: rec.feed_kg,
-              avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
-              mortality_count: rec.mortality_count,
-              temperature_c: rec.temperature_c,
-              oxygen_mg_l: rec.oxygen_mg_l,
-              ammonia_mg_l: rec.ammonia_mg_l,
-              nitrite_mg_l: rec.nitrite_mg_l,
-              ph: rec.ph,
-              phosphate_mg_l: rec.phosphate_mg_l,
-              hardness_mg_l: rec.hardness_mg_l,
-              alkalinity_mg_l: rec.alkalinity_mg_l,
-              turbidity_ntu: rec.turbidity_ntu,
-              daily_gain_g: rec.daily_gain_g,
-              effective_fca: rec.effective_fca,
-              fca_source: rec.fca_source,
-              biomass_kg: rec.biomass_kg,
-              sampling_weight_g: rec.sampling_weight_g,
-            }))}
-          />
+          <div className="flex items-center gap-2">
+            {canEdit ? (
+              <ProductionRecordWaterQualityImportDialog
+                ponds={ponds}
+                activeBatchPondIds={activeBatchPondIds}
+              />
+            ) : null}
+            <RecordsExport
+              records={records.map((rec) => ({
+                id: rec.id,
+                record_date: rec.record_date,
+                pond_name: batchPondMap[rec.batch_id] || '-',
+                fish_count: rec.fish_count,
+                feed_kg: rec.feed_kg,
+                avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                mortality_count: rec.mortality_count,
+                temperature_c: rec.temperature_c,
+                oxygen_mg_l: rec.oxygen_mg_l,
+                ammonia_mg_l: rec.ammonia_mg_l,
+                nitrite_mg_l: rec.nitrite_mg_l,
+                ph: rec.ph,
+                phosphate_mg_l: rec.phosphate_mg_l,
+                hardness_mg_l: rec.hardness_mg_l,
+                alkalinity_mg_l: rec.alkalinity_mg_l,
+                turbidity_ntu: rec.turbidity_ntu,
+                daily_gain_g: rec.daily_gain_g,
+                effective_fca: rec.effective_fca,
+                fca_source: rec.fca_source,
+                biomass_kg: rec.biomass_kg,
+                sampling_weight_g: rec.sampling_weight_g,
+              }))}
+            />
+          </div>
         ) : null}
       </div>
 

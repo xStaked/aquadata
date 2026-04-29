@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { differenceInDays, subDays } from 'date-fns'
 import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
-import { updateBatchPopulation, updateRecord, createAlerts, deleteAlertsByRecordId } from '@/lib/db'
+import { updateBatchPopulation, updateRecord, createAlerts, createRecord, deleteAlertsByRecordId } from '@/lib/db'
 import { getPreviousRecordByBatch } from '@/lib/db/repositories/production-record-repository'
 import { calculateDailyGainG } from '@/lib/growth'
 import { type FcaSource, calculateCalculatedFca, resolveEffectiveFca } from '@/lib/fca'
@@ -226,6 +226,145 @@ export async function updateProductionRecord(data: UpdateProductionRecordInput) 
   revalidatePath('/dashboard/records')
   revalidatePath('/dashboard/analytics')
   revalidatePath('/dashboard/alerts')
+}
+
+export async function bulkImportWaterQualityProductionRecords(
+  rows: Array<{
+    pond_id: string
+    record_date: string
+    ph?: number | null
+    ammonia_mg_l?: number | null
+    nitrite_mg_l?: number | null
+    nitrate_mg_l?: number | null
+    phosphate_mg_l?: number | null
+    turbidity_ntu?: number | null
+    alkalinity_mg_l?: number | null
+    hardness_mg_l?: number | null
+    notes?: string | null
+  }>
+) {
+  const ctx = await requireOrgWriteContext()
+  const { userId, orgId } = ctx
+
+  if (rows.length === 0) {
+    throw new Error('No hay filas listas para importar')
+  }
+
+  const supabase = await createClient()
+  const pondIds = Array.from(new Set(rows.map((row) => row.pond_id)))
+
+  const { data: ownedPonds, error: pondsError } = await supabase
+    .from('ponds')
+    .select('id')
+    .eq('organization_id', orgId)
+    .in('id', pondIds)
+
+  if (pondsError) {
+    throw new Error('No se pudieron validar los estanques del archivo')
+  }
+
+  const ownedPondIds = new Set((ownedPonds ?? []).map((pond) => pond.id))
+  const unauthorizedRow = rows.find((row) => !ownedPondIds.has(row.pond_id))
+  if (unauthorizedRow) {
+    throw new Error('El archivo contiene estanques que no pertenecen a tu organización')
+  }
+
+  const { data: activeBatches, error: batchesError } = await supabase
+    .from('batches')
+    .select('id, pond_id, start_date')
+    .in('pond_id', pondIds)
+    .eq('status', 'active')
+    .order('start_date', { ascending: false })
+
+  if (batchesError) {
+    throw new Error('No se pudieron cargar los lotes activos para los estanques importados')
+  }
+
+  const activeBatchByPondId = new Map<string, string>()
+  for (const batch of activeBatches ?? []) {
+    if (!activeBatchByPondId.has(batch.pond_id)) {
+      activeBatchByPondId.set(batch.pond_id, batch.id)
+    }
+  }
+
+  const pondWithoutActiveBatch = rows.find((row) => !activeBatchByPondId.has(row.pond_id))
+  if (pondWithoutActiveBatch) {
+    throw new Error('Uno o más estanques seleccionados no tienen un lote activo')
+  }
+
+  let imported = 0
+
+  for (const row of rows) {
+    const batchId = activeBatchByPondId.get(row.pond_id)
+    if (!batchId) {
+      continue
+    }
+
+    const recordId = await createRecord({
+      batch_id: batchId,
+      record_date: row.record_date,
+      report_type: 'daily',
+      week_end_date: null,
+      fish_count: null,
+      feed_kg: null,
+      avg_weight_kg: null,
+      biomass_kg: null,
+      sampling_weight_g: null,
+      mortality_count: 0,
+      temperature_c: null,
+      oxygen_mg_l: null,
+      ammonia_mg_l: row.ammonia_mg_l ?? null,
+      nitrite_mg_l: row.nitrite_mg_l ?? null,
+      nitrate_mg_l: row.nitrate_mg_l ?? null,
+      ph: row.ph ?? null,
+      phosphate_mg_l: row.phosphate_mg_l ?? null,
+      hardness_mg_l: row.hardness_mg_l ?? null,
+      alkalinity_mg_l: row.alkalinity_mg_l ?? null,
+      turbidity_ntu: row.turbidity_ntu ?? null,
+      daily_gain_g: null,
+      notes: row.notes ?? 'Importado desde Excel CALIDAD DE AGUA',
+      calculated_fca: null,
+      effective_fca: null,
+      fca_source: null,
+      record_time: null,
+      confirmed_by: userId,
+    })
+
+    const reading: WaterQualityReading = {
+      batch_id: batchId,
+      pond_id: row.pond_id,
+      record_id: recordId,
+      oxygen_mg_l: null,
+      ammonia_mg_l: row.ammonia_mg_l ?? null,
+      ph: row.ph ?? null,
+      temperature_c: null,
+      nitrite_mg_l: row.nitrite_mg_l ?? null,
+      nitrate_mg_l: row.nitrate_mg_l ?? null,
+      hardness_mg_l: row.hardness_mg_l ?? null,
+      alkalinity_mg_l: row.alkalinity_mg_l ?? null,
+      phosphate_mg_l: row.phosphate_mg_l ?? null,
+      mortality_count: 0,
+      effective_fca: null,
+    }
+
+    const alertPayloads = generateAlerts(reading, orgId).map((alert) => ({
+      ...alert,
+      record_id: recordId,
+    }))
+
+    if (alertPayloads.length > 0) {
+      await createAlerts(alertPayloads)
+    }
+
+    imported += 1
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/records')
+  revalidatePath('/dashboard/analytics')
+  revalidatePath('/dashboard/ponds')
+
+  return { imported }
 }
 
 export async function getProductionRecordDetail(recordId: string): Promise<ProductionRecordDetail | null> {
