@@ -19,6 +19,7 @@ import { formatColombianPhoneNumber } from '@/lib/phone'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
 import { ProductionRecordWaterQualityImportDialog } from '@/components/production-record-water-quality-import-dialog'
+import { ProductionRecordSamplingImportDialog } from '@/components/production-record-sampling-import-dialog'
 
 const PRODUCTION_RECORD_FIELDS = `
   id,
@@ -297,10 +298,16 @@ export default async function RecordsPage({
         {currentView === 'records' ? (
           <div className="flex items-center gap-2">
             {canEdit ? (
-              <ProductionRecordWaterQualityImportDialog
-                ponds={ponds}
-                activeBatchPondIds={activeBatchPondIds}
-              />
+              <>
+                <ProductionRecordWaterQualityImportDialog
+                  ponds={ponds}
+                  activeBatchPondIds={activeBatchPondIds}
+                />
+                <ProductionRecordSamplingImportDialog
+                  ponds={ponds}
+                  activeBatchPondIds={activeBatchPondIds}
+                />
+              </>
             ) : null}
             <RecordsExport
               records={records.map((rec) => ({

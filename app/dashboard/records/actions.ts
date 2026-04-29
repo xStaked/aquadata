@@ -367,6 +367,117 @@ export async function bulkImportWaterQualityProductionRecords(
   return { imported }
 }
 
+export async function bulkImportSamplingProductionRecords(
+  rows: Array<{
+    pond_id: string
+    record_date: string
+    avg_weight_g?: number | null
+    sampling_weight_g?: number | null
+    species?: string | null
+    sample_fish_count?: number | null
+    notes?: string | null
+  }>
+) {
+  const ctx = await requireOrgWriteContext()
+  const { userId, orgId } = ctx
+
+  if (rows.length === 0) {
+    throw new Error('No hay filas listas para importar')
+  }
+
+  const supabase = await createClient()
+  const pondIds = Array.from(new Set(rows.map((row) => row.pond_id)))
+
+  const { data: ownedPonds, error: pondsError } = await supabase
+    .from('ponds')
+    .select('id')
+    .eq('organization_id', orgId)
+    .in('id', pondIds)
+
+  if (pondsError) {
+    throw new Error('No se pudieron validar los estanques del archivo')
+  }
+
+  const ownedPondIds = new Set((ownedPonds ?? []).map((pond) => pond.id))
+  const unauthorizedRow = rows.find((row) => !ownedPondIds.has(row.pond_id))
+  if (unauthorizedRow) {
+    throw new Error('El archivo contiene estanques que no pertenecen a tu organización')
+  }
+
+  const { data: activeBatches, error: batchesError } = await supabase
+    .from('batches')
+    .select('id, pond_id, start_date')
+    .in('pond_id', pondIds)
+    .eq('status', 'active')
+    .order('start_date', { ascending: false })
+
+  if (batchesError) {
+    throw new Error('No se pudieron cargar los lotes activos para los estanques importados')
+  }
+
+  const activeBatchByPondId = new Map<string, string>()
+  for (const batch of activeBatches ?? []) {
+    if (!activeBatchByPondId.has(batch.pond_id)) {
+      activeBatchByPondId.set(batch.pond_id, batch.id)
+    }
+  }
+
+  const pondWithoutActiveBatch = rows.find((row) => !activeBatchByPondId.has(row.pond_id))
+  if (pondWithoutActiveBatch) {
+    throw new Error('Uno o más estanques seleccionados no tienen un lote activo')
+  }
+
+  let imported = 0
+
+  for (const row of rows) {
+    const batchId = activeBatchByPondId.get(row.pond_id)
+    if (!batchId) continue
+
+    const noteParts = [row.notes]
+    if (row.species) noteParts.push(`Especie: ${row.species}`)
+    if (row.sample_fish_count != null) noteParts.push(`Peces muestreados: ${row.sample_fish_count}`)
+
+    await createRecord({
+      batch_id: batchId,
+      record_date: row.record_date,
+      report_type: 'daily',
+      week_end_date: null,
+      fish_count: null,
+      feed_kg: null,
+      avg_weight_g: row.avg_weight_g ?? null,
+      biomass_kg: null,
+      sampling_weight_g: row.sampling_weight_g ?? null,
+      mortality_count: 0,
+      temperature_c: null,
+      oxygen_mg_l: null,
+      ammonia_mg_l: null,
+      nitrite_mg_l: null,
+      nitrate_mg_l: null,
+      ph: null,
+      phosphate_mg_l: null,
+      hardness_mg_l: null,
+      alkalinity_mg_l: null,
+      turbidity_ntu: null,
+      daily_gain_g: null,
+      notes: noteParts.filter(Boolean).join(' · ') || 'Importado desde Excel MUESTREO',
+      calculated_fca: null,
+      effective_fca: null,
+      fca_source: null,
+      record_time: null,
+      confirmed_by: userId,
+    })
+
+    imported += 1
+  }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/records')
+  revalidatePath('/dashboard/analytics')
+  revalidatePath('/dashboard/ponds')
+
+  return { imported }
+}
+
 export async function getProductionRecordDetail(recordId: string): Promise<ProductionRecordDetail | null> {
   const { orgId } = await getOrgContext()
   const supabase = await createClient()
