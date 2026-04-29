@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useState, useCallback } from 'react'
-import { Upload, Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
+import { Upload, Loader2, CheckCircle2, XCircle, AlertTriangle, FileSpreadsheet } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,6 +14,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { bulkImportDailyFeedRecords, type DailyFeedRecordInput } from '@/app/dashboard/feed/daily-actions'
 import type { Concentrate, BatchForForms } from '@/app/dashboard/costs/types'
 
@@ -30,7 +46,13 @@ interface DailyFeedImportDialogProps {
 interface ParsedRow {
   rowIndex: number
   raw: Record<string, string | number | null>
-  parsed: DailyFeedRecordInput | null
+  sourcePondName: string
+  sourceConcentrateName: string
+  matchedBatchId: string | null
+  manualBatchId: string | null
+  matchedConcentrateId: string | null
+  manualConcentrateId: string | null
+  draft: Omit<DailyFeedRecordInput, 'batch_id'> | null
   errors: string[]
 }
 
@@ -85,16 +107,10 @@ function findConcentrate(name: string, concentrates: Concentrate[]): Concentrate
   return bestScore >= 2 ? bestMatch : null
 }
 
-function findBatch(
-  lagoValue: string | number | null,
-  loteValue: string | number | null,
-  batches: BatchForForms[],
-  ponds: PondInfo[]
-): BatchForForms | null {
-  if (!lagoValue && !loteValue) return null
+function findBatch(lagoValue: string | number | null, batches: BatchForForms[], ponds: PondInfo[]): BatchForForms | null {
+  if (!lagoValue) return null
 
   const lagoNorm = normalizeText(lagoValue?.toString() ?? '')
-  const loteNorm = normalizeText(loteValue?.toString() ?? '')
 
   // Try match by pond name first
   if (lagoNorm) {
@@ -123,12 +139,6 @@ function findBatch(
       normalizeText(b.pond_name).includes(lagoNorm) || lagoNorm.includes(normalizeText(b.pond_name))
     )
     if (fuzzyBatch) return fuzzyBatch
-  }
-
-  // Try match by lote name
-  if (loteNorm) {
-    const batch = batches.find((b) => normalizeText(b.id) === loteNorm)
-    if (batch) return batch
   }
 
   return null
@@ -231,17 +241,45 @@ function extractSheetData(sheet: XLSX.WorkSheet): ParsedSheetData | null {
 export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFeedImportDialogProps) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const [step, setStep] = useState<'select-file' | 'preview'>('select-file')
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([])
   const [isImporting, setIsImporting] = useState(false)
   const [importResult, setImportResult] = useState<{ imported: number } | { error: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const validRows = parsedRows.filter((r) => r.parsed && r.errors.length === 0)
-  const invalidRows = parsedRows.filter((r) => !r.parsed || r.errors.length > 0)
+  const batchById = new Map(batches.map((batch) => [batch.id, batch] as const))
+  const concentrateById = new Map(concentrates.map((concentrate) => [concentrate.id, concentrate] as const))
+
+  const isBatchResolutionError = (error: string) => error.startsWith('No se encontró lote para lago')
+  const isConcentrateResolutionError = (error: string) => error.startsWith('No se encontró concentrado')
+  const getResolvedBatchId = (row: ParsedRow) => row.manualBatchId ?? row.matchedBatchId
+  const getResolvedConcentrateId = (row: ParsedRow) => row.manualConcentrateId ?? row.matchedConcentrateId
+  const getVisibleErrors = (row: ParsedRow) => {
+    return row.errors.filter((error) => {
+      if (isBatchResolutionError(error) && getResolvedBatchId(row)) return false
+      if (isConcentrateResolutionError(error) && getResolvedConcentrateId(row)) return false
+      return true
+    })
+  }
+
+  const getRowState = (row: ParsedRow): 'ready' | 'needs_pond' | 'invalid' => {
+    if (!row.draft) return 'invalid'
+
+    const hasBlockingErrors = getVisibleErrors(row).length > 0
+    if (hasBlockingErrors) return 'invalid'
+
+    if (!getResolvedBatchId(row) || !getResolvedConcentrateId(row)) return 'needs_pond'
+
+    return 'ready'
+  }
+
+  const validRows = parsedRows.filter((row) => getRowState(row) === 'ready')
+  const needsPondRows = parsedRows.filter((row) => getRowState(row) === 'needs_pond')
+  const invalidRows = parsedRows.filter((row) => getRowState(row) === 'invalid')
   const hasFileLevelError =
     parsedRows.length === 1 &&
     parsedRows[0]?.rowIndex === 0 &&
-    parsedRows[0]?.parsed == null &&
+    parsedRows[0]?.draft == null &&
     Object.keys(parsedRows[0]?.raw ?? {}).length === 0 &&
     parsedRows[0]?.errors.length > 0
 
@@ -263,7 +301,13 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             setParsedRows([{
               rowIndex: 0,
               raw: {},
-              parsed: null,
+              sourcePondName: '',
+              sourceConcentrateName: '',
+              matchedBatchId: null,
+              manualBatchId: null,
+              matchedConcentrateId: null,
+              manualConcentrateId: null,
+              draft: null,
               errors: [
                 availableSheets
                   ? `No se encontró la hoja "alimentacion". Hojas disponibles: ${availableSheets}`
@@ -279,7 +323,13 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             setParsedRows([{
               rowIndex: 0,
               raw: {},
-              parsed: null,
+              sourcePondName: '',
+              sourceConcentrateName: '',
+              matchedBatchId: null,
+              manualBatchId: null,
+              matchedConcentrateId: null,
+              manualConcentrateId: null,
+              draft: null,
               errors: ['No se pudo identificar el encabezado o no hay filas de datos en la hoja "alimentacion".'],
             }])
             return
@@ -311,15 +361,16 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             const fechaValue = cols.fecha ? raw[cols.fecha] : null
 
             // Find batch
-            const batch = findBatch(lagoValue, loteValue, batches, ponds)
+            const batch = findBatch(lagoValue, batches, ponds)
             if (!batch) {
               errors.push(`No se encontró lote para lago "${lagoValue}" / lote "${loteValue}"`)
             }
 
             // Find concentrate
-            const concentrate = findConcentrate(String(refValue ?? ''), concentrates)
+            const concentrateLookupValue = String(refValue ?? loteValue ?? '').trim()
+            const concentrate = findConcentrate(concentrateLookupValue, concentrates)
             if (!concentrate) {
-              errors.push(`No se encontró concentrado "${refValue}"`)
+              errors.push(`No se encontró concentrado "${concentrateLookupValue}"`)
             }
 
             // Parse bags
@@ -351,32 +402,60 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                 recordDate = d.toISOString().split('T')[0]
               }
             }
-            if (!recordDate && batch) {
-              // Default to today if no date column found
-              recordDate = new Date().toISOString().split('T')[0]
-            }
             if (!recordDate) {
-              errors.push('Fecha no válida o no encontrada')
+              // Si el archivo no trae fecha, usamos la fecha actual.
+              recordDate = new Date().toISOString().split('T')[0]
             }
 
             if (errors.length > 0) {
-              results.push({ rowIndex: sheetRow.rowIndex, raw, parsed: null, errors })
+              const hasOnlyRecoverableErrors = errors.every(
+                (error) => isBatchResolutionError(error) || isConcentrateResolutionError(error)
+              )
+              results.push({
+                rowIndex: sheetRow.rowIndex,
+                raw,
+                sourcePondName: String(lagoValue ?? loteValue ?? '').trim(),
+                sourceConcentrateName: concentrateLookupValue,
+                matchedBatchId: batch?.id ?? null,
+                manualBatchId: null,
+                matchedConcentrateId: concentrate?.id ?? null,
+                manualConcentrateId: null,
+                draft: hasOnlyRecoverableErrors
+                  ? {
+                      record_date: recordDate!,
+                      concentrate_id: concentrate?.id ?? null,
+                      concentrate_name: concentrate?.name ?? (concentrateLookupValue || 'Desconocido'),
+                      bags_am: bagsAm,
+                      bags_pm: bagsPm,
+                      kg_per_bag: 40,
+                      mortality_count: mortality,
+                      reference: concentrateLookupValue,
+                      notes: String(obsValue ?? ''),
+                    }
+                  : null,
+                errors,
+              })
               continue
             }
 
             results.push({
               rowIndex: sheetRow.rowIndex,
               raw,
-              parsed: {
-                batch_id: batch!.id,
+              sourcePondName: String(lagoValue ?? loteValue ?? '').trim(),
+              sourceConcentrateName: concentrateLookupValue,
+              matchedBatchId: batch!.id,
+              manualBatchId: null,
+              matchedConcentrateId: concentrate?.id ?? null,
+              manualConcentrateId: null,
+              draft: {
                 record_date: recordDate!,
                 concentrate_id: concentrate?.id ?? null,
-                concentrate_name: concentrate?.name ?? String(refValue ?? 'Desconocido'),
+                concentrate_name: concentrate?.name ?? (concentrateLookupValue || 'Desconocido'),
                 bags_am: bagsAm,
                 bags_pm: bagsPm,
                 kg_per_bag: 40,
                 mortality_count: mortality,
-                reference: String(refValue ?? ''),
+                reference: concentrateLookupValue,
                 notes: String(obsValue ?? ''),
               },
               errors: [],
@@ -384,8 +463,20 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
           }
 
           setParsedRows(results)
+          setStep('preview')
         } catch (err) {
-          setParsedRows([{ rowIndex: 0, raw: {}, parsed: null, errors: ['Error al leer el archivo: ' + (err instanceof Error ? err.message : 'desconocido')] }])
+          setParsedRows([{
+            rowIndex: 0,
+            raw: {},
+            sourcePondName: '',
+            sourceConcentrateName: '',
+            matchedBatchId: null,
+            manualBatchId: null,
+            matchedConcentrateId: null,
+            manualConcentrateId: null,
+            draft: null,
+            errors: ['Error al leer el archivo: ' + (err instanceof Error ? err.message : 'desconocido')],
+          }])
         }
       }
       reader.readAsArrayBuffer(selectedFile)
@@ -406,12 +497,16 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
     setImportResult(null)
 
     try {
-      const records = validRows.map((r) => r.parsed!)
+      const records = validRows.map((row) => ({
+        ...row.draft!,
+        batch_id: getResolvedBatchId(row)!,
+        concentrate_id: getResolvedConcentrateId(row),
+        concentrate_name:
+          (getResolvedConcentrateId(row) && concentrateById.get(getResolvedConcentrateId(row)!)?.name) ??
+          row.draft!.concentrate_name,
+      }))
       const result = await bulkImportDailyFeedRecords(records)
       setImportResult(result)
-      setTimeout(() => {
-        setOpen(false)
-      }, 2000)
     } catch (err) {
       setImportResult({ error: err instanceof Error ? err.message : 'Error al importar' })
     } finally {
@@ -419,20 +514,60 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
     }
   }
 
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next)
-    if (!next) {
-      setFile(null)
-      setParsedRows([])
-      setImportResult(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+  const handleBatchSelect = (rowIndex: number, batchId: string) => {
+    setParsedRows((currentRows) =>
+      currentRows.map((row) =>
+        row.rowIndex === rowIndex
+          ? {
+              ...row,
+              manualBatchId: batchId,
+            }
+          : row
+      )
+    )
+  }
+
+  const handleConcentrateSelect = (rowIndex: number, concentrateId: string) => {
+    setParsedRows((currentRows) =>
+      currentRows.map((row) =>
+        row.rowIndex === rowIndex
+          ? {
+              ...row,
+              manualConcentrateId: concentrateId,
+            }
+          : row
+      )
+    )
+  }
+
+  const resetState = () => {
+    setFile(null)
+    setStep('select-file')
+    setParsedRows([])
+    setImportResult(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
-  const previewRows = parsedRows.slice(0, 8)
-  const remainingCount = parsedRows.length - 8
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next) {
+      resetState()
+    }
+  }
+
+  const formatStateLabel = (state: 'ready' | 'needs_pond' | 'invalid') => {
+    if (state === 'ready') return 'Lista'
+    if (state === 'needs_pond') return 'Requiere estanque'
+    return 'Inválida'
+  }
+
+  const formatStateVariant = (state: 'ready' | 'needs_pond' | 'invalid'): 'default' | 'secondary' | 'destructive' => {
+    if (state === 'ready') return 'default'
+    if (state === 'needs_pond') return 'secondary'
+    return 'destructive'
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -442,28 +577,57 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
           Importar Excel
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] overflow-y-auto px-0 sm:w-[calc(100vw-2rem)] sm:max-w-6xl xl:max-w-7xl">
         <DialogHeader>
-          <DialogTitle>Importar registro diario de alimentación</DialogTitle>
-          <DialogDescription>
-            Sube un archivo Excel con las columnas: Número de Lagos, Bultos AM/PM, Total, Lote, Referencia, Mortalidad y Observaciones.
+          <DialogTitle className="px-4 pt-4 sm:px-6">Importar registro diario de alimentación</DialogTitle>
+          <DialogDescription className="px-4 sm:px-6">
+            Wizard de 2 pasos con preview editable. Si no encuentra el estanque, puedes asignarlo manualmente y se importan solo las filas listas.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-2">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium" htmlFor="excel-file-input">
-              Seleccionar archivo Excel (.xlsx, .xls)
-            </label>
-            <input
-              id="excel-file-input"
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              className="block w-full cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-primary file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary-foreground"
-            />
+        <div className="flex flex-col gap-5 px-4 py-2 sm:px-6">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant={step === 'select-file' ? 'default' : 'outline'}>Paso 1: Archivo</Badge>
+            <Badge variant={step === 'preview' ? 'default' : 'outline'}>Paso 2: Preview</Badge>
           </div>
+
+          {step === 'select-file' ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/10 p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Archivo fuente</p>
+                  <p className="text-sm text-muted-foreground">
+                    Se intentará leer la hoja <strong>alimentacion</strong>. Si no existe columna de fecha, se usa la fecha actual. `Lote` también se usa como apoyo para encontrar el concentrado.
+                  </p>
+                  {file ? (
+                    <p className="flex items-center gap-2 text-sm text-foreground">
+                      <FileSpreadsheet className="h-4 w-4 text-primary" />
+                      {file.name}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={resetState} disabled={!file}>
+                    Reiniciar
+                  </Button>
+                  <Button type="button" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Seleccionar Excel
+                  </Button>
+                </div>
+              </div>
+
+              <input
+                id="excel-file-input"
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+          ) : null}
 
           {hasFileLevelError ? (
             <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -471,7 +635,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             </p>
           ) : null}
 
-          {parsedRows.length > 0 && !hasFileLevelError ? (
+          {step === 'preview' && parsedRows.length > 0 && !hasFileLevelError ? (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-4 flex-wrap">
                 <p className="text-sm font-medium">Vista previa</p>
@@ -480,6 +644,12 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {validRows.length} válidas
                 </span>
+                {needsPondRows.length > 0 ? (
+                  <span className="flex items-center gap-1 text-xs text-amber-700">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    {needsPondRows.length} requieren estanque
+                  </span>
+                ) : null}
                 {invalidRows.length > 0 ? (
                   <span className="flex items-center gap-1 text-xs text-destructive">
                     <XCircle className="h-3.5 w-3.5" />
@@ -496,7 +666,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                     <ul className="mt-1 space-y-0.5 text-xs">
                       {invalidRows.slice(0, 5).map((r) => (
                         <li key={r.rowIndex}>
-                          Fila {r.rowIndex + 1}: {r.errors.join(', ')}
+                          Fila {r.rowIndex}: {getVisibleErrors(r).join(', ')}
                         </li>
                       ))}
                       {invalidRows.length > 5 && (
@@ -507,60 +677,206 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                 </div>
               )}
 
-              <div className="overflow-x-auto rounded-md border border-border">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Fila</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Fecha</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Lote</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Concentrado</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Bultos AM</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Bultos PM</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Mortalidad</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {previewRows.map((result) => (
-                      <tr key={result.rowIndex} className={result.errors.length > 0 ? 'bg-destructive/5' : ''}>
-                        <td className="px-3 py-2 text-muted-foreground">{result.rowIndex + 1}</td>
-                        <td className="px-3 py-2">{result.parsed?.record_date ?? '-'}</td>
-                        <td className="px-3 py-2 max-w-[120px] truncate">
-                          {result.parsed ? batches.find((b) => b.id === result.parsed!.batch_id)?.pond_name ?? result.parsed.batch_id : '-'}
-                        </td>
-                        <td className="px-3 py-2 max-w-[120px] truncate">
-                          {result.parsed?.concentrate_name ?? '-'}
-                        </td>
-                        <td className="px-3 py-2">{result.parsed?.bags_am ?? '-'}</td>
-                        <td className="px-3 py-2">{result.parsed?.bags_pm ?? '-'}</td>
-                        <td className="px-3 py-2">{result.parsed?.mortality_count ?? '-'}</td>
-                        <td className="px-3 py-2">
-                          {result.errors.length === 0 ? (
-                            <span className="flex items-center gap-1 text-green-600">
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              Válida
-                            </span>
+              <div className="grid gap-3 xl:hidden">
+                {parsedRows.map((row) => {
+                  const state = getRowState(row)
+                  const resolvedBatchId = getResolvedBatchId(row)
+                  const resolvedBatch = resolvedBatchId ? batchById.get(resolvedBatchId) : null
+                  const resolvedConcentrateId = getResolvedConcentrateId(row)
+                  const resolvedConcentrate = resolvedConcentrateId ? concentrateById.get(resolvedConcentrateId) : null
+                  const visibleErrors = getVisibleErrors(row)
+
+                  return (
+                    <div
+                      key={row.rowIndex}
+                      className={`rounded-xl border p-4 ${state === 'invalid' ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-background'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Fila {row.rowIndex}</p>
+                          <p className="text-sm font-medium text-foreground">{row.draft?.record_date ?? '-'}</p>
+                        </div>
+                        <Badge variant={formatStateVariant(state)}>{formatStateLabel(state)}</Badge>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Estanque archivo</p>
+                          <p className="text-sm text-foreground">{row.sourcePondName || '-'}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Estanque destino</p>
+                          {!resolvedBatchId ? (
+                            <Select
+                              value={row.manualBatchId ?? undefined}
+                              onValueChange={(batchId) => handleBatchSelect(row.rowIndex, batchId)}
+                            >
+                              <SelectTrigger className="h-9 w-full">
+                                <SelectValue placeholder="Selecciona un estanque" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {batches.map((batch) => (
+                                  <SelectItem key={batch.id} value={batch.id}>
+                                    {batch.pond_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           ) : (
-                            <span className="flex flex-col gap-0.5 text-destructive">
-                              <span className="flex items-center gap-1">
-                                <XCircle className="h-3.5 w-3.5 shrink-0" />
-                                Error
-                              </span>
-                            </span>
+                            <p className="text-sm text-foreground">{resolvedBatch?.pond_name ?? '-'}</p>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Concentrado archivo</p>
+                          <p className="text-sm text-foreground break-words">{row.sourceConcentrateName || '-'}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Concentrado destino</p>
+                          {!resolvedConcentrateId ? (
+                            <Select
+                              value={row.manualConcentrateId ?? undefined}
+                              onValueChange={(concentrateId) => handleConcentrateSelect(row.rowIndex, concentrateId)}
+                            >
+                              <SelectTrigger className="h-9 w-full">
+                                <SelectValue placeholder="Selecciona un concentrado" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {concentrates.map((concentrate) => (
+                                  <SelectItem key={concentrate.id} value={concentrate.id}>
+                                    {concentrate.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-sm text-foreground break-words">
+                              {resolvedConcentrate?.name ?? row.draft?.concentrate_name ?? '-'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-3 gap-3 rounded-lg bg-muted/30 p-3">
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">AM</p>
+                          <p className="text-sm font-medium">{row.draft?.bags_am ?? '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">PM</p>
+                          <p className="text-sm font-medium">{row.draft?.bags_pm ?? '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">Mortalidad</p>
+                          <p className="text-sm font-medium">{row.draft?.mortality_count ?? '-'}</p>
+                        </div>
+                      </div>
+
+                      {visibleErrors.length > 0 ? (
+                        <div className="mt-3 text-xs text-muted-foreground">
+                          {visibleErrors.join(', ')}
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
               </div>
 
-              {remainingCount > 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  ... y {remainingCount} {remainingCount === 1 ? 'fila más' : 'filas más'}
-                </p>
-              ) : null}
+              <div className="hidden overflow-x-auto rounded-md border border-border xl:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fila</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Estanque archivo</TableHead>
+                      <TableHead>Estanque destino</TableHead>
+                      <TableHead>Concentrado archivo</TableHead>
+                      <TableHead>Concentrado destino</TableHead>
+                      <TableHead className="text-right">AM</TableHead>
+                      <TableHead className="text-right">PM</TableHead>
+                      <TableHead className="text-right">Mortalidad</TableHead>
+                      <TableHead>Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {parsedRows.map((row) => {
+                      const state = getRowState(row)
+                      const resolvedBatchId = getResolvedBatchId(row)
+                      const resolvedBatch = resolvedBatchId ? batchById.get(resolvedBatchId) : null
+                      const resolvedConcentrateId = getResolvedConcentrateId(row)
+                      const resolvedConcentrate = resolvedConcentrateId ? concentrateById.get(resolvedConcentrateId) : null
+                      const visibleErrors = getVisibleErrors(row)
+
+                      return (
+                        <TableRow key={row.rowIndex} className={state === 'invalid' ? 'bg-destructive/5' : ''}>
+                          <TableCell className="text-muted-foreground">{row.rowIndex}</TableCell>
+                          <TableCell>{row.draft?.record_date ?? '-'}</TableCell>
+                          <TableCell>{row.sourcePondName || '-'}</TableCell>
+                          <TableCell className="w-[180px]">
+                            {!resolvedBatchId ? (
+                              <Select
+                                value={row.manualBatchId ?? undefined}
+                                onValueChange={(batchId) => handleBatchSelect(row.rowIndex, batchId)}
+                              >
+                                <SelectTrigger className="h-9 w-full">
+                                  <SelectValue placeholder="Selecciona un estanque" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {batches.map((batch) => (
+                                    <SelectItem key={batch.id} value={batch.id}>
+                                      {batch.pond_name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              resolvedBatch?.pond_name ?? '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-[160px] truncate" title={row.sourceConcentrateName}>
+                            {row.sourceConcentrateName || '-'}
+                          </TableCell>
+                          <TableCell className="w-[220px]">
+                            {!resolvedConcentrateId ? (
+                              <Select
+                                value={row.manualConcentrateId ?? undefined}
+                                onValueChange={(concentrateId) => handleConcentrateSelect(row.rowIndex, concentrateId)}
+                              >
+                                <SelectTrigger className="h-9 w-full">
+                                  <SelectValue placeholder="Selecciona un concentrado" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {concentrates.map((concentrate) => (
+                                    <SelectItem key={concentrate.id} value={concentrate.id}>
+                                      {concentrate.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              resolvedConcentrate?.name ?? row.draft?.concentrate_name ?? '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">{row.draft?.bags_am ?? '-'}</TableCell>
+                          <TableCell className="text-right">{row.draft?.bags_pm ?? '-'}</TableCell>
+                          <TableCell className="text-right">{row.draft?.mortality_count ?? '-'}</TableCell>
+                          <TableCell className="space-y-2">
+                            <Badge variant={formatStateVariant(state)}>{formatStateLabel(state)}</Badge>
+                            {visibleErrors.length > 0 ? (
+                              <div className="text-xs text-muted-foreground">
+                                {visibleErrors.join(', ')}
+                              </div>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/20 px-3 py-3 text-sm">
+                Se importarán <strong>{validRows.length}</strong> filas listas. Las filas que requieran estanque o sigan inválidas se omiten.
+              </div>
             </div>
           ) : null}
 
@@ -577,10 +893,15 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
           ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-4 pb-4 sm:px-6">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isImporting}>
-            Cancelar
+            Cerrar
           </Button>
+          {step === 'preview' ? (
+            <Button type="button" variant="outline" onClick={() => setStep('select-file')} disabled={isImporting}>
+              Cambiar archivo
+            </Button>
+          ) : null}
           <Button type="button" onClick={handleImport} disabled={isImporting || validRows.length === 0}>
             {isImporting ? (
               <>
@@ -588,7 +909,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                 Importando...
               </>
             ) : (
-              `Importar ${validRows.length > 0 ? validRows.length : ''} registros válidos`
+              `Importar ${validRows.length > 0 ? validRows.length : ''} filas listas`
             )}
           </Button>
         </DialogFooter>

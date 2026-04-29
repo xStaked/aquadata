@@ -18,6 +18,46 @@ export interface DailyFeedRecordInput {
   notes?: string
 }
 
+function buildDailyFeedImportKey(record: DailyFeedRecordInput) {
+  return `${record.batch_id}::${record.record_date}::${record.concentrate_id ?? 'null'}`
+}
+
+function mergeTextValues(values: Array<string | undefined>) {
+  const uniqueValues = Array.from(
+    new Set(
+      values
+        .map((value) => value?.trim())
+        .filter((value): value is string => !!value)
+    )
+  )
+
+  return uniqueValues.length > 0 ? uniqueValues.join(' | ') : undefined
+}
+
+function consolidateDailyFeedImportRecords(records: DailyFeedRecordInput[]): DailyFeedRecordInput[] {
+  const grouped = new Map<string, DailyFeedRecordInput>()
+
+  for (const record of records) {
+    const key = buildDailyFeedImportKey(record)
+    const existing = grouped.get(key)
+
+    if (!existing) {
+      grouped.set(key, { ...record })
+      continue
+    }
+
+    existing.bags_am += record.bags_am
+    existing.bags_pm += record.bags_pm
+    existing.mortality_count += record.mortality_count
+    existing.kg_per_bag = record.kg_per_bag || existing.kg_per_bag
+    existing.concentrate_name = existing.concentrate_name || record.concentrate_name
+    existing.reference = mergeTextValues([existing.reference, record.reference])
+    existing.notes = mergeTextValues([existing.notes, record.notes])
+  }
+
+  return Array.from(grouped.values())
+}
+
 async function getOwnedBatch(
   batchId: string,
   orgId: string,
@@ -154,10 +194,12 @@ export async function bulkImportDailyFeedRecords(records: DailyFeedRecordInput[]
     throw new Error('No hay registros para importar')
   }
 
+  const consolidatedRecords = consolidateDailyFeedImportRecords(records)
+
   const mortalityAdjustments: Array<{ batchId: string; delta: number }> = []
   const batchStageById = new Map<string, 'levante' | 'engorde'>()
 
-  for (const record of records) {
+  for (const record of consolidatedRecords) {
     const batch = await getOwnedBatch(record.batch_id, orgId, supabase)
     batchStageById.set(record.batch_id, batch.production_stage)
 
@@ -173,7 +215,7 @@ export async function bulkImportDailyFeedRecords(records: DailyFeedRecordInput[]
     mortalityAdjustments.push({ batchId: record.batch_id, delta: mortalityDelta })
   }
 
-  const rows = records.map((r) => ({
+  const rows = consolidatedRecords.map((r) => ({
     batch_id: r.batch_id,
     record_date: r.record_date,
     concentrate_id: r.concentrate_id,
