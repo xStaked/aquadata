@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { Loader2, CheckCircle2, AlertCircle, Thermometer, Wind } from 'lucide-react'
 import { confirmWaterQualityReading } from '@/app/dashboard/upload/actions'
+import { WaterQualityImportWizard } from '@/components/water-quality-import-wizard'
 
 interface Pond {
   id: string
@@ -160,121 +162,129 @@ export function QuickWaterReadingForm({ ponds }: { ponds: Pond[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-3.5">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Oxigeno y temperatura
-        </p>
-      </div>
+    <Tabs defaultValue="manual" className="space-y-4">
+      <TabsList>
+        <TabsTrigger value="manual">Manual</TabsTrigger>
+        <TabsTrigger value="excel">Importar Excel</TabsTrigger>
+      </TabsList>
 
-      <div className="space-y-6 p-6">
-        {/* Estanque & Fecha */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <FieldLabel htmlFor="q_pond">Estanque</FieldLabel>
-            <Select value={selectedPond} onValueChange={setSelectedPond}>
-              <SelectTrigger id="q_pond" className="h-9">
-                <SelectValue placeholder="Selecciona un estanque" />
-              </SelectTrigger>
-              <SelectContent>
-                {ponds.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <TabsContent value="manual">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Oxigeno y temperatura
+            </p>
           </div>
-          <div className="flex flex-col gap-2">
-            <FieldLabel htmlFor="q_date">Fecha de lectura</FieldLabel>
-            <div className="flex items-center gap-2">
-              <DatePicker
-                id="q_date"
-                value={formData.reading_date}
-                onChange={(value) => updateField('reading_date', value)}
-                buttonClassName="h-9 flex-1"
-              />
-              <input
-                id="q_time"
-                type="time"
-                value={formData.reading_time}
-                onChange={(e) => updateField('reading_time', e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+
+          <div className="space-y-6 p-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <FieldLabel htmlFor="q_pond">Estanque</FieldLabel>
+                <Select value={selectedPond} onValueChange={setSelectedPond}>
+                  <SelectTrigger id="q_pond" className="h-9">
+                    <SelectValue placeholder="Selecciona un estanque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ponds.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <FieldLabel htmlFor="q_date">Fecha de lectura</FieldLabel>
+                <div className="flex items-center gap-2">
+                  <DatePicker
+                    id="q_date"
+                    value={formData.reading_date}
+                    onChange={(value) => updateField('reading_date', value)}
+                    buttonClassName="h-9 flex-1"
+                  />
+                  <input
+                    id="q_time"
+                    type="time"
+                    value={formData.reading_time}
+                    onChange={(e) => updateField('reading_time', e.target.value)}
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <FieldLabel htmlFor="q_oxygen" unit="mg/L">
+                  <Wind className="h-3 w-3" />
+                  Oxígeno
+                </FieldLabel>
+                <Input
+                  id="q_oxygen"
+                  type="number"
+                  step="0.1"
+                  placeholder="6.0"
+                  className="h-9"
+                  value={formData.oxygen_mg_l}
+                  onChange={(e) => updateField('oxygen_mg_l', e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <FieldLabel htmlFor="q_temp" unit="°C">
+                  <Thermometer className="h-3 w-3" />
+                  Temperatura
+                </FieldLabel>
+                <Input
+                  id="q_temp"
+                  type="number"
+                  step="0.1"
+                  placeholder="28.0"
+                  className="h-9"
+                  value={formData.temperature_c}
+                  onChange={(e) => updateField('temperature_c', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <FieldLabel htmlFor="q_notes">Observaciones</FieldLabel>
+              <Input
+                id="q_notes"
+                className="h-9"
+                value={formData.notes}
+                onChange={(e) => updateField('notes', e.target.value)}
+                placeholder="Condiciones del momento, hora del día..."
               />
             </div>
+
+            {error && (
+              <div className="flex items-center gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !selectedPond}
+              className="h-10 w-full text-sm font-semibold tracking-wide"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando lectura...
+                </>
+              ) : (
+                'Guardar Lectura'
+              )}
+            </Button>
           </div>
         </div>
+      </TabsContent>
 
-        {/* O₂ y T */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <FieldLabel htmlFor="q_oxygen" unit="mg/L">
-              <Wind className="h-3 w-3" />
-              Oxígeno
-            </FieldLabel>
-            <Input
-              id="q_oxygen"
-              type="number"
-              step="0.1"
-              placeholder="6.0"
-              className="h-9"
-              value={formData.oxygen_mg_l}
-              onChange={(e) => updateField('oxygen_mg_l', e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <FieldLabel htmlFor="q_temp" unit="°C">
-              <Thermometer className="h-3 w-3" />
-              Temperatura
-            </FieldLabel>
-            <Input
-              id="q_temp"
-              type="number"
-              step="0.1"
-              placeholder="28.0"
-              className="h-9"
-              value={formData.temperature_c}
-              onChange={(e) => updateField('temperature_c', e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Notas */}
-        <div className="flex flex-col gap-2">
-          <FieldLabel htmlFor="q_notes">Observaciones</FieldLabel>
-          <Input
-            id="q_notes"
-            className="h-9"
-            value={formData.notes}
-            onChange={(e) => updateField('notes', e.target.value)}
-            placeholder="Condiciones del momento, hora del día..."
-          />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="flex items-center gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {/* Submit */}
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !selectedPond}
-          className="h-10 w-full text-sm font-semibold tracking-wide"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Guardando lectura...
-            </>
-          ) : (
-            'Guardar Lectura'
-          )}
-        </Button>
-      </div>
-    </div>
+      <TabsContent value="excel">
+        <WaterQualityImportWizard ponds={ponds} />
+      </TabsContent>
+    </Tabs>
   )
 }

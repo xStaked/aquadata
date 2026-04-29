@@ -2,7 +2,15 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getOrgContext, requireOrgWriteContext } from '@/lib/db/context'
-import { getBatch, updateBatchPopulation, createRecord, createAlerts, createWaterQualityReading, getWaterQualityReadingsByPondAndDate } from '@/lib/db'
+import {
+  getBatch,
+  updateBatchPopulation,
+  createRecord,
+  createAlerts,
+  createWaterQualityReading,
+  bulkCreateWaterQualityReadings,
+  getWaterQualityReadingsByPondAndDate,
+} from '@/lib/db'
 import { getPreviousRecordByBatch } from '@/lib/db/repositories/production-record-repository'
 import { calculateDailyGainG } from '@/lib/growth'
 import { getOrganization } from '@/lib/db/repositories/organization-repository'
@@ -207,6 +215,80 @@ export async function confirmWaterQualityReading(data: {
   revalidatePath(`/dashboard/ponds/${data.pond_id}`)
 
   return readingId
+}
+
+export async function bulkImportOtWaterQualityReadings(
+  rows: Array<{
+    pond_id: string
+    reading_date: string
+    reading_time: string | null
+    temperature_c: number
+    oxygen_mg_l: number
+    notes?: string | null
+  }>
+) {
+  const ctx = await requireOrgWriteContext()
+  const { userId, orgId } = ctx
+
+  if (rows.length === 0) {
+    throw new Error('No hay filas listas para importar')
+  }
+
+  const supabase = await createClient()
+  const pondIds = Array.from(new Set(rows.map((row) => row.pond_id)))
+
+  const { data: ownedPonds, error: pondsError } = await supabase
+    .from('ponds')
+    .select('id')
+    .eq('organization_id', orgId)
+    .in('id', pondIds)
+
+  if (pondsError) {
+    throw new Error('No se pudieron validar los estanques del archivo')
+  }
+
+  const ownedPondIds = new Set((ownedPonds ?? []).map((pond) => pond.id))
+  const unauthorizedRow = rows.find((row) => !ownedPondIds.has(row.pond_id))
+  if (unauthorizedRow) {
+    throw new Error('El archivo contiene estanques que no pertenecen a tu organización')
+  }
+
+  const { data: activeBatches, error: batchesError } = await supabase
+    .from('batches')
+    .select('id, pond_id, start_date')
+    .in('pond_id', pondIds)
+    .eq('status', 'active')
+    .order('start_date', { ascending: false })
+
+  if (batchesError) {
+    throw new Error('No se pudieron cargar los lotes activos para los estanques importados')
+  }
+
+  const activeBatchByPondId = new Map<string, string>()
+  for (const batch of activeBatches ?? []) {
+    if (!activeBatchByPondId.has(batch.pond_id)) {
+      activeBatchByPondId.set(batch.pond_id, batch.id)
+    }
+  }
+
+  const imported = await bulkCreateWaterQualityReadings(
+    rows.map((row) => ({
+      pond_id: row.pond_id,
+      batch_id: activeBatchByPondId.get(row.pond_id) ?? null,
+      reading_date: row.reading_date,
+      reading_time: row.reading_time,
+      temperature_c: row.temperature_c,
+      oxygen_mg_l: row.oxygen_mg_l,
+      notes: row.notes ?? 'Importado desde Excel OT',
+      created_by: userId,
+    }))
+  )
+
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/ponds')
+  revalidatePath('/dashboard/upload')
+
+  return { imported }
 }
 
 export async function getWaterQualityReadingsForPondDate(

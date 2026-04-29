@@ -60,6 +60,37 @@ export async function createWaterQualityReading(data: {
   return inserted.id as string
 }
 
+export async function bulkCreateWaterQualityReadings(rows: Array<{
+  pond_id: string
+  batch_id?: string | null
+  reading_date: string
+  reading_time?: string | null
+  temperature_c?: number | null
+  oxygen_mg_l?: number | null
+  notes?: string | null
+  created_by?: string | null
+}>): Promise<number> {
+  if (rows.length === 0) return 0
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('water_quality_readings').insert(
+    rows.map((row) => ({
+      pond_id: row.pond_id,
+      batch_id: row.batch_id ?? null,
+      reading_date: row.reading_date,
+      reading_time: row.reading_time ?? null,
+      temperature_c: row.temperature_c ?? null,
+      oxygen_mg_l: row.oxygen_mg_l ?? null,
+      notes: row.notes ?? null,
+      created_by: row.created_by ?? null,
+    }))
+  )
+
+  if (error) throw new Error(`Error creating water quality readings: ${error.message}`)
+  return rows.length
+}
+
 export async function getWaterQualityReadingsByPondAndDate(
   pondId: string,
   date: string

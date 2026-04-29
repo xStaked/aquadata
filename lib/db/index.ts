@@ -106,6 +106,7 @@ export {
 // ── Water Quality Reading Repository ──────────────────────────
 export {
   createWaterQualityReading,
+  bulkCreateWaterQualityReadings,
   getWaterQualityReadingsByPondAndDate,
   getLatestWaterQualityReadingByPond,
   getWaterQualityReadingsByPond,
