@@ -44,6 +44,7 @@ export interface Pond {
   area_m2: number | null
   depth_m: number | null
   species: string | null
+  production_stage: 'levante' | 'engorde' | null
   status: PondStatus
   sort_order: number
   created_at: string
@@ -55,6 +56,7 @@ export interface PondInput {
   area_m2?: number | null
   depth_m?: number | null
   species?: string | null
+  production_stage?: 'levante' | 'engorde' | null
   status: PondStatus
   sort_order: number
 }

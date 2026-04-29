@@ -130,6 +130,119 @@ export async function deleteMonthlyFeedRecord(id: string) {
   revalidatePath('/dashboard/feed')
 }
 
+export async function generateMonthlyFeedRecordsFromDaily(data: {
+  year: number
+  month: number
+}) {
+  const { supabase, orgId } = await getContext()
+
+  const monthStart = `${data.year}-${String(data.month).padStart(2, '0')}-01`
+  const lastDay = new Date(data.year, data.month, 0).getDate()
+  const monthEnd = `${data.year}-${String(data.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const [{ data: rawDailyFeed, error: dailyError }, { data: rawConcentrates }, { data: rawLatestCosts }] = await Promise.all([
+    supabase
+      .from('daily_feed_records')
+      .select(`
+        batch_id,
+        concentrate_id,
+        concentrate_name,
+        kg_total,
+        production_stage,
+        batches!inner(
+          ponds!inner(
+            organization_id,
+            production_stage
+          )
+        )
+      `)
+      .eq('batches.ponds.organization_id', orgId)
+      .gte('record_date', monthStart)
+      .lte('record_date', monthEnd),
+    supabase
+      .from('feed_concentrates')
+      .select('id, name, price_per_kg')
+      .eq('organization_id', orgId),
+    supabase
+      .from('feed_latest_entry_cost')
+      .select('concentrate_id, latest_cost_per_kg')
+      .eq('organization_id', orgId),
+  ])
+
+  if (dailyError) {
+    throw new Error(dailyError.message)
+  }
+
+  const dailyRows = rawDailyFeed ?? []
+  if (dailyRows.length === 0) {
+    throw new Error('No hay registros diarios para ese período')
+  }
+
+  const concentrateCostMap = new Map<string, number>()
+  for (const concentrate of rawConcentrates ?? []) {
+    concentrateCostMap.set(concentrate.id, Number(concentrate.price_per_kg ?? 0))
+  }
+  for (const latestCost of rawLatestCosts ?? []) {
+    if (latestCost.latest_cost_per_kg != null) {
+      concentrateCostMap.set(latestCost.concentrate_id, Number(latestCost.latest_cost_per_kg))
+    }
+  }
+
+  const grouped = new Map<string, {
+    batch_id: string
+    concentrate_id: string | null
+    concentrate_name: string
+    production_stage: 'levante' | 'engorde'
+    kg_used: number
+  }>()
+
+  for (const row of dailyRows as any[]) {
+    const stage = row.production_stage === 'levante' || row.batches?.ponds?.production_stage === 'levante'
+      ? 'levante'
+      : 'engorde'
+    const key = [
+      row.batch_id,
+      row.concentrate_id ?? row.concentrate_name,
+      stage,
+    ].join(':')
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        batch_id: row.batch_id,
+        concentrate_id: row.concentrate_id,
+        concentrate_name: row.concentrate_name,
+        production_stage: stage,
+        kg_used: 0,
+      })
+    }
+
+    grouped.get(key)!.kg_used += Number(row.kg_total ?? 0)
+  }
+
+  const rows = Array.from(grouped.values()).map((group) => ({
+    batch_id: group.batch_id,
+    concentrate_id: group.concentrate_id,
+    concentrate_name: group.concentrate_name,
+    production_stage: group.production_stage,
+    year: data.year,
+    month: data.month,
+    kg_used: Number(group.kg_used.toFixed(2)),
+    cost_per_kg: group.concentrate_id ? Number(concentrateCostMap.get(group.concentrate_id) ?? 0) : 0,
+    notes: `Generado desde registros diarios ${String(data.month).padStart(2, '0')}/${data.year}`,
+  }))
+
+  const { error } = await supabase.from('monthly_feed_records').upsert(rows, {
+    onConflict: 'batch_id,concentrate_id,year,month,production_stage',
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/dashboard/feed')
+  return { generated: rows.length }
+}
+
 // ── Inventario de concentrado ─────────────────────────────────
 
 export async function createFeedInventoryEntry(data: {

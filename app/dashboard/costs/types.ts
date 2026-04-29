@@ -58,6 +58,25 @@ export type FeedRecord = {
   cost_per_kg: number
 }
 
+export type DailyFeedRecord = {
+  id: string
+  batch_id: string
+  record_date: string
+  concentrate_id: string | null
+  concentrate_name: string
+  bags_am: number
+  bags_pm: number
+  bags_total: number
+  kg_per_bag: number
+  kg_total: number
+  mortality_count: number
+  reference: string | null
+  notes: string | null
+  pond_name: string
+  production_stage: 'levante' | 'engorde' | null
+  created_at: string
+}
+
 export type HarvestRecord = {
   id: string
   batch_id: string

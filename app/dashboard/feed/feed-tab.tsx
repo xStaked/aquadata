@@ -9,9 +9,17 @@ interface FeedTabProps {
   feedRecords: FeedRecord[]
   stock: FeedStock[]
   canEdit: boolean
+  showCreateButton?: boolean
 }
 
-export function FeedTab({ concentrates, batchesForForms, feedRecords, stock, canEdit }: FeedTabProps) {
+export function FeedTab({
+  concentrates,
+  batchesForForms,
+  feedRecords,
+  stock,
+  canEdit,
+  showCreateButton = true,
+}: FeedTabProps) {
   const hasConsumo = feedRecords.length > 0
 
   return (
@@ -69,6 +77,7 @@ export function FeedTab({ concentrates, batchesForForms, feedRecords, stock, can
             feedRecords={feedRecords}
             stock={stock}
             canEdit={canEdit}
+            showCreateButton={showCreateButton}
           />
         </CardContent>
       </Card>

@@ -48,6 +48,7 @@ export async function createPond(data: {
   area_m2?: number | null
   depth_m?: number | null
   species?: string | null
+  production_stage?: 'levante' | 'engorde' | null
   sort_order: number
 }): Promise<void> {
   const supabase = await createClient()
@@ -58,6 +59,7 @@ export async function createPond(data: {
     area_m2: data.area_m2 ?? null,
     depth_m: data.depth_m ?? null,
     species: data.species ?? null,
+    production_stage: data.production_stage ?? null,
     status: 'active',
     sort_order: data.sort_order,
   })
@@ -131,6 +133,7 @@ export async function getNextSortOrder(orgId: string): Promise<number> {
 }
 
 function normalizePond(raw: Record<string, unknown>): Pond {
+  const stage = raw.production_stage as string | null
   return {
     id: raw.id as string,
     organization_id: raw.organization_id as string,
@@ -138,6 +141,7 @@ function normalizePond(raw: Record<string, unknown>): Pond {
     area_m2: raw.area_m2 != null ? Number(raw.area_m2) : null,
     depth_m: raw.depth_m != null ? Number(raw.depth_m) : null,
     species: (raw.species as string) ?? null,
+    production_stage: stage === 'levante' || stage === 'engorde' ? stage : null,
     status: (raw.status as Pond['status']) ?? 'active',
     sort_order: Number(raw.sort_order ?? 0),
     created_at: raw.created_at as string,

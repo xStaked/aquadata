@@ -3,9 +3,11 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Wheat } from 'lucide-react'
 import { FeedTab } from './feed-tab'
+import { DailyFeedTab } from './daily-feed-tab'
 import { type Concentrate, type FeedRecord, type BatchForForms, type FeedStock } from '../costs/types'
 import { isWriterRole } from '@/lib/auth/roles'
 import { ReadOnlyBanner } from '@/components/read-only-banner'
+import { FeedRecordDialog } from '@/components/feed-record-dialog'
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -23,6 +25,7 @@ export default async function FeedPage() {
   let feedRecords: FeedRecord[] = []
   let batchesForForms: BatchForForms[] = []
   let stock: FeedStock[] = []
+  let dailyFeedRecords: any[] = []
 
   if (profile?.organization_id) {
     const [
@@ -32,6 +35,7 @@ export default async function FeedPage() {
       { data: rawFeedRecords },
       { data: rawStock },
       { data: rawLatestCosts },
+      { data: rawDailyFeed },
     ] = await Promise.all([
       supabase
         .from('ponds')
@@ -65,6 +69,18 @@ export default async function FeedPage() {
         .from('feed_latest_entry_cost')
         .select('concentrate_id, latest_cost_per_kg')
         .eq('organization_id', profile.organization_id),
+      supabase
+        .from('daily_feed_records')
+        .select(`
+          id, batch_id, record_date, concentrate_id, concentrate_name,
+          bags_am, bags_pm, bags_total, kg_per_bag, kg_total,
+          mortality_count, reference, notes, created_at,
+          batches!inner(ponds!inner(name))
+        `)
+        .eq('batches.ponds.organization_id', profile.organization_id)
+        .order('record_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(500),
     ])
 
     const pondMap: Record<string, { name: string; species: string }> = {}
@@ -142,6 +158,25 @@ export default async function FeedPage() {
       available_kg: Number(s.available_kg),
       latest_cost_per_kg: latestCostMap[s.concentrate_id] ?? null,
     }))
+
+    // ── daily feed records ──────────────────────────────────────
+    dailyFeedRecords = (rawDailyFeed ?? []).map((r: any) => ({
+      id: r.id,
+      batch_id: r.batch_id,
+      record_date: r.record_date,
+      concentrate_id: r.concentrate_id,
+      concentrate_name: r.concentrate_name,
+      bags_am: Number(r.bags_am),
+      bags_pm: Number(r.bags_pm),
+      bags_total: Number(r.bags_total),
+      kg_per_bag: Number(r.kg_per_bag),
+      kg_total: Number(r.kg_total),
+      mortality_count: Number(r.mortality_count),
+      reference: r.reference,
+      notes: r.notes,
+      pond_name: r.batches?.ponds?.name ?? 'S/E',
+      created_at: r.created_at,
+    }))
   }
 
   return (
@@ -153,9 +188,16 @@ export default async function FeedPage() {
             Alimentación
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Gestión de concentrados y registro de consumo mensual por lote
+            Gestión de concentrados y registro diario y mensual de consumo por lote
           </p>
         </div>
+        {canEdit ? (
+          <FeedRecordDialog
+            batches={batchesForForms}
+            concentrates={concentrates}
+            stock={stock}
+          />
+        ) : null}
       </div>
 
       {!canEdit ? <ReadOnlyBanner description="Puedes consultar concentrados y consumo histórico, pero no registrar ni editar alimentación." /> : null}
@@ -166,6 +208,15 @@ export default async function FeedPage() {
         feedRecords={feedRecords}
         stock={stock}
         canEdit={canEdit}
+        showCreateButton={false}
+      />
+
+      <DailyFeedTab
+        concentrates={concentrates}
+        batches={batchesForForms}
+        records={dailyFeedRecords}
+        canEdit={canEdit}
+        showRegisterButton={false}
       />
     </div>
   )

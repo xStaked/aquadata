@@ -13,6 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Plus } from 'lucide-react'
 import { createPond } from '@/app/dashboard/ponds/actions'
 
@@ -80,6 +87,21 @@ export function PondForm({ hasOrganization }: { hasOrganization: boolean }) {
           <div className="grid gap-2">
             <Label htmlFor="species">Especie</Label>
             <Input id="species" name="species" placeholder="Tilapia, Camaron..." />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="production_stage">Etapa productiva</Label>
+            <Select name="production_stage">
+              <SelectTrigger id="production_stage">
+                <SelectValue placeholder="Seleccionar etapa (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="levante">Levante</SelectItem>
+                <SelectItem value="engorde">Engorde</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Define si este estanque está en etapa de levante o engorde. Se usará por defecto en los registros de alimentación diaria.
+            </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={isLoading}>

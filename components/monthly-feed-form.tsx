@@ -33,8 +33,10 @@ import {
   updateMonthlyFeedRecord,
   deleteMonthlyFeedRecord,
   createConcentrate,
+  generateMonthlyFeedRecordsFromDaily,
 } from '@/app/dashboard/feed/actions'
 import { formatCOP } from '@/lib/format'
+import { toast } from 'sonner'
 
 interface Batch {
   id: string
@@ -74,6 +76,7 @@ interface MonthlyFeedFormProps {
   feedRecords: FeedRecord[]
   stock?: StockItem[]
   canEdit: boolean
+  showCreateButton?: boolean
 }
 
 interface FeedFormState {
@@ -106,7 +109,14 @@ const emptyForm: FeedFormState = {
 
 const emptyQuick = { name: '', brand: '', price_per_kg: '' }
 
-export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = [], canEdit }: MonthlyFeedFormProps) {
+export function MonthlyFeedForm({
+  batches,
+  concentrates,
+  feedRecords,
+  stock = [],
+  canEdit,
+  showCreateButton = true,
+}: MonthlyFeedFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
@@ -121,6 +131,16 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
   const [quickForm, setQuickForm] = useState(emptyQuick)
   const [quickError, setQuickError] = useState('')
   const [pendingSelect, setPendingSelect] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [generateOpen, setGenerateOpen] = useState(false)
+  const [generateYear, setGenerateYear] = useState(String(now.getFullYear()))
+  const [generateMonth, setGenerateMonth] = useState(String(now.getMonth() + 1))
+
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(feedRecords.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const startIndex = (safeCurrentPage - 1) * pageSize
+  const paginatedFeedRecords = feedRecords.slice(startIndex, startIndex + pageSize)
 
   const totalCost = (Number(form.kg_used) || 0) * (Number(form.cost_per_kg) || 0)
   const editTotalCost = (Number(editForm.kg_used) || 0) * (Number(editForm.cost_per_kg) || 0)
@@ -163,6 +183,10 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
       }
     }
   }, [concentrates, stock, pendingSelect])
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, Math.max(1, Math.ceil(feedRecords.length / pageSize))))
+  }, [feedRecords.length])
 
   const handleQuickCreate = () => {
     if (!quickForm.name.trim() || !quickForm.price_per_kg) {
@@ -241,6 +265,21 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
     startTransition(async () => { await deleteMonthlyFeedRecord(id) })
   }
 
+  const handleGenerateMonthlyFromDaily = () => {
+    startTransition(async () => {
+      try {
+        const result = await generateMonthlyFeedRecordsFromDaily({
+          year: Number(generateYear),
+          month: Number(generateMonth),
+        })
+        setGenerateOpen(false)
+        toast.success(`${result.generated} registros mensuales generados desde diarios`)
+      } catch (e: any) {
+        toast.error(e.message ?? 'No se pudo generar el resumen mensual')
+      }
+    })
+  }
+
   const handleOpenEdit = (record: FeedRecord) => {
     const fallbackConcentrateId = concentrates.find(c => c.name === record.concentrate_name)?.id ?? ''
     setEditForm({
@@ -311,15 +350,69 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
           <Wheat className="h-4 w-4" />
           <span>{feedRecords.length} registro{feedRecords.length !== 1 ? 's' : ''} de alimentación</span>
         </div>
-        {canEdit ? (
-        <Dialog open={open} onOpenChange={handleDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Registrar alimento
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
+        <div className="flex items-center gap-2">
+          {canEdit ? (
+            <Dialog open={generateOpen} onOpenChange={setGenerateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  Generar desde diario
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Generar registro mensual</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    Consolida los registros diarios del mes seleccionado y actualiza los registros mensuales del mismo período.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Año</Label>
+                      <Input
+                        type="number"
+                        min="2020"
+                        max="2030"
+                        value={generateYear}
+                        onChange={e => setGenerateYear(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Mes</Label>
+                      <Select value={generateMonth} onValueChange={setGenerateMonth}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MONTHS.map((m, i) => (
+                            <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setGenerateOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleGenerateMonthlyFromDaily} disabled={isPending}>
+                      {isPending ? 'Generando…' : 'Generar'}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : null}
+
+          {canEdit && showCreateButton ? (
+          <Dialog open={open} onOpenChange={handleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Registrar alimento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Registro de alimento mensual</DialogTitle>
             </DialogHeader>
@@ -546,9 +639,10 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
                 {isPending ? 'Guardando…' : 'Registrar'}
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-        ) : null}
+            </DialogContent>
+          </Dialog>
+          ) : null}
+        </div>
       </div>
 
       <Table>
@@ -572,7 +666,7 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
               </TableCell>
             </TableRow>
           ) : (
-            feedRecords.map(r => (
+            paginatedFeedRecords.map(r => (
               <TableRow key={r.id} className="transition-colors hover:bg-muted/40">
                 <TableCell className="font-medium">
                   {MONTHS[r.month - 1]} {r.year}
@@ -753,6 +847,33 @@ export function MonthlyFeedForm({ batches, concentrates, feedRecords, stock = []
           )}
         </TableBody>
       </Table>
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Mostrando {feedRecords.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pageSize, feedRecords.length)} de {feedRecords.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={safeCurrentPage === 1}
+          >
+            Anterior
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Página {safeCurrentPage} de {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            disabled={safeCurrentPage === totalPages}
+          >
+            Siguiente
+          </Button>
+        </div>
+      </div>
 
       {/* Monthly summary */}
       {Object.keys(byMonth).length > 0 && (
