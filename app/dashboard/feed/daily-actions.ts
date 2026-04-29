@@ -155,9 +155,11 @@ export async function bulkImportDailyFeedRecords(records: DailyFeedRecordInput[]
   }
 
   const mortalityAdjustments: Array<{ batchId: string; delta: number }> = []
+  const batchStageById = new Map<string, 'levante' | 'engorde'>()
 
   for (const record of records) {
     const batch = await getOwnedBatch(record.batch_id, orgId, supabase)
+    batchStageById.set(record.batch_id, batch.production_stage)
 
     const { data: existingRecord } = await supabase
       .from('daily_feed_records')
@@ -181,7 +183,7 @@ export async function bulkImportDailyFeedRecords(records: DailyFeedRecordInput[]
     kg_per_bag: r.kg_per_bag,
     mortality_count: r.mortality_count,
     reference: r.reference || null,
-    production_stage: batch.production_stage,
+    production_stage: batchStageById.get(r.batch_id) ?? 'engorde',
     notes: r.notes || null,
     created_by: userId,
   }))

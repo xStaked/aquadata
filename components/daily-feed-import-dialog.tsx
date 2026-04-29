@@ -34,6 +34,11 @@ interface ParsedRow {
   errors: string[]
 }
 
+interface ParsedSheetData {
+  headers: string[]
+  dataRows: Array<{ rowIndex: number; values: Array<string | number | null> }>
+}
+
 function normalizeText(str: string): string {
   return str
     .toString()
@@ -163,6 +168,66 @@ function detectColumns(headers: string[]): Record<string, string | null> {
   }
 }
 
+function findFeedingSheet(workbook: XLSX.WorkBook): XLSX.WorkSheet | null {
+  const feedingSheetName = workbook.SheetNames.find((sheetName) => normalizeText(sheetName) === 'alimentacion')
+  return feedingSheetName ? workbook.Sheets[feedingSheetName] ?? null : null
+}
+
+function buildHeaderLabel(parts: Array<string | number | null | undefined>): string {
+  return parts
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function hasAnyCellValue(values: Array<string | number | null | undefined>): boolean {
+  return values.some((value) => String(value ?? '').trim() !== '')
+}
+
+function extractSheetData(sheet: XLSX.WorkSheet): ParsedSheetData | null {
+  const rows = XLSX.utils.sheet_to_json<Array<string | number | null>>(sheet, {
+    header: 1,
+    defval: '',
+  })
+
+  for (let startIndex = 0; startIndex < Math.min(rows.length, 10); startIndex++) {
+    const headerRows = rows.slice(startIndex, startIndex + 3)
+    if (headerRows.length === 0) continue
+
+    const maxColumns = Math.max(...headerRows.map((row) => row.length), 0)
+    const headers = Array.from({ length: maxColumns }, (_, columnIndex) =>
+      buildHeaderLabel(headerRows.map((row) => row[columnIndex]))
+    )
+    const columns = detectColumns(headers)
+    const looksLikeHeader =
+      !!columns.lago &&
+      (!!columns.am || !!columns.pm || !!columns.total) &&
+      (!!columns.referencia || !!columns.lote)
+
+    if (!looksLikeHeader) continue
+
+    let dataStartIndex = startIndex + headerRows.length
+    while (dataStartIndex < rows.length && !hasAnyCellValue(rows[dataStartIndex])) {
+      dataStartIndex += 1
+    }
+
+    return {
+      headers,
+      dataRows: rows
+        .slice(dataStartIndex)
+        .map((values, offset) => ({
+          rowIndex: dataStartIndex + offset + 1,
+          values,
+        }))
+        .filter((row) => hasAnyCellValue(row.values)),
+    }
+  }
+
+  return null
+}
+
 export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFeedImportDialogProps) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
@@ -173,6 +238,12 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
 
   const validRows = parsedRows.filter((r) => r.parsed && r.errors.length === 0)
   const invalidRows = parsedRows.filter((r) => !r.parsed || r.errors.length > 0)
+  const hasFileLevelError =
+    parsedRows.length === 1 &&
+    parsedRows[0]?.rowIndex === 0 &&
+    parsedRows[0]?.parsed == null &&
+    Object.keys(parsedRows[0]?.raw ?? {}).length === 0 &&
+    parsedRows[0]?.errors.length > 0
 
   const processFile = useCallback(
     (selectedFile: File) => {
@@ -185,30 +256,45 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer)
           const workbook = XLSX.read(data, { type: 'array' })
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-          const jsonRows: Record<string, string | number>[] = XLSX.utils.sheet_to_json(firstSheet, {
-            header: 'A',
-            defval: '',
-          })
+          const feedingSheet = findFeedingSheet(workbook)
 
-          if (jsonRows.length < 2) {
-            setParsedRows([{ rowIndex: 0, raw: {}, parsed: null, errors: ['El archivo no tiene suficientes filas (mínimo encabezado + 1 dato)'] }])
+          if (!feedingSheet) {
+            const availableSheets = workbook.SheetNames.join(', ')
+            setParsedRows([{
+              rowIndex: 0,
+              raw: {},
+              parsed: null,
+              errors: [
+                availableSheets
+                  ? `No se encontró la hoja "alimentacion". Hojas disponibles: ${availableSheets}`
+                  : 'No se encontró la hoja "alimentacion" en el archivo.',
+              ],
+            }])
             return
           }
 
-          // Detect header row
-          const headerRow = jsonRows[0]
-          const headers = Object.values(headerRow).map((v) => String(v ?? ''))
+          const sheetData = extractSheetData(feedingSheet)
+
+          if (!sheetData || sheetData.dataRows.length === 0) {
+            setParsedRows([{
+              rowIndex: 0,
+              raw: {},
+              parsed: null,
+              errors: ['No se pudo identificar el encabezado o no hay filas de datos en la hoja "alimentacion".'],
+            }])
+            return
+          }
+
+          const { headers, dataRows } = sheetData
           const cols = detectColumns(headers)
 
           const results: ParsedRow[] = []
 
-          for (let i = 1; i < jsonRows.length; i++) {
+          for (const sheetRow of dataRows) {
             const raw: Record<string, string | number | null> = {}
-            const row = jsonRows[i]
-            headers.forEach((h, idx) => {
-              const key = String.fromCharCode(65 + idx) // A, B, C...
-              raw[h] = row[key] ?? null
+            headers.forEach((header, idx) => {
+              if (!header) return
+              raw[header] = sheetRow.values[idx] ?? null
             })
 
             const errors: string[] = []
@@ -274,12 +360,12 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             }
 
             if (errors.length > 0) {
-              results.push({ rowIndex: i, raw, parsed: null, errors })
+              results.push({ rowIndex: sheetRow.rowIndex, raw, parsed: null, errors })
               continue
             }
 
             results.push({
-              rowIndex: i,
+              rowIndex: sheetRow.rowIndex,
               raw,
               parsed: {
                 batch_id: batch!.id,
@@ -379,13 +465,13 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             />
           </div>
 
-          {parsedRows.length > 0 && parsedRows[0]?.errors[0]?.startsWith('Error al leer') ? (
+          {hasFileLevelError ? (
             <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {parsedRows[0].errors[0]}
             </p>
           ) : null}
 
-          {parsedRows.length > 0 ? (
+          {parsedRows.length > 0 && !hasFileLevelError ? (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-4 flex-wrap">
                 <p className="text-sm font-medium">Vista previa</p>
