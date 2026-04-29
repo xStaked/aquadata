@@ -241,6 +241,7 @@ function normalizePond(raw: Record<string, unknown>): Pond {
     area_m2: raw.area_m2 != null ? Number(raw.area_m2) : null,
     depth_m: raw.depth_m != null ? Number(raw.depth_m) : null,
     species: (raw.species as string) ?? null,
+    production_stage: (raw.production_stage as Pond['production_stage']) ?? null,
     status: (raw.status as Pond['status']) ?? 'active',
     sort_order: Number(raw.sort_order ?? 0),
     created_at: raw.created_at as string,

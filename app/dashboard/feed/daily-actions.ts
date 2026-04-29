@@ -62,7 +62,12 @@ async function getOwnedBatch(
   batchId: string,
   orgId: string,
   supabase: Awaited<ReturnType<typeof createClient>>
-) {
+): Promise<{
+  id: string
+  current_population: number | null
+  initial_population: number
+  production_stage: 'levante' | 'engorde'
+}> {
   const { data, error } = await supabase
     .from('batches')
     .select('id, current_population, initial_population, ponds!inner(organization_id, production_stage)')
@@ -74,11 +79,13 @@ async function getOwnedBatch(
     throw new Error('No se pudo cargar el lote')
   }
 
+  const pond = Array.isArray(data.ponds) ? data.ponds[0] : data.ponds
+
   return {
     id: data.id,
     current_population: data.current_population != null ? Number(data.current_population) : null,
     initial_population: Number(data.initial_population ?? 0),
-    production_stage: data.ponds?.production_stage === 'levante' ? 'levante' : 'engorde',
+    production_stage: pond?.production_stage === 'levante' ? 'levante' : 'engorde',
   }
 }
 
