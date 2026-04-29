@@ -58,7 +58,8 @@ interface ParsedRow {
 
 interface ParsedSheetData {
   headers: string[]
-  dataRows: Array<{ rowIndex: number; values: Array<string | number | null> }>
+  columnMap: Record<string, number | null>
+  dataRows: Array<{ rowIndex: number; values: Array<string | number | Date | null> }>
 }
 
 function normalizeText(str: string): string {
@@ -107,8 +108,13 @@ function findConcentrate(name: string, concentrates: Concentrate[]): Concentrate
   return bestScore >= 2 ? bestMatch : null
 }
 
-function findBatch(lagoValue: string | number | null, batches: BatchForForms[], ponds: PondInfo[]): BatchForForms | null {
+function findBatch(
+  lagoValue: string | number | Date | null,
+  batches: BatchForForms[],
+  ponds: PondInfo[]
+): BatchForForms | null {
   if (!lagoValue) return null
+  if (lagoValue instanceof Date) return null
 
   const lagoNorm = normalizeText(lagoValue?.toString() ?? '')
 
@@ -144,10 +150,59 @@ function findBatch(lagoValue: string | number | null, batches: BatchForForms[], 
   return null
 }
 
-function parseNumber(value: string | number | null): number | null {
+function parseNumber(value: string | number | Date | null): number | null {
   if (value == null || value === '') return null
+  if (value instanceof Date) return null
   const n = Number(String(value).replace(',', '.'))
   return Number.isFinite(n) ? n : null
+}
+
+function parseExcelDate(value: string | number | Date | null): string | null {
+  if (value == null || value === '') return null
+
+  if (typeof value === 'number') {
+    const parsed = XLSX.SSF.parse_date_code(value)
+    if (!parsed) return null
+
+    const month = String(parsed.m).padStart(2, '0')
+    const day = String(parsed.d).padStart(2, '0')
+    return `${parsed.y}-${month}-${day}`
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10)
+  }
+
+  const rawValue = String(value).trim()
+  if (!rawValue) return null
+
+  const normalized = rawValue.replace(/\./g, '/').replace(/-/g, '/')
+  const parts = normalized.split('/').map((part) => part.trim())
+
+  if (parts.length === 3) {
+    const [first, second, third] = parts
+
+    if (first.length === 4) {
+      const year = Number(first)
+      const month = Number(second)
+      const day = Number(third)
+      if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+        return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      }
+    }
+
+    const day = Number(first)
+    const month = Number(second)
+    const year = Number(third)
+    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    }
+  }
+
+  const parsedDate = new Date(rawValue)
+  if (Number.isNaN(parsedDate.getTime())) return null
+
+  return parsedDate.toISOString().split('T')[0]
 }
 
 function detectColumns(headers: string[]): Record<string, string | null> {
@@ -165,8 +220,35 @@ function detectColumns(headers: string[]): Record<string, string | null> {
     return null
   }
 
+  const findExactOrIncludes = (exactPatterns: string[], includePatterns: string[]): string | null => {
+    for (let i = 0; i < normalizedHeaders.length; i++) {
+      const header = normalizedHeaders[i]
+      if (exactPatterns.includes(header)) {
+        return headers[i]
+      }
+    }
+
+    for (let i = 0; i < normalizedHeaders.length; i++) {
+      const header = normalizedHeaders[i]
+      for (const pattern of includePatterns) {
+        if (header.includes(pattern)) {
+          return headers[i]
+        }
+      }
+    }
+
+    return null
+  }
+
+  const findPreferred = (preferredPatterns: string[], fallbackPatterns: string[]): string | null => {
+    return find(preferredPatterns) ?? find(fallbackPatterns)
+  }
+
   return {
-    lago: find(['lago', 'estanque', 'pond', 'numero', 'numeor', 'lagos']),
+    lago: findPreferred(
+      ['nombredelago', 'nombrelago', 'nombredeestanque', 'nombreestanque'],
+      ['lago', 'estanque', 'pond', 'numerodelago', 'numerolago', 'numero', 'numeor', 'lagos']
+    ),
     am: find(['am', 'manana', 'mañana', 'morning']),
     pm: find(['pm', 'tarde', 'afternoon', 'evening']),
     total: find(['total', 'bultos']),
@@ -174,7 +256,7 @@ function detectColumns(headers: string[]): Record<string, string | null> {
     referencia: find(['referencia', 'ref', 'mm', 'marca', 'concentrado']),
     mortalidad: find(['mortalidad', 'mortality', 'muertos']),
     observaciones: find(['observaciones', 'obs', 'notas', 'notes']),
-    fecha: find(['fecha', 'date', 'dia']),
+    fecha: findExactOrIncludes(['fecha', 'date'], ['fechaderegistro', 'fechareporte', 'recorddate']),
   }
 }
 
@@ -183,7 +265,7 @@ function findFeedingSheet(workbook: XLSX.WorkBook): XLSX.WorkSheet | null {
   return feedingSheetName ? workbook.Sheets[feedingSheetName] ?? null : null
 }
 
-function buildHeaderLabel(parts: Array<string | number | null | undefined>): string {
+function buildHeaderLabel(parts: Array<string | number | Date | null | undefined>): string {
   return parts
     .map((value) => String(value ?? '').trim())
     .filter(Boolean)
@@ -192,14 +274,16 @@ function buildHeaderLabel(parts: Array<string | number | null | undefined>): str
     .trim()
 }
 
-function hasAnyCellValue(values: Array<string | number | null | undefined>): boolean {
+function hasAnyCellValue(values: Array<string | number | Date | null | undefined>): boolean {
   return values.some((value) => String(value ?? '').trim() !== '')
 }
 
 function extractSheetData(sheet: XLSX.WorkSheet): ParsedSheetData | null {
-  const rows = XLSX.utils.sheet_to_json<Array<string | number | null>>(sheet, {
+  const rows = XLSX.utils.sheet_to_json<Array<string | number | Date | null>>(sheet, {
     header: 1,
-    defval: '',
+    defval: null,
+    raw: true,
+    blankrows: true,
   })
 
   for (let startIndex = 0; startIndex < Math.min(rows.length, 10); startIndex++) {
@@ -225,6 +309,7 @@ function extractSheetData(sheet: XLSX.WorkSheet): ParsedSheetData | null {
 
     return {
       headers,
+      columnMap: Object.fromEntries(Object.entries(columns).map(([key, header]) => [key, header ? headers.indexOf(header) : null])),
       dataRows: rows
         .slice(dataStartIndex)
         .map((values, offset) => ({
@@ -250,7 +335,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
   const batchById = new Map(batches.map((batch) => [batch.id, batch] as const))
   const concentrateById = new Map(concentrates.map((concentrate) => [concentrate.id, concentrate] as const))
 
-  const isBatchResolutionError = (error: string) => error.startsWith('No se encontró lote para lago')
+  const isBatchResolutionError = (error: string) => error.startsWith('No se encontró lote para')
   const isConcentrateResolutionError = (error: string) => error.startsWith('No se encontró concentrado')
   const getResolvedBatchId = (row: ParsedRow) => row.manualBatchId ?? row.matchedBatchId
   const getResolvedConcentrateId = (row: ParsedRow) => row.manualConcentrateId ?? row.matchedConcentrateId
@@ -335,8 +420,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             return
           }
 
-          const { headers, dataRows } = sheetData
-          const cols = detectColumns(headers)
+          const { headers, columnMap, dataRows } = sheetData
 
           const results: ParsedRow[] = []
 
@@ -344,26 +428,32 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             const raw: Record<string, string | number | null> = {}
             headers.forEach((header, idx) => {
               if (!header) return
-              raw[header] = sheetRow.values[idx] ?? null
+              const value = sheetRow.values[idx] ?? null
+              raw[header] =
+                value instanceof Date
+                  ? value.toISOString().slice(0, 10)
+                  : typeof value === 'string' || typeof value === 'number' || value == null
+                    ? value
+                    : String(value)
             })
 
             const errors: string[] = []
 
             // Extract values
-            const lagoValue = cols.lago ? raw[cols.lago] : null
-            const loteValue = cols.lote ? raw[cols.lote] : null
-            const amValue = cols.am ? raw[cols.am] : null
-            const pmValue = cols.pm ? raw[cols.pm] : null
-            const totalValue = cols.total ? raw[cols.total] : null
-            const refValue = cols.referencia ? raw[cols.referencia] : null
-            const mortValue = cols.mortalidad ? raw[cols.mortalidad] : null
-            const obsValue = cols.observaciones ? raw[cols.observaciones] : null
-            const fechaValue = cols.fecha ? raw[cols.fecha] : null
+            const pondNameValue = columnMap.lago != null ? sheetRow.values[columnMap.lago] ?? null : null
+            const loteValue = columnMap.lote != null ? sheetRow.values[columnMap.lote] ?? null : null
+            const amValue = columnMap.am != null ? sheetRow.values[columnMap.am] ?? null : null
+            const pmValue = columnMap.pm != null ? sheetRow.values[columnMap.pm] ?? null : null
+            const totalValue = columnMap.total != null ? sheetRow.values[columnMap.total] ?? null : null
+            const refValue = columnMap.referencia != null ? sheetRow.values[columnMap.referencia] ?? null : null
+            const mortValue = columnMap.mortalidad != null ? sheetRow.values[columnMap.mortalidad] ?? null : null
+            const obsValue = columnMap.observaciones != null ? sheetRow.values[columnMap.observaciones] ?? null : null
+            const fechaValue = columnMap.fecha != null ? sheetRow.values[columnMap.fecha] ?? null : null
 
             // Find batch
-            const batch = findBatch(lagoValue, batches, ponds)
+            const batch = findBatch(pondNameValue, batches, ponds)
             if (!batch) {
-              errors.push(`No se encontró lote para lago "${lagoValue}" / lote "${loteValue}"`)
+              errors.push(`No se encontró lote para nombre de lago "${pondNameValue}" / lote "${loteValue}"`)
             }
 
             // Find concentrate
@@ -395,13 +485,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             const mortality = parseNumber(mortValue) ?? 0
 
             // Parse date
-            let recordDate: string | null = null
-            if (fechaValue) {
-              const d = new Date(String(fechaValue))
-              if (!isNaN(d.getTime())) {
-                recordDate = d.toISOString().split('T')[0]
-              }
-            }
+            let recordDate = parseExcelDate(fechaValue)
             if (!recordDate) {
               // Si el archivo no trae fecha, usamos la fecha actual.
               recordDate = new Date().toISOString().split('T')[0]
@@ -414,7 +498,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
               results.push({
                 rowIndex: sheetRow.rowIndex,
                 raw,
-                sourcePondName: String(lagoValue ?? loteValue ?? '').trim(),
+                sourcePondName: String(pondNameValue ?? loteValue ?? '').trim(),
                 sourceConcentrateName: concentrateLookupValue,
                 matchedBatchId: batch?.id ?? null,
                 manualBatchId: null,
@@ -422,7 +506,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                 manualConcentrateId: null,
                 draft: hasOnlyRecoverableErrors
                   ? {
-                      record_date: recordDate!,
+                      record_date: recordDate,
                       concentrate_id: concentrate?.id ?? null,
                       concentrate_name: concentrate?.name ?? (concentrateLookupValue || 'Desconocido'),
                       bags_am: bagsAm,
@@ -441,14 +525,14 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
             results.push({
               rowIndex: sheetRow.rowIndex,
               raw,
-              sourcePondName: String(lagoValue ?? loteValue ?? '').trim(),
+              sourcePondName: String(pondNameValue ?? loteValue ?? '').trim(),
               sourceConcentrateName: concentrateLookupValue,
               matchedBatchId: batch!.id,
               manualBatchId: null,
               matchedConcentrateId: concentrate?.id ?? null,
               manualConcentrateId: null,
               draft: {
-                record_date: recordDate!,
+                record_date: recordDate,
                 concentrate_id: concentrate?.id ?? null,
                 concentrate_name: concentrate?.name ?? (concentrateLookupValue || 'Desconocido'),
                 bags_am: bagsAm,
@@ -597,7 +681,7 @@ export function DailyFeedImportDialog({ concentrates, batches, ponds }: DailyFee
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-foreground">Archivo fuente</p>
                   <p className="text-sm text-muted-foreground">
-                    Se intentará leer la hoja <strong>alimentacion</strong>. Si no existe columna de fecha, se usa la fecha actual. `Lote` también se usa como apoyo para encontrar el concentrado.
+                    Se intentará leer la hoja <strong>alimentacion</strong>. El formato nuevo usa las columnas <strong>fecha</strong> y <strong>nombre de lago</strong>. Si no existe columna de fecha, se usa la fecha actual. `Lote` también se usa como apoyo para encontrar el concentrado.
                   </p>
                   {file ? (
                     <p className="flex items-center gap-2 text-sm text-foreground">
