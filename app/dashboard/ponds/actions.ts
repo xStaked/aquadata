@@ -97,19 +97,30 @@ export async function updateBatchDetails(formData: FormData) {
   const batchId = formData.get('batch_id') as string
   const startDate = formData.get('start_date') as string
   const seedSource = (formData.get('seed_source') as string) || null
+  const currentPopulationValue = formData.get('current_population') as string
+  const currentPopulation = Number(currentPopulationValue)
 
   if (!batchId) throw new Error('Lote no encontrado')
   if (!startDate) throw new Error('La fecha de inicio es requerida')
+  if (!currentPopulationValue || Number.isNaN(currentPopulation) || currentPopulation < 0) {
+    throw new Error('La cantidad actual de animales debe ser un número mayor o igual a 0')
+  }
 
   await dbUpdateBatchDetails(batchId, {
     start_date: startDate,
     pond_entry_date: startDate,
     seed_source: seedSource,
+    current_population: currentPopulation,
   })
 
   revalidatePath('/dashboard/ponds')
+  revalidatePath('/dashboard/ponds/[id]', 'page')
+  revalidatePath('/dashboard/transfers')
+  revalidatePath('/dashboard/feed')
+  revalidatePath('/dashboard/harvest')
   revalidatePath('/dashboard/upload')
   revalidatePath('/dashboard/records')
+  revalidatePath('/dashboard/costs')
 }
 
 export async function updateBatchPrice(batchId: string, price: number) {

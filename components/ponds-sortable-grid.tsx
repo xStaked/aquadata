@@ -323,6 +323,7 @@ function SortablePondCard({
                         batchId={batch.id}
                         startDate={batch.start_date}
                         seedSource={batch.seed_source}
+                        currentPopulation={batch.current_population ?? batch.initial_population}
                       />
                       <BatchFinancialConfig
                         batchId={batch.id}

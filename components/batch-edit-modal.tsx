@@ -20,16 +20,19 @@ export function BatchEditModal({
   batchId,
   startDate: initialStartDate,
   seedSource: initialSeedSource,
+  currentPopulation: initialCurrentPopulation,
 }: {
   batchId: string
   startDate: string
   seedSource: string | null
+  currentPopulation: number | null
 }) {
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [startDate, setStartDate] = useState(initialStartDate)
   const [seedSource, setSeedSource] = useState(initialSeedSource ?? '')
+  const [currentPopulation, setCurrentPopulation] = useState(String(initialCurrentPopulation ?? 0))
 
   const resetState = (nextOpen: boolean) => {
     setOpen(nextOpen)
@@ -38,6 +41,7 @@ export function BatchEditModal({
       setIsSaving(false)
       setStartDate(initialStartDate)
       setSeedSource(initialSeedSource ?? '')
+      setCurrentPopulation(String(initialCurrentPopulation ?? 0))
     }
   }
 
@@ -51,6 +55,7 @@ export function BatchEditModal({
       formData.set('batch_id', batchId)
       formData.set('start_date', startDate)
       formData.set('seed_source', seedSource)
+      formData.set('current_population', currentPopulation)
 
       await updateBatchDetails(formData)
       resetState(false)
@@ -90,6 +95,20 @@ export function BatchEditModal({
               value={seedSource}
               onChange={(event) => setSeedSource(event.target.value)}
               placeholder="Proveedor o hatchery"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor={`batch-current-population-${batchId}`}>Animales actuales</Label>
+            <Input
+              id={`batch-current-population-${batchId}`}
+              type="number"
+              min="0"
+              step="1"
+              value={currentPopulation}
+              onChange={(event) => setCurrentPopulation(event.target.value)}
+              placeholder="0"
+              required
             />
           </div>
 

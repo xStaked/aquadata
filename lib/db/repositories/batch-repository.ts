@@ -131,6 +131,7 @@ export async function updateBatchDetails(
     start_date?: string
     pond_entry_date?: string | null
     seed_source?: string | null
+    current_population?: number
   }
 ): Promise<void> {
   const supabase = await createClient()
@@ -141,6 +142,7 @@ export async function updateBatchDetails(
       start_date: data.start_date,
       pond_entry_date: data.pond_entry_date ?? null,
       seed_source: data.seed_source ?? null,
+      current_population: data.current_population,
     })
     .eq('id', batchId)
 
