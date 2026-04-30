@@ -28,7 +28,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Separator } from '@/components/ui/separator'
 import { Plus, Scale, Trash2, TrendingDown } from 'lucide-react'
 import { createHarvestRecord, deleteHarvestRecord } from '@/app/dashboard/harvest/actions'
 import { formatCOP } from '@/lib/format'
@@ -37,7 +36,7 @@ interface Batch {
   id: string
   pond_name: string
   species: string
-  initial_population: number
+  current_population: number
 }
 
 interface HarvestRecord {
@@ -46,6 +45,7 @@ interface HarvestRecord {
   pond_name: string
   harvest_date: string
   total_animals: number
+  hidden_mortality: number
   avg_weight_whole_g: number
   avg_weight_eviscerated_g: number | null
   labor_cost: number
@@ -71,6 +71,7 @@ const emptyForm = {
   batch_id: '',
   harvest_date: today,
   total_animals: '',
+  hidden_mortality: '',
   avg_weight_whole_g: '',
   avg_weight_eviscerated_g: '',
   labor_cost: '',
@@ -82,15 +83,22 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const selectedBatch = batches.find((batch) => batch.id === form.batch_id)
 
   const animals = Number(form.total_animals) || 0
+  const hiddenMortality = Number(form.hidden_mortality) || 0
   const wholeG = Number(form.avg_weight_whole_g) || 0
   const eviscG = form.avg_weight_eviscerated_g ? Number(form.avg_weight_eviscerated_g) : null
   const preview = calcMetrics(animals, wholeG, eviscG)
+  const totalOutput = animals + hiddenMortality
 
   const handleSubmit = () => {
     if (!form.batch_id || !form.harvest_date || !form.total_animals || !form.avg_weight_whole_g) {
       setError('Lote, fecha, animales y peso entero son requeridos')
+      return
+    }
+    if (selectedBatch && totalOutput > selectedBatch.current_population) {
+      setError(`La salida total del lote excede la población disponible (${selectedBatch.current_population.toLocaleString()} animales)`)
       return
     }
     setError('')
@@ -100,6 +108,7 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
           batch_id: form.batch_id,
           harvest_date: form.harvest_date,
           total_animals: Number(form.total_animals),
+          hidden_mortality: Number(form.hidden_mortality) || 0,
           avg_weight_whole_g: Number(form.avg_weight_whole_g),
           avg_weight_eviscerated_g: form.avg_weight_eviscerated_g ? Number(form.avg_weight_eviscerated_g) : undefined,
           labor_cost: Number(form.labor_cost) || 0,
@@ -149,11 +158,16 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
                     <SelectContent>
                       {batches.map(b => (
                         <SelectItem key={b.id} value={b.id}>
-                          {b.pond_name} — {b.species}
+                          {b.pond_name} — {b.species} — {b.current_population.toLocaleString()} animales
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedBatch ? (
+                    <p className="text-xs text-muted-foreground">
+                      Disponibles: {selectedBatch.current_population.toLocaleString()} animales
+                    </p>
+                  ) : null}
                 </div>
 
                 {/* Fecha */}
@@ -177,6 +191,18 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
                     placeholder="Ej: 5000"
                     value={form.total_animals}
                     onChange={e => setForm(f => ({ ...f, total_animals: e.target.value }))}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="h-hidden-mortality">Mortalidad oculta</Label>
+                  <Input
+                    id="h-hidden-mortality"
+                    type="number"
+                    min="0"
+                    placeholder="Ej: 120"
+                    value={form.hidden_mortality}
+                    onChange={e => setForm(f => ({ ...f, hidden_mortality: e.target.value }))}
                   />
                 </div>
 
@@ -241,6 +267,16 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
                       <span className="text-muted-foreground">Peso total entero:</span>
                       <span className="ml-2 font-semibold">{preview.totalWholeKg.toFixed(2)} kg</span>
                     </div>
+                    <div>
+                      <span className="text-muted-foreground">Salida total:</span>
+                      <span className="ml-2 font-semibold">{totalOutput.toLocaleString()} animales</span>
+                    </div>
+                    {hiddenMortality > 0 && (
+                      <div>
+                        <span className="text-muted-foreground">Mortalidad oculta:</span>
+                        <span className="ml-2 font-semibold text-amber-600">{hiddenMortality.toLocaleString()} animales</span>
+                      </div>
+                    )}
                     {preview.totalEviscKg != null && (
                       <>
                         <div>
@@ -280,7 +316,8 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
           <TableRow>
             <TableHead>Fecha</TableHead>
             <TableHead>Lote</TableHead>
-            <TableHead>Animales</TableHead>
+            <TableHead>Cosechados</TableHead>
+            <TableHead>Mortalidad oculta</TableHead>
             <TableHead>Peso entero</TableHead>
             <TableHead>Peso eviscerado</TableHead>
             <TableHead>% Merma</TableHead>
@@ -292,7 +329,7 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
         <TableBody>
           {harvests.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={canEdit ? 9 : 8} className="h-20 text-center text-muted-foreground">
+              <TableCell colSpan={canEdit ? 10 : 9} className="h-20 text-center text-muted-foreground">
                 No hay cosechas registradas.
               </TableCell>
             </TableRow>
@@ -306,6 +343,7 @@ export function HarvestForm({ batches, harvests, canEdit }: HarvestFormProps) {
                   </TableCell>
                   <TableCell className="font-medium">{h.pond_name}</TableCell>
                   <TableCell>{h.total_animals.toLocaleString()}</TableCell>
+                  <TableCell>{h.hidden_mortality > 0 ? h.hidden_mortality.toLocaleString() : '—'}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{m.totalWholeKg.toFixed(1)} kg</span>

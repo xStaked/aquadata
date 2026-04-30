@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.harvest_records (
   batch_id                  UUID        NOT NULL REFERENCES public.batches(id) ON DELETE CASCADE,
   harvest_date              DATE        NOT NULL,
   total_animals             INTEGER     NOT NULL,
+  hidden_mortality          INTEGER     NOT NULL DEFAULT 0,
   avg_weight_whole_g        NUMERIC     NOT NULL,       -- peso promedio entero
   avg_weight_eviscerated_g  NUMERIC,                   -- peso promedio eviscerado
   labor_cost                NUMERIC     NOT NULL DEFAULT 0,

@@ -8,6 +8,7 @@ export type HarvestRecord = {
   pond_name: string
   harvest_date: string
   total_animals: number
+  hidden_mortality: number
   avg_weight_whole_g: number
   avg_weight_eviscerated_g: number | null
   labor_cost: number
@@ -18,7 +19,7 @@ export type BatchForForms = {
   id: string
   pond_name: string
   species: string
-  initial_population: number
+  current_population: number
 }
 
 interface HarvestTabProps {

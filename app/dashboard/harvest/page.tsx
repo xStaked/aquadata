@@ -39,7 +39,7 @@ export default async function HarvestPage() {
         .eq('status', 'active'),
       supabase
         .from('harvest_records')
-        .select('id, batch_id, harvest_date, total_animals, avg_weight_whole_g, avg_weight_eviscerated_g, labor_cost, notes')
+        .select('id, batch_id, harvest_date, total_animals, hidden_mortality, avg_weight_whole_g, avg_weight_eviscerated_g, labor_cost, notes')
         .order('harvest_date', { ascending: false }),
     ])
 
@@ -69,7 +69,7 @@ export default async function HarvestPage() {
       id: b.id,
       pond_name: pondMap[b.pond_id]?.name ?? 'S/E',
       species: pondMap[b.pond_id]?.species ?? 'Pescado',
-      initial_population: b.current_population || 0,
+      current_population: b.current_population || 0,
     }))
 
     // ── harvests with pond name ─────────────────────────────────
@@ -84,6 +84,7 @@ export default async function HarvestPage() {
         pond_name: batchPondMap[h.batch_id] ?? 'S/E',
         harvest_date: h.harvest_date,
         total_animals: h.total_animals,
+        hidden_mortality: Number(h.hidden_mortality ?? 0),
         avg_weight_whole_g: Number(h.avg_weight_whole_g),
         avg_weight_eviscerated_g: h.avg_weight_eviscerated_g != null ? Number(h.avg_weight_eviscerated_g) : null,
         labor_cost: Number(h.labor_cost),
@@ -122,6 +123,7 @@ type HarvestRecord = {
   pond_name: string
   harvest_date: string
   total_animals: number
+  hidden_mortality: number
   avg_weight_whole_g: number
   avg_weight_eviscerated_g: number | null
   labor_cost: number
@@ -132,7 +134,7 @@ type BatchForForms = {
   id: string
   pond_name: string
   species: string
-  initial_population: number
+  current_population: number
 }
 
 function getHarvests(): Promise<HarvestRecord[]> {
