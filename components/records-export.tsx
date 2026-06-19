@@ -32,6 +32,20 @@ interface RecordsExportProps {
   records: RecordRow[]
 }
 
+interface WaterQualityReadingExportRow {
+  id: string
+  reading_date: string
+  reading_time: string | null
+  pond_name: string
+  temperature_c: number | null
+  oxygen_mg_l: number | null
+  notes: string | null
+}
+
+interface WaterQualityReadingsExportProps {
+  readings: WaterQualityReadingExportRow[]
+}
+
 const HEADERS = [
   'Fecha',
   'Estanque',
@@ -54,11 +68,23 @@ const HEADERS = [
   'Peso muestreo (g)',
 ]
 
+const WATER_QUALITY_HEADERS = [
+  'Fecha',
+  'Hora',
+  'Estanque',
+  'Temperatura (°C)',
+  'Oxígeno (mg/L)',
+  'Notas',
+]
+
+function formatDate(value: string) {
+  const d = new Date(value)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
 function formatRow(rec: RecordRow) {
-  const d = new Date(rec.record_date)
-  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
   return [
-    date,
+    formatDate(rec.record_date),
     rec.pond_name || '-',
     rec.fish_count ?? '-',
     rec.feed_kg?.toFixed(1) ?? '-',
@@ -80,6 +106,17 @@ function formatRow(rec: RecordRow) {
   ]
 }
 
+function formatWaterQualityRow(reading: WaterQualityReadingExportRow) {
+  return [
+    formatDate(reading.reading_date),
+    reading.reading_time ? reading.reading_time.slice(0, 5) : '-',
+    reading.pond_name || '-',
+    reading.temperature_c?.toFixed(1) ?? '-',
+    reading.oxygen_mg_l?.toFixed(1) ?? '-',
+    reading.notes || '-',
+  ]
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -97,8 +134,7 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
     const autoTable = (await import('jspdf-autotable')).default
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const d = new Date(record.record_date)
-    const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+    const dateStr = formatDate(record.record_date)
 
     doc.setFontSize(18)
     doc.text('Reporte de Produccion', 14, 18)
@@ -145,8 +181,7 @@ export function SingleRecordExport({ record }: { record: RecordRow }) {
 
   async function handleExcel() {
     const XLSX = await import('xlsx')
-    const d = new Date(record.record_date)
-    const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+    const dateStr = formatDate(record.record_date)
 
     const data = [
       ['Parametro', 'Valor'],
@@ -288,5 +323,44 @@ export function RecordsExport({ records }: RecordsExportProps) {
         {loadingPdf ? 'Generando...' : 'PDF'}
       </Button>
     </div>
+  )
+}
+
+export function WaterQualityReadingsExport({ readings }: WaterQualityReadingsExportProps) {
+  const [loadingExcel, setLoadingExcel] = useState(false)
+
+  async function handleExcel() {
+    setLoadingExcel(true)
+    try {
+      const XLSX = await import('xlsx')
+      const rows = readings.map(formatWaterQualityRow)
+      const ws = XLSX.utils.aoa_to_sheet([WATER_QUALITY_HEADERS, ...rows])
+
+      ws['!cols'] = WATER_QUALITY_HEADERS.map((h) => ({ wch: Math.max(h.length, 14) }))
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Oxigeno y temperatura')
+      const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([buf], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      downloadBlob(blob, `lecturas_oxigeno_temperatura_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } finally {
+      setLoadingExcel(false)
+    }
+  }
+
+  if (readings.length === 0) return null
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleExcel}
+      disabled={loadingExcel}
+    >
+      <FileSpreadsheet className="mr-2 h-4 w-4" />
+      {loadingExcel ? 'Generando...' : 'Excel'}
+    </Button>
   )
 }

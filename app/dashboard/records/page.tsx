@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { ClipboardList, CalendarDays, CalendarRange, CalendarRangeIcon, Eye, Gauge } from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
-import { RecordsExport, SingleRecordExport } from '@/components/records-export'
+import { RecordsExport, SingleRecordExport, WaterQualityReadingsExport } from '@/components/records-export'
 import { DatePicker } from '@/components/ui/date-picker'
 import { RecordEditModal } from '@/components/record-edit-modal'
 import { formatColombianPhoneNumber } from '@/lib/phone'
@@ -111,6 +111,8 @@ export default async function RecordsPage({
     } | null
   }> = []
 
+  let exportRecords: typeof records = []
+
   let batchPondMap: Record<string, string> = {}
   let batchDataMap: Record<string, {
     start_date: string
@@ -135,6 +137,8 @@ export default async function RecordsPage({
     notes: string | null
     created_at: string
   }> = []
+
+  let exportReadings: typeof readings = []
 
   let totalReadings = 0
 
@@ -216,6 +220,40 @@ export default async function RecordsPage({
 
             records = (recs as unknown as typeof records) ?? []
             totalRecords = count ?? 0
+
+            let exportOffset = 0
+            const exportPageSize = 1000
+
+            while (true) {
+              let exportRecordsQuery = supabase
+                .from('production_records')
+                .select(PRODUCTION_RECORD_FIELDS)
+                .in('batch_id', batchIds)
+                .order('record_date', { ascending: false })
+                .order('created_at', { ascending: false })
+
+              if (fromDateFilter) {
+                exportRecordsQuery = exportRecordsQuery.gte('record_date', fromDateFilter)
+              }
+
+              if (toDateFilter) {
+                exportRecordsQuery = exportRecordsQuery.lte('record_date', toDateFilter)
+              }
+
+              if (typeFilter === 'daily' || typeFilter === 'weekly') {
+                exportRecordsQuery = exportRecordsQuery.eq('report_type', typeFilter)
+              }
+
+              const { data: exportRecs } = await exportRecordsQuery.range(
+                exportOffset,
+                exportOffset + exportPageSize - 1
+              )
+              const exportChunk = (exportRecs as unknown as typeof records) ?? []
+              exportRecords = [...exportRecords, ...exportChunk]
+
+              if (exportChunk.length < exportPageSize) break
+              exportOffset += exportPageSize
+            }
           }
         }
       } else {
@@ -241,6 +279,36 @@ export default async function RecordsPage({
 
         readings = (rds as unknown as typeof readings) ?? []
         totalReadings = count ?? 0
+
+        let exportOffset = 0
+        const exportPageSize = 1000
+
+        while (true) {
+          let exportReadingsQuery = supabase
+            .from('water_quality_readings')
+            .select('id, pond_id, batch_id, reading_date, reading_time, temperature_c, oxygen_mg_l, notes, created_at')
+            .in('pond_id', pondIds)
+            .order('reading_date', { ascending: false })
+            .order('reading_time', { ascending: false })
+
+          if (fromDateFilter) {
+            exportReadingsQuery = exportReadingsQuery.gte('reading_date', fromDateFilter)
+          }
+
+          if (toDateFilter) {
+            exportReadingsQuery = exportReadingsQuery.lte('reading_date', toDateFilter)
+          }
+
+          const { data: exportRds } = await exportReadingsQuery.range(
+            exportOffset,
+            exportOffset + exportPageSize - 1
+          )
+          const exportChunk = (exportRds as unknown as typeof readings) ?? []
+          exportReadings = [...exportReadings, ...exportChunk]
+
+          if (exportChunk.length < exportPageSize) break
+          exportOffset += exportPageSize
+        }
       }
     }
   }
@@ -295,47 +363,61 @@ export default async function RecordsPage({
             Ver valores por periodo
           </Link>
         </div>
-        {currentView === 'records' ? (
-          <div className="flex items-center gap-2">
-            {canEdit ? (
-              <>
-                <ProductionRecordWaterQualityImportDialog
-                  ponds={ponds}
-                  activeBatchPondIds={activeBatchPondIds}
-                />
-                <ProductionRecordSamplingImportDialog
-                  ponds={ponds}
-                  activeBatchPondIds={activeBatchPondIds}
-                />
-              </>
-            ) : null}
-            <RecordsExport
-              records={records.map((rec) => ({
-                id: rec.id,
-                record_date: rec.record_date,
-                pond_name: batchPondMap[rec.batch_id] || '-',
-                fish_count: rec.fish_count,
-                feed_kg: rec.feed_kg,
-                avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
-                mortality_count: rec.mortality_count,
-                temperature_c: rec.temperature_c,
-                oxygen_mg_l: rec.oxygen_mg_l,
-                ammonia_mg_l: rec.ammonia_mg_l,
-                nitrite_mg_l: rec.nitrite_mg_l,
-                ph: rec.ph,
-                phosphate_mg_l: rec.phosphate_mg_l,
-                hardness_mg_l: rec.hardness_mg_l,
-                alkalinity_mg_l: rec.alkalinity_mg_l,
-                turbidity_ntu: rec.turbidity_ntu,
-                daily_gain_g: rec.daily_gain_g,
-                effective_fca: rec.effective_fca,
-                fca_source: rec.fca_source,
-                biomass_kg: rec.biomass_kg,
-                sampling_weight_g: rec.sampling_weight_g,
+        <div className="flex items-center gap-2">
+          {currentView === 'records' ? (
+            <>
+              {canEdit ? (
+                <>
+                  <ProductionRecordWaterQualityImportDialog
+                    ponds={ponds}
+                    activeBatchPondIds={activeBatchPondIds}
+                  />
+                  <ProductionRecordSamplingImportDialog
+                    ponds={ponds}
+                    activeBatchPondIds={activeBatchPondIds}
+                  />
+                </>
+              ) : null}
+              <RecordsExport
+                records={exportRecords.map((rec) => ({
+                  id: rec.id,
+                  record_date: rec.record_date,
+                  pond_name: batchPondMap[rec.batch_id] || '-',
+                  fish_count: rec.fish_count,
+                  feed_kg: rec.feed_kg,
+                  avg_weight_g: rec.avg_weight_kg != null ? rec.avg_weight_kg * 1000 : null,
+                  mortality_count: rec.mortality_count,
+                  temperature_c: rec.temperature_c,
+                  oxygen_mg_l: rec.oxygen_mg_l,
+                  ammonia_mg_l: rec.ammonia_mg_l,
+                  nitrite_mg_l: rec.nitrite_mg_l,
+                  ph: rec.ph,
+                  phosphate_mg_l: rec.phosphate_mg_l,
+                  hardness_mg_l: rec.hardness_mg_l,
+                  alkalinity_mg_l: rec.alkalinity_mg_l,
+                  turbidity_ntu: rec.turbidity_ntu,
+                  daily_gain_g: rec.daily_gain_g,
+                  effective_fca: rec.effective_fca,
+                  fca_source: rec.fca_source,
+                  biomass_kg: rec.biomass_kg,
+                  sampling_weight_g: rec.sampling_weight_g,
+                }))}
+              />
+            </>
+          ) : (
+            <WaterQualityReadingsExport
+              readings={exportReadings.map((reading) => ({
+                id: reading.id,
+                reading_date: reading.reading_date,
+                reading_time: reading.reading_time,
+                pond_name: ponds.find((p) => p.id === reading.pond_id)?.name || '-',
+                temperature_c: reading.temperature_c,
+                oxygen_mg_l: reading.oxygen_mg_l,
+                notes: reading.notes,
               }))}
             />
-          </div>
-        ) : null}
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
