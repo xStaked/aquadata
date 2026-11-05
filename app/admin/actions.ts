@@ -30,9 +30,9 @@ export async function createInvitationCode(formData: FormData) {
   revalidatePath('/admin')
 }
 
-export type CreateUserResult = { ok: true } | { ok: false; error: string }
+export type AdminActionResult = { ok: true } | { ok: false; error: string }
 
-export async function createOrganizationUser(formData: FormData): Promise<CreateUserResult> {
+export async function createOrganizationUser(formData: FormData): Promise<AdminActionResult> {
   await requireAdminUser()
 
   const organizationId = String(formData.get('organization_id') || '').trim()
@@ -94,6 +94,46 @@ export async function createOrganizationUser(formData: FormData): Promise<Create
   revalidatePath('/admin/producers')
   if (organizationId) {
     revalidatePath(`/admin/producers/${organizationId}`)
+  }
+
+  return { ok: true }
+}
+
+export async function deleteOrganizationUser(userId: string): Promise<AdminActionResult> {
+  const { user, supabase } = await requireAdminUser()
+
+  if (!userId) {
+    return { ok: false, error: 'Usuario no válido' }
+  }
+
+  if (userId === user.id) {
+    return { ok: false, error: 'No puedes eliminar tu propio usuario' }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', userId)
+    .maybeSingle()
+
+  const supabaseAdmin = createAdminClient()
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+  if (error) {
+    const message = error.message || 'No se pudo eliminar el usuario'
+    return {
+      ok: false,
+      error: /foreign key/i.test(message)
+        ? 'No se puede eliminar: el usuario tiene registros asociados'
+        : message,
+    }
+  }
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/users')
+  revalidatePath('/admin/producers')
+  if (profile?.organization_id) {
+    revalidatePath(`/admin/producers/${profile.organization_id}`)
   }
 
   return { ok: true }

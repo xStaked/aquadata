@@ -14,6 +14,7 @@ import {
 import { requireAdminUser } from '@/lib/auth/roles'
 import { ArrowLeft, Bell, Fish, Users, Waves } from 'lucide-react'
 import { CreateOrganizationUserForm } from '@/components/admin/create-organization-user-form'
+import { DeleteUserButton } from '@/components/admin/delete-user-button'
 
 export default async function AdminProducerDetailPage({
   params,
@@ -21,7 +22,7 @@ export default async function AdminProducerDetailPage({
   params: Promise<{ orgId: string }>
 }) {
   const { orgId } = await params
-  const { supabase } = await requireAdminUser()
+  const { supabase, user } = await requireAdminUser()
 
   const { data: organization } = await supabase
     .from('organizations')
@@ -250,7 +251,8 @@ export default async function AdminProducerDetailPage({
                   <tr className="border-b border-border">
                     <th className="py-2 pr-3 font-medium text-muted-foreground">Nombre</th>
                     <th className="py-2 pr-3 font-medium text-muted-foreground">Email</th>
-                    <th className="py-2 pr-0 font-medium text-muted-foreground">Rol</th>
+                    <th className="py-2 pr-3 font-medium text-muted-foreground">Rol</th>
+                    <th className="py-2 pr-0 font-medium text-muted-foreground text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,8 +260,18 @@ export default async function AdminProducerDetailPage({
                     <tr key={profile.id} className="border-b border-border/70">
                       <td className="py-2 pr-3 text-foreground">{profile.full_name || '-'}</td>
                       <td className="py-2 pr-3 text-muted-foreground">{profile.email || '-'}</td>
-                      <td className="py-2 pr-0 text-muted-foreground">
+                      <td className="py-2 pr-3 text-muted-foreground">
                         <Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>{profile.role}</Badge>
+                      </td>
+                      <td className="py-2 pr-0 text-right">
+                        {profile.id === user.id ? (
+                          <span className="text-xs text-muted-foreground">Tú</span>
+                        ) : (
+                          <DeleteUserButton
+                            userId={profile.id}
+                            label={profile.full_name || profile.email || 'este usuario'}
+                          />
+                        )}
                       </td>
                     </tr>
                   ))}

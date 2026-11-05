@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { requireAdminUser } from '@/lib/auth/roles'
 import { CreateOrganizationUserForm } from '@/components/admin/create-organization-user-form'
+import { DeleteUserButton } from '@/components/admin/delete-user-button'
 import { Users, ShieldCheck, UserCog, Eye, ArrowLeft, Building2 } from 'lucide-react'
 
 export default async function AdminUsersPage({
@@ -15,7 +16,7 @@ export default async function AdminUsersPage({
   const selectedOrg = org && org !== 'all' ? org : null
   const selectedRole = role && role !== 'all' ? role : null
 
-  const { supabase } = await requireAdminUser()
+  const { supabase, user } = await requireAdminUser()
 
   const [orgsRes, profilesRes] = await Promise.allSettled([
     supabase.from('organizations').select('id, name').order('name', { ascending: true }),
@@ -152,13 +153,14 @@ export default async function AdminUsersPage({
                     <th className="py-2 pr-3 font-medium text-muted-foreground">Nombre</th>
                     <th className="py-2 pr-3 font-medium text-muted-foreground">Email</th>
                     <th className="py-2 pr-3 font-medium text-muted-foreground">Rol</th>
-                    <th className="py-2 pr-0 font-medium text-muted-foreground">Granja</th>
+                    <th className="py-2 pr-3 font-medium text-muted-foreground">Granja</th>
+                    <th className="py-2 pr-0 font-medium text-muted-foreground text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProfiles.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-4 text-center text-muted-foreground">
+                      <td colSpan={5} className="py-4 text-center text-muted-foreground">
                         No se encontraron usuarios
                       </td>
                     </tr>
@@ -189,11 +191,21 @@ export default async function AdminUsersPage({
                             {profile.role}
                           </Badge>
                         </td>
-                        <td className="py-2 pr-0 text-muted-foreground">
+                        <td className="py-2 pr-3 text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
                             {orgName}
                           </span>
+                        </td>
+                        <td className="py-2 pr-0 text-right">
+                          {profile.id === user.id ? (
+                            <span className="text-xs text-muted-foreground">Tú</span>
+                          ) : (
+                            <DeleteUserButton
+                              userId={profile.id}
+                              label={profile.full_name || profile.email || 'este usuario'}
+                            />
+                          )}
                         </td>
                       </tr>
                     )
