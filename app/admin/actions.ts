@@ -30,7 +30,9 @@ export async function createInvitationCode(formData: FormData) {
   revalidatePath('/admin')
 }
 
-export async function createOrganizationUser(formData: FormData) {
+export type CreateUserResult = { ok: true } | { ok: false; error: string }
+
+export async function createOrganizationUser(formData: FormData): Promise<CreateUserResult> {
   await requireAdminUser()
 
   const organizationId = String(formData.get('organization_id') || '').trim()
@@ -41,34 +43,29 @@ export async function createOrganizationUser(formData: FormData) {
   const rawRole = String(formData.get('role') || 'viewer').trim()
   const role = ['admin', 'operario', 'viewer'].includes(rawRole) ? rawRole : 'viewer'
 
-  if (!organizationId) {
-    throw new Error('La organización es obligatoria')
+  // Admitir roles globales sin finca; operarios/viewers si la requieren.
+  if (role !== 'admin' && !organizationId) {
+    return { ok: false, error: 'La organización es obligatoria para operarios y usuarios de solo lectura' }
   }
 
   if (!email) {
-    throw new Error('El email es obligatorio')
+    return { ok: false, error: 'El email es obligatorio' }
   }
 
   if (!fullName) {
-    throw new Error('El nombre es obligatorio')
+    return { ok: false, error: 'El nombre es obligatorio' }
   }
 
   if (!/^\d{10}$/.test(phoneDigits)) {
-    throw new Error('El número telefónico debe tener 10 dígitos')
+    return { ok: false, error: 'El número telefónico debe tener 10 dígitos' }
   }
 
   if (!password || password.length < 6) {
-    throw new Error('La contraseña debe tener al menos 6 caracteres')
+    return { ok: false, error: 'La contraseña debe tener al menos 6 caracteres' }
   }
 
   const supabaseAdmin = createAdminClient()
   const phone = `+57${phoneDigits}`
-
-  const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
-  const alreadyExists = existing?.users?.some((u) => u.email?.toLowerCase() === email)
-  if (alreadyExists) {
-    throw new Error('Ya existe un usuario con este email')
-  }
 
   const { error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -78,16 +75,26 @@ export async function createOrganizationUser(formData: FormData) {
       full_name: fullName,
       phone,
       role,
-      organization_id: organizationId,
+      organization_id: role === 'admin' ? null : organizationId,
     },
   })
 
   if (error) {
-    throw new Error(error.message)
+    const message = error.message || 'No se pudo crear el usuario'
+    return {
+      ok: false,
+      error: /already|registered|exists/i.test(message)
+        ? 'Ya existe un usuario con este email'
+        : message,
+    }
   }
 
   revalidatePath('/admin')
   revalidatePath('/admin/users')
   revalidatePath('/admin/producers')
-  revalidatePath(`/admin/producers/${organizationId}`)
+  if (organizationId) {
+    revalidatePath(`/admin/producers/${organizationId}`)
+  }
+
+  return { ok: true }
 }

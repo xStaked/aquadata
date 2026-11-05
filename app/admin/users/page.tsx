@@ -2,10 +2,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { requireAdminUser } from '@/lib/auth/roles'
-import { createOrganizationUser } from '@/app/admin/actions'
+import { CreateOrganizationUserForm } from '@/components/admin/create-organization-user-form'
 import { Users, ShieldCheck, UserCog, Eye, ArrowLeft, Building2 } from 'lucide-react'
 
 export default async function AdminUsersPage({
@@ -107,71 +105,7 @@ export default async function AdminUsersPage({
             <CardTitle className="text-base">Crear usuario</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createOrganizationUser} className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="full_name">Nombre completo</Label>
-                <Input id="full_name" name="full_name" placeholder="Juan Perez" required />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="juan@granja.com" required />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  inputMode="numeric"
-                  maxLength={10}
-                  placeholder="3001234567"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Minimo 6 caracteres"
-                  minLength={6}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="role">Rol</Label>
-                <select
-                  id="role"
-                  name="role"
-                  defaultValue="viewer"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  required
-                >
-                  <option value="viewer">Solo lectura</option>
-                  <option value="operario">Operario</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="organization_id">Granja</Label>
-                <select
-                  id="organization_id"
-                  name="organization_id"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  required
-                >
-                  <option value="">Selecciona una granja</option>
-                  {orgs.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button type="submit" className="w-full">
-                Crear usuario e invitar
-              </Button>
-            </form>
+            <CreateOrganizationUserForm organizations={orgs} />
           </CardContent>
         </Card>
 

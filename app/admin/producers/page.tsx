@@ -15,7 +15,7 @@ export default async function AdminProducersPage({
 
   const { supabase } = await requireAdminUser()
 
-  const [orgsRes, profilesRes, pondsRes, batchesRes, recordsRes] = await Promise.allSettled([
+  const [orgsRes, profilesRes, pondsRes, batchesRes, recordsRes, readingsRes] = await Promise.allSettled([
     supabase.from('organizations').select('id, name, created_at').order('created_at', { ascending: false }),
     supabase
       .from('profiles')
@@ -26,8 +26,14 @@ export default async function AdminProducersPage({
     supabase.from('batches').select('id, pond_id, status, created_at').order('created_at', { ascending: false }),
     supabase
       .from('production_records')
-      .select('id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count')
+      .select('id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l')
       .order('record_date', { ascending: false })
+      .limit(300),
+    supabase
+      .from('water_quality_readings')
+      .select('id, pond_id, reading_date, reading_time, temperature_c, oxygen_mg_l')
+      .order('reading_date', { ascending: false })
+      .order('reading_time', { ascending: false })
       .limit(300),
   ])
 
@@ -36,9 +42,11 @@ export default async function AdminProducersPage({
   const ponds = pondsRes.status === 'fulfilled' ? pondsRes.value.data ?? [] : []
   const batches = batchesRes.status === 'fulfilled' ? batchesRes.value.data ?? [] : []
   const records = recordsRes.status === 'fulfilled' ? recordsRes.value.data ?? [] : []
+  const readings = readingsRes.status === 'fulfilled' ? readingsRes.value.data ?? [] : []
 
   const orgMap = new Map(orgs.map((o) => [o.id, o.name]))
   const pondOrgMap = new Map(ponds.map((p) => [p.id, p.organization_id]))
+  const pondNameMap = new Map(ponds.map((p) => [p.id, p.name]))
   const batchOrgMap = new Map(batches.map((b) => [b.id, pondOrgMap.get(b.pond_id) ?? null]))
 
   const scopedProfiles = selectedOrg
@@ -57,8 +65,12 @@ export default async function AdminProducersPage({
     ? records.filter((r) => batchOrgMap.get(r.batch_id) === selectedOrg)
     : records
 
+  const scopedReadings = selectedOrg
+    ? readings.filter((r) => pondOrgMap.get(r.pond_id) === selectedOrg)
+    : readings
+
   const producerCount = scopedProfiles.filter((p) => p.role === 'operario').length
-  const adminCount = scopedProfiles.filter((p) => p.role === 'admin').length
+  const adminCount = profiles.filter((p) => p.role === 'admin').length
   const activeBatchCount = scopedBatches.filter((b) => b.status === 'active').length
 
   const orgSummary = orgs
@@ -96,6 +108,8 @@ export default async function AdminProducersPage({
     alimento_kg: record.feed_kg ?? '',
     peso_kg: record.avg_weight_kg ?? '',
     mortalidad: record.mortality_count ?? 0,
+    temperatura_c: record.temperature_c ?? '',
+    oxigeno_mg_l: record.oxygen_mg_l ?? '',
   }))
 
   return (
@@ -152,7 +166,7 @@ export default async function AdminProducersPage({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Admins</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Admins globales</CardTitle>
             <Building2 className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -260,7 +274,9 @@ export default async function AdminProducersPage({
                   <th className="py-2 pr-3 font-medium text-muted-foreground">Granja</th>
                   <th className="py-2 pr-3 font-medium text-muted-foreground text-right">Alimento (kg)</th>
                   <th className="py-2 pr-3 font-medium text-muted-foreground text-right">Peso (kg)</th>
-                  <th className="py-2 pr-0 font-medium text-muted-foreground text-right">Mortalidad</th>
+                  <th className="py-2 pr-3 font-medium text-muted-foreground text-right">Mortalidad</th>
+                  <th className="py-2 pr-3 font-medium text-muted-foreground text-right">Temp (°C)</th>
+                  <th className="py-2 pr-0 font-medium text-muted-foreground text-right">O2 (mg/L)</th>
                 </tr>
               </thead>
               <tbody>
@@ -272,10 +288,59 @@ export default async function AdminProducersPage({
                       <td className="py-2 pr-3 text-muted-foreground">{orgMap.get(organizationId || '') || '-'}</td>
                       <td className="py-2 pr-3 text-right text-muted-foreground">{record.feed_kg?.toFixed(1) ?? '-'}</td>
                       <td className="py-2 pr-3 text-right text-muted-foreground">{record.avg_weight_kg?.toFixed(3) ?? '-'}</td>
-                      <td className="py-2 pr-0 text-right text-muted-foreground">{record.mortality_count ?? 0}</td>
+                      <td className="py-2 pr-3 text-right text-muted-foreground">{record.mortality_count ?? 0}</td>
+                      <td className="py-2 pr-3 text-right text-muted-foreground">{record.temperature_c?.toFixed(1) ?? '-'}</td>
+                      <td className="py-2 pr-0 text-right text-muted-foreground">{record.oxygen_mg_l?.toFixed(2) ?? '-'}</td>
                     </tr>
                   )
                 })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Registros de oxígeno y temperatura</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="py-2 pr-3 font-medium text-muted-foreground">Fecha</th>
+                  <th className="py-2 pr-3 font-medium text-muted-foreground">Hora</th>
+                  <th className="py-2 pr-3 font-medium text-muted-foreground">Granja</th>
+                  <th className="py-2 pr-3 font-medium text-muted-foreground">Estanque</th>
+                  <th className="py-2 pr-3 font-medium text-muted-foreground text-right">Temp (°C)</th>
+                  <th className="py-2 pr-0 font-medium text-muted-foreground text-right">O2 (mg/L)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scopedReadings.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-center text-muted-foreground">
+                      Sin lecturas de oxígeno y temperatura
+                    </td>
+                  </tr>
+                )}
+                {scopedReadings.slice(0, 20).map((reading) => (
+                  <tr key={reading.id} className="border-b border-border/70">
+                    <td className="py-2 pr-3 text-foreground">{reading.reading_date}</td>
+                    <td className="py-2 pr-3 text-muted-foreground">{reading.reading_time?.slice(0, 5) || '-'}</td>
+                    <td className="py-2 pr-3 text-muted-foreground">
+                      {orgMap.get(pondOrgMap.get(reading.pond_id) || '') || '-'}
+                    </td>
+                    <td className="py-2 pr-3 text-muted-foreground">{pondNameMap.get(reading.pond_id) || '-'}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">
+                      {reading.temperature_c?.toFixed(1) ?? '-'}
+                    </td>
+                    <td className="py-2 pr-0 text-right text-muted-foreground">
+                      {reading.oxygen_mg_l?.toFixed(2) ?? '-'}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

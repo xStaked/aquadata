@@ -80,29 +80,44 @@ export default async function AdminProducerDetailPage({
     is_read: boolean
     created_at: string
   }> = []
+  let waterQualityReadings: Array<{
+    id: string
+    reading_date: string
+    reading_time: string | null
+    temperature_c: number | null
+    oxygen_mg_l: number | null
+  }> = []
 
   if (pondIds.length > 0) {
-    const [batchesResult, recordsResult, treatmentsResult, alertsResult] = await Promise.all([
-      supabase.from('batches').select('id, pond_id, status, start_date').in('pond_id', pondIds),
-      supabase
-        .from('production_records')
-        .select(
-          'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, effective_fca, biomass_kg'
-        )
-        .order('record_date', { ascending: true })
-        .limit(3000),
-      supabase
-        .from('bioremediation_treatments')
-        .select('pond_id, treatment_date, product_name, dose_liters, ammonia_before, ammonia_after')
-        .in('pond_id', pondIds)
-        .order('treatment_date', { ascending: true }),
-      supabase
-        .from('alerts')
-        .select('id, severity, alert_type, message, is_read, created_at, pond_id')
-        .in('pond_id', pondIds)
-        .order('created_at', { ascending: false })
-        .limit(120),
-    ])
+    const [batchesResult, recordsResult, treatmentsResult, alertsResult, readingsResult] =
+      await Promise.all([
+        supabase.from('batches').select('id, pond_id, status, start_date').in('pond_id', pondIds),
+        supabase
+          .from('production_records')
+          .select(
+            'id, batch_id, record_date, feed_kg, avg_weight_kg, mortality_count, temperature_c, oxygen_mg_l, ammonia_mg_l, nitrite_mg_l, nitrate_mg_l, ph, effective_fca, biomass_kg'
+          )
+          .order('record_date', { ascending: true })
+          .limit(3000),
+        supabase
+          .from('bioremediation_treatments')
+          .select('pond_id, treatment_date, product_name, dose_liters, ammonia_before, ammonia_after')
+          .in('pond_id', pondIds)
+          .order('treatment_date', { ascending: true }),
+        supabase
+          .from('alerts')
+          .select('id, severity, alert_type, message, is_read, created_at, pond_id')
+          .in('pond_id', pondIds)
+          .order('created_at', { ascending: false })
+          .limit(120),
+        supabase
+          .from('water_quality_readings')
+          .select('id, reading_date, reading_time, temperature_c, oxygen_mg_l')
+          .in('pond_id', pondIds)
+          .order('reading_date', { ascending: false })
+          .order('reading_time', { ascending: false })
+          .limit(1000),
+      ])
 
     const pondMap = new Map((ponds ?? []).map((pond) => [pond.id, pond]))
 
@@ -111,10 +126,12 @@ export default async function AdminProducerDetailPage({
       const batchPondMap = new Map(batches.map((batch) => [batch.id, batch.pond_id]))
 
       if (!recordsResult.error) {
-        records = (recordsResult.data ?? []).map((record) => ({
-          ...record,
-          pond_name: pondMap.get(batchPondMap.get(record.batch_id) || '')?.name || '-',
-        })) as typeof records
+        records = (recordsResult.data ?? [])
+          .filter((record) => batchPondMap.has(record.batch_id))
+          .map((record) => ({
+            ...record,
+            pond_name: pondMap.get(batchPondMap.get(record.batch_id) || '')?.name || '-',
+          })) as typeof records
       }
     }
 
@@ -127,6 +144,10 @@ export default async function AdminProducerDetailPage({
 
     if (!alertsResult.error) {
       alerts = alertsResult.data ?? []
+    }
+
+    if (!readingsResult.error) {
+      waterQualityReadings = readingsResult.data ?? []
     }
   }
 
@@ -196,12 +217,12 @@ export default async function AdminProducerDetailPage({
         </Card>
       </div>
 
-      {records.length > 0 && (
+      {(records.length > 0 || waterQualityReadings.length > 0) && (
         <div className="grid gap-6 xl:grid-cols-2">
           <WeightChart records={records} />
           <FcaChart records={records} />
           <FeedConsumptionChart records={records} />
-          <WaterQualityChart records={records} />
+          <WaterQualityChart records={records} waterQualityReadings={waterQualityReadings} />
           <NitrogenChart records={records} />
           <TreatmentEffectivenessChart treatments={treatments} />
           <MortalityChart records={records} />
